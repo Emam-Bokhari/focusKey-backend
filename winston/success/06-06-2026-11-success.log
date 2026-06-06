@@ -1,0 +1,27 @@
+Sat Jun 06 2026 11:32:5 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:32:5 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:32:8 [SQUALLY] info: 10.10.7.93 - POST /api/v1/users 200 - 558.272 ms
+Sat Jun 06 2026 11:34:26 [SQUALLY] info: 10.10.7.93 - POST /api/v1/auth/verify-email 200 - 133.738 ms
+Sat Jun 06 2026 11:34:33 [SQUALLY] info: 10.10.7.93 - POST /api/v1/auth/login 200 - 312.947 ms
+Sat Jun 06 2026 11:35:26 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:35:26 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:35:32 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:35:32 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:36:3 [SQUALLY] info: 10.10.7.93 - POST /api/v1/users 200 - 561.108 ms
+Sat Jun 06 2026 11:36:7 [SQUALLY] info: Mail send successfully
+Sat Jun 06 2026 11:36:21 [SQUALLY] info: 10.10.7.93 - POST /api/v1/auth/login 200 - 319.798 ms
+Sat Jun 06 2026 11:36:40 [SQUALLY] info: 10.10.7.93 - POST /api/v1/auth/login 200 - 322.332 ms
+Sat Jun 06 2026 11:37:41 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:37:41 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:37:47 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:37:47 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:37:55 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:37:55 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:38:0 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:38:0 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:38:8 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:38:8 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:38:14 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sat Jun 06 2026 11:38:14 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Sat Jun 06 2026 11:38:19 [SQUALLY] info: 10.10.7.93 - GET /api/v1/users/profile 200 - 92.076 ms
+Sat Jun 06 2026 11:38:31 [SQUALLY] info: 10.10.7.93 - GET /api/v1/rules/about 200 - 47.781 ms

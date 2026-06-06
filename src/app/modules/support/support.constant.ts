@@ -1,0 +1,4 @@
+export enum SUPPORT_STATUS {
+  PENDING = "PENDING",
+  RESOLVED = "RESOLVED",
+}

@@ -1,0 +1,20 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 1
+    },
+    "auditLog": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\.d91f4d79c0f62bc160cff999a3339d31e5d9bee9-audit.json",
+    "files": [
+        {
+            "date": 1780712634044,
+            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\06-06-2026-08-error.log",
+            "hash": "3aeb7f0ca5ed51c59c06fe43a3278268d297a114391922c5a161b2125e730a72"
+        },
+        {
+            "date": 1780723922087,
+            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\06-06-2026-11-error.log",
+            "hash": "08f7b3c2029f35835ed1821d2d801a855803d2b34ab04c52716a80753067a00e"
+        }
+    ],
+    "hashType": "sha256"
+}

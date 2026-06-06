@@ -1,0 +1,17 @@
+Sat Jun 06 2026 12:6:4 [SQUALLY] info: 10.10.7.93 - GET /api/v1/rules/about 200 - 63.171 ms
+Sat Jun 06 2026 12:6:13 [SQUALLY] info: 10.10.7.93 - GET /api/v1/faqs 200 - 45.829 ms
+Sat Jun 06 2026 12:6:36 [SQUALLY] info: 10.10.7.93 - GET /api/v1/users/profile 200 - 90.132 ms
+Sat Jun 06 2026 12:6:43 [SQUALLY] info: 10.10.7.93 - POST /api/v1/rules 200 - 181.113 ms
+Sat Jun 06 2026 12:6:55 [SQUALLY] info: 10.10.7.93 - POST /api/v1/rules 200 - 87.624 ms
+Sat Jun 06 2026 12:7:5 [SQUALLY] info: 10.10.7.93 - POST /api/v1/rules 200 - 88.880 ms
+Sat Jun 06 2026 12:7:10 [SQUALLY] info: 10.10.7.93 - GET /api/v1/rules/about 200 - 42.321 ms
+Sat Jun 06 2026 12:7:15 [SQUALLY] info: 10.10.7.93 - GET /api/v1/rules/terms 200 - 41.849 ms
+Sat Jun 06 2026 12:7:19 [SQUALLY] info: 10.10.7.93 - GET /api/v1/rules/privacy 200 - 45.338 ms
+Sat Jun 06 2026 12:7:24 [SQUALLY] info: 10.10.7.93 - GET /api/v1/users/profile 200 - 85.240 ms
+Sat Jun 06 2026 12:7:31 [SQUALLY] info: 10.10.7.93 - POST /api/v1/faqs 200 - 95.902 ms
+Sat Jun 06 2026 12:7:34 [SQUALLY] info: 10.10.7.93 - GET /api/v1/faqs 200 - 42.645 ms
+Sat Jun 06 2026 12:7:41 [SQUALLY] info: 10.10.7.93 - GET /api/v1/supports 200 - 132.187 ms
+Sat Jun 06 2026 12:7:54 [SQUALLY] info: 10.10.7.93 - POST /api/v1/users/create-admin 200 - 366.106 ms
+Sat Jun 06 2026 12:8:0 [SQUALLY] info: 10.10.7.93 - GET /api/v1/users/admins 200 - 128.898 ms
+Sat Jun 06 2026 12:10:1 [SQUALLY] info: 10.10.7.93 - GET /api/v1/banners 200 - 43.952 ms
+Sat Jun 06 2026 12:11:9 [SQUALLY] info: 🛑 Graceful shutdown started...

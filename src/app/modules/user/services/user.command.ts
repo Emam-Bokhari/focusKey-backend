@@ -13,9 +13,51 @@ import {
   NOTIFICATION_REFERENCE_MODEL,
   NOTIFICATION_TYPE,
 } from "../../notification/notification.constant";
-import { IUser } from "../user.interface";
+import { IDevice, IUser } from "../user.interface";
 import unlinkFile from "../../../../shared/unlinkFile";
 import bcrypt from "bcrypt";
+import crypto from "crypto";
+
+
+const generatePairingCode = (): string => {
+  return crypto.randomBytes(3).toString("hex").toUpperCase(); // 6 character hex code
+};
+
+const handleUserPairing = async (
+  userId: string,
+  deviceData: Partial<IDevice>,
+) => {
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+
+  // If device data is provided, it means we are completing the pairing process
+  if (deviceData.deviceName || deviceData.deviceFingerprint) {
+    const newDevice: IDevice = {
+      deviceName: deviceData.deviceName || "Unknown Device",
+      deviceFingerprint: deviceData.deviceFingerprint || "",
+      platform: deviceData.platform || "android",
+    };
+
+    user.device = newDevice;
+    user.isPaired = true;
+    user.pairingCode = undefined; // Clear code once paired
+  } else {
+    // If no device data, and not yet paired, ensure a pairing code exists
+    if (!user.isPaired && !user.pairingCode) {
+      let code = generatePairingCode();
+      // Ensure uniqueness across all users
+      while (await User.findOne({ pairingCode: code })) {
+        code = generatePairingCode();
+      }
+      user.pairingCode = code;
+    }
+  }
+
+  await user.save();
+  return user;
+};
 
 
 const createUserToDB = async (payload: any) => {
@@ -138,6 +180,8 @@ const updateUserStatusByIdToDB = async (
   return result;
 };
 
+
+
 const deleteUserByIdFromDB = async (id: string) => {
   const user = await User.findById(id);
 
@@ -255,4 +299,5 @@ export const UserCommands = {
   deleteProfileFromDB,
   createAdminToDB,
   deleteAdminFromDB,
+  handleUserPairing,
 };

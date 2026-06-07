@@ -9,6 +9,8 @@ export type ILoginData = {
   password?: string;
   fcmToken?: string;
   deviceId?: string;
+  deviceName?: string;
+  deviceFingerprint?: string;
   deviceType?: "ios" | "android" | "web";
 };
 

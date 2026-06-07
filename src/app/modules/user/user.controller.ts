@@ -162,6 +162,20 @@ const deleteAdmin = catchAsync(async (req, res) => {
   });
 });
 
+const handleUserPairing = catchAsync(async (req, res) => {
+  const { id: userId } = req.user as JwtPayload;
+  const deviceData = req.body;
+
+  const result = await UserCommands.handleUserPairing(userId, deviceData);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "User pairing handled successfully",
+    data: result,
+  });
+});
+
 export const UserControllers = {
   createUser,
   getUserProfile,
@@ -174,4 +188,5 @@ export const UserControllers = {
   createAdmin,
   getAdmin,
   deleteAdmin,
+  handleUserPairing,
 };

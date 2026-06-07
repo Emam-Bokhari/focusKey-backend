@@ -5,6 +5,59 @@ import bcrypt from "bcrypt";
 import config from "../../../config";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
+const installedAppSchema = new Schema(
+  {
+    packageName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    appName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    category: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
+    isSystemApp: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
+);
+
+const deviceSchema = new Schema(
+  {
+    deviceName: { type: String, required: true, trim: true },
+
+    platform: {
+      type: String,
+      enum: ["android", "ios", "web"],
+      required: true,
+      index: true,
+    },
+
+    deviceFingerprint: {
+      type: String,
+      required: true,
+      trim: true,
+      index: true,
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
+);
+
 /* ================= USER SCHEMA ================= */
 const userSchema = new Schema<IUser, IUserModel>(
   {
@@ -60,6 +113,10 @@ const userSchema = new Schema<IUser, IUserModel>(
       default: null,
     },
 
+    installedApps: [installedAppSchema],
+
+    device: deviceSchema,
+
     /* ================= SECURITY ================= */
     password: {
       type: String,
@@ -71,6 +128,16 @@ const userSchema = new Schema<IUser, IUserModel>(
     verified: {
       type: Boolean,
       default: false,
+    },
+
+    isPaired: {
+      type: Boolean,
+      default: false,
+    },
+
+    pairingCode: {
+      type: String,
+      default: null,
     },
 
     status: {

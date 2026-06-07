@@ -5,9 +5,6 @@ import ApiError from "../../../../errors/ApiErrors";
 import { USER_ROLES } from "../../../../enums/user";
 import QueryBuilder from "../../../builder/queryBuilder";
 import { IUser } from "../user.interface";
-import { Types } from "mongoose";
-import { Plan } from "../../plan/plan.model";
-import { PLAN_TIER } from "../../plan/plan.constant";
 
 const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {
   const { id } = user;
@@ -34,6 +31,7 @@ const getAllUsersFromDB = async (query: any) => {
     filter.status = status;
   }
 
+  
 
   const baseQuery = User.find(filter);
 

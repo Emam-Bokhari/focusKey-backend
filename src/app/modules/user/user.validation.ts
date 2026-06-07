@@ -9,4 +9,13 @@ const createAdminZodSchema = z.object({
   }),
 });
 
-export const UserValidation = { createAdminZodSchema };
+const handleUserPairingZodSchema = z.object({
+  body: z.object({
+    deviceName: z.string().optional(),
+    deviceFingerprint: z.string().optional(),
+    platform: z.enum(["android", "ios", "web"]).optional(),
+  }),
+});export const UserValidation = {
+  createAdminZodSchema,
+  handleUserPairingZodSchema,
+};

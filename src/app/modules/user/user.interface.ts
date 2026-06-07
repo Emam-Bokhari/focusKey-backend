@@ -1,7 +1,17 @@
+import { Types } from "mongoose";
 import { GENDER, STATUS, USER_ROLES } from "../../../enums/user";
 import { ISoftDeleteModel } from "../../../types/softDelete";
 
-/* ================= USER ================= */
+export interface IInstalledApp {
+  packageName: string;
+  appName: string;
+}
+
+export interface IDevice {
+  deviceName: string;
+  platform: "android" | "ios" | "web";
+  deviceFingerprint: string;
+}/* ================= USER ================= */
 export type IUser = {
   name: string;
 
@@ -20,9 +30,15 @@ export type IUser = {
 
   /* ================= VERIFICATION ================= */
   verified: boolean;
+  isPaired: boolean;
+  pairingCode?: string;
+  
 
   status?: STATUS;
   userName?: string;
+
+  installedApps?: IInstalledApp[];
+  device?: IDevice;
 
   /* ================= PROFILE ================= */
   profileImage?: string;

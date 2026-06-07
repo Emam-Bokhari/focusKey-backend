@@ -1,10 +1,19 @@
 import express from "express";
 import fileUploadHandler from "../../middlewares/fileUploaderHandler";
 import { UserControllers } from "./user.controller";
-import { isAdmin, isAuthenticated } from "../../../helpers/authHelper";
+import { isAdmin, isAuthenticated, isUser } from "../../../helpers/authHelper";
 import { parseFileData } from "../../middlewares/parseFileData";
+import validateRequest from "../../middlewares/validateRequest";
+import { UserValidation } from "./user.validation";
 
 const router = express.Router();
+
+router.post(
+  "/pair-device",
+  isUser,
+  validateRequest(UserValidation.handleUserPairingZodSchema),
+  UserControllers.handleUserPairing,
+);
 
 router
   .route("/profile")

@@ -1,11 +1,18 @@
 import { Types } from "mongoose";
 
-type IconType = 
-  | "book" | "briefcase" | "dumbbell" | "moon"
-  | "meditation" | "code" | "music" | "heart";
+type IconType =
+  | "gym"
+  | "study"
+  | "work"
+  | "workout"
+  | "social"
+  | "reading"
+  | "family"
+  | "meditation"
+  | "sleep"
+  | "creative";
 
 export interface IMode {
-  _id: Types.ObjectId;
   userId: Types.ObjectId;
   name: string;
   description: string;
@@ -15,14 +22,12 @@ export interface IMode {
     appName: string;
   }[];
   schedule: {
-    startTime: string;   // "09:00"
-    endTime: string;     // "15:00"
+    startTime: string; // "09:00"
+    endTime: string; // "15:00"
   };
   breakConfig: {
     breaksPerDay: number;
     breakDurationMinutes: number;
   };
   isActive: boolean;
-  createdAt: Date;
-  updatedAt: Date;
 }

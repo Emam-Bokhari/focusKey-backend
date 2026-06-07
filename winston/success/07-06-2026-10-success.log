@@ -19,3 +19,5 @@ Sun Jun 07 2026 10:36:15 [SQUALLY] info: 10.10.7.93 - POST /api/v1/users/pair-de
 Sun Jun 07 2026 10:36:59 [SQUALLY] info: 10.10.7.93 - POST /api/v1/users/pair-device 200 - 138.108 ms
 Sun Jun 07 2026 10:37:0 [SQUALLY] info: 10.10.7.93 - POST /api/v1/users/pair-device 200 - 138.261 ms
 Sun Jun 07 2026 10:38:3 [SQUALLY] info: 🛑 Graceful shutdown started...
+Sun Jun 07 2026 10:50:26 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Sun Jun 07 2026 10:50:26 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

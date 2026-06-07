@@ -7,7 +7,6 @@ import path from "path";
 import v2Router from "./app/routes/v2";
 import router from "./app/routes";
 import { serverAdapter } from "./config/bullboard";
-import { WebhookRoutes } from "./app/modules/webhook/webhook.route";
 
 const app: Application = express();
 
@@ -26,8 +25,6 @@ app.use(
   }),
 );
 
-// Stripe Webhook (MUST be before express.json())
-app.use("/api/v1/webhooks", WebhookRoutes);
 
 app.use(express.json());
 

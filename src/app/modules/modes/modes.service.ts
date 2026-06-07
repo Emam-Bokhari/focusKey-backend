@@ -2,8 +2,13 @@ import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiErrors";
 import { IMode } from "./modes.interface";
 import { Mode } from "./modes.model";
+import mongoose from "mongoose";
 
-const createModeToDB = async (payload: IMode): Promise<IMode> => {
+const createModeToDB = async (
+  payload: IMode,
+  userId: string,
+): Promise<IMode> => {
+  payload.userId = new mongoose.Types.ObjectId(userId);
   const result = await Mode.create(payload);
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create mode");

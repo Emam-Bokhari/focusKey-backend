@@ -21,3 +21,133 @@ Mon Jun 08 2026 11:12:36 [SQUALLY] info: [33m♻️ Application listening on po
 Mon Jun 08 2026 11:12:52 [SQUALLY] info: [32m🚀 Database connected successfully[39m
 Mon Jun 08 2026 11:12:52 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
 Mon Jun 08 2026 11:12:52 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:14:5 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:14:5 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:14:5 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:15:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 439.351 ms
+Mon Jun 08 2026 11:15:13 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 414.195 ms
+Mon Jun 08 2026 11:15:16 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 422.454 ms
+Mon Jun 08 2026 11:15:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 417.330 ms
+Mon Jun 08 2026 11:15:26 [SQUALLY] info: 10.10.7.93 - POST /api/v1/breaks/start 200 - 240.189 ms
+Mon Jun 08 2026 11:15:38 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 225.342 ms
+Mon Jun 08 2026 11:15:44 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 206.326 ms
+Mon Jun 08 2026 11:15:45 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 466.717 ms
+Mon Jun 08 2026 11:15:46 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 214.346 ms
+Mon Jun 08 2026 11:15:48 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 208.300 ms
+Mon Jun 08 2026 11:15:49 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 205.403 ms
+Mon Jun 08 2026 11:15:50 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 212.926 ms
+Mon Jun 08 2026 11:15:55 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 413.465 ms
+Mon Jun 08 2026 11:15:58 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 417.821 ms
+Mon Jun 08 2026 11:15:59 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 409.004 ms
+Mon Jun 08 2026 11:16:1 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 410.654 ms
+Mon Jun 08 2026 11:16:2 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 411.730 ms
+Mon Jun 08 2026 11:16:4 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 407.767 ms
+Mon Jun 08 2026 11:16:5 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 413.811 ms
+Mon Jun 08 2026 11:16:6 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 405.534 ms
+Mon Jun 08 2026 11:16:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 406.590 ms
+Mon Jun 08 2026 11:16:17 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 412.787 ms
+Mon Jun 08 2026 11:16:20 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 421.647 ms
+Mon Jun 08 2026 11:16:22 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 412.152 ms
+Mon Jun 08 2026 11:16:24 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 414.523 ms
+Mon Jun 08 2026 11:16:26 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 409.729 ms
+Mon Jun 08 2026 11:16:32 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 421.670 ms
+Mon Jun 08 2026 11:16:34 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 418.583 ms
+Mon Jun 08 2026 11:16:35 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 408.343 ms
+Mon Jun 08 2026 11:16:39 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 405.099 ms
+Mon Jun 08 2026 11:16:40 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 405.297 ms
+Mon Jun 08 2026 11:16:42 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 416.464 ms
+Mon Jun 08 2026 11:16:44 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 406.371 ms
+Mon Jun 08 2026 11:16:46 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 418.716 ms
+Mon Jun 08 2026 11:16:47 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 406.775 ms
+Mon Jun 08 2026 11:16:48 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 405.445 ms
+Mon Jun 08 2026 11:16:49 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 407.180 ms
+Mon Jun 08 2026 11:16:54 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 408.629 ms
+Mon Jun 08 2026 11:16:55 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 422.594 ms
+Mon Jun 08 2026 11:16:58 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 413.098 ms
+Mon Jun 08 2026 11:17:2 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 411.717 ms
+Mon Jun 08 2026 11:17:4 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 406.687 ms
+Mon Jun 08 2026 11:17:6 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 409.754 ms
+Mon Jun 08 2026 11:17:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 405.424 ms
+Mon Jun 08 2026 11:17:11 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 410.447 ms
+Mon Jun 08 2026 11:17:14 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 406.796 ms
+Mon Jun 08 2026 11:17:16 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 415.024 ms
+Mon Jun 08 2026 11:17:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 419.301 ms
+Mon Jun 08 2026 11:17:20 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 412.473 ms
+Mon Jun 08 2026 11:17:22 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 407.824 ms
+Mon Jun 08 2026 11:17:24 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 419.336 ms
+Mon Jun 08 2026 11:17:25 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 409.778 ms
+Mon Jun 08 2026 11:17:26 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 422.531 ms
+Mon Jun 08 2026 11:17:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 404.126 ms
+Mon Jun 08 2026 11:17:30 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 665.281 ms
+Mon Jun 08 2026 11:17:32 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 917.328 ms
+Mon Jun 08 2026 11:18:0 [SQUALLY] info: Cron Job: 1 expired breaks marked as completed.
+Mon Jun 08 2026 11:18:35 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 363.631 ms
+Mon Jun 08 2026 11:18:41 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 84.592 ms
+Mon Jun 08 2026 11:18:49 [SQUALLY] info: 10.10.7.93 - POST /api/v1/modes 200 - 199.202 ms
+Mon Jun 08 2026 11:18:58 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 123.778 ms
+Mon Jun 08 2026 11:19:5 [SQUALLY] info: 10.10.7.93 - PATCH /api/v1/modes/6a2650b9a32343db847ec9ff/toggle-activation 200 - 349.725 ms
+Mon Jun 08 2026 11:19:15 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 404.856 ms
+Mon Jun 08 2026 11:19:22 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 409.433 ms
+Mon Jun 08 2026 11:19:23 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 405.982 ms
+Mon Jun 08 2026 11:20:0 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session? 200 - 406.050 ms
+Mon Jun 08 2026 11:21:31 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session? 200 - 473.546 ms
+Mon Jun 08 2026 11:23:41 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session? 200 - 951.134 ms
+Mon Jun 08 2026 11:29:29 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 488.001 ms
+Mon Jun 08 2026 11:29:41 [SQUALLY] info: 10.10.7.93 - POST /api/v1/breaks/start 200 - 253.027 ms
+Mon Jun 08 2026 11:29:47 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 127.341 ms
+Mon Jun 08 2026 11:30:41 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 497.133 ms
+Mon Jun 08 2026 11:30:44 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 410.738 ms
+Mon Jun 08 2026 11:31:10 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 432.923 ms
+Mon Jun 08 2026 11:31:11 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 433.505 ms
+Mon Jun 08 2026 11:31:12 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 411.504 ms
+Mon Jun 08 2026 11:31:13 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 412.902 ms
+Mon Jun 08 2026 11:31:15 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 419.274 ms
+Mon Jun 08 2026 11:31:16 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 666.573 ms
+Mon Jun 08 2026 11:31:17 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 405.533 ms
+Mon Jun 08 2026 11:31:19 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 505.696 ms
+Mon Jun 08 2026 11:31:20 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 426.318 ms
+Mon Jun 08 2026 11:31:21 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 420.649 ms
+Mon Jun 08 2026 11:31:22 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 671.763 ms
+Mon Jun 08 2026 11:32:24 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 408.871 ms
+Mon Jun 08 2026 11:34:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 654.509 ms
+Mon Jun 08 2026 11:34:13 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 437.996 ms
+Mon Jun 08 2026 11:34:21 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 422.910 ms
+Mon Jun 08 2026 11:35:4 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 501.099 ms
+Mon Jun 08 2026 11:35:10 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 443.987 ms
+Mon Jun 08 2026 11:35:21 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 447.369 ms
+Mon Jun 08 2026 11:37:19 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 480.492 ms
+Mon Jun 08 2026 11:40:2 [SQUALLY] info: Cron Job: 1 expired breaks marked as completed.
+Mon Jun 08 2026 11:47:25 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 513.679 ms
+Mon Jun 08 2026 11:56:50 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:56:50 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:56:50 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:56:54 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:56:54 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:56:54 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:57:36 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:57:36 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:57:36 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:57:44 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:57:44 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:57:44 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:57:58 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:57:58 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:57:58 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:58:4 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:58:4 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:58:4 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:58:11 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:58:11 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:58:11 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:58:15 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:58:15 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:58:15 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:58:20 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:58:20 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:58:20 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:58:33 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:58:33 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:58:33 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 11:58:47 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 11:58:47 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 11:58:47 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

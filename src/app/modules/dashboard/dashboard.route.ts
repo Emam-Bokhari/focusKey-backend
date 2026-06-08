@@ -6,4 +6,6 @@ const router = express.Router();
 
 router.get("/focus-session", isUser, DashboardController.getDashboardData);
 
+router.get("/history", isUser, DashboardController.getHistoryData);
+
 export const DashboardRoutes = router;

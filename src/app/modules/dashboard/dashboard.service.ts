@@ -158,6 +158,166 @@ const getDashboardData = async (userId: string) => {
   };
 };
 
+const formatDuration = (totalMinutes: number) => {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return {
+    hours,
+    minutes,
+    formatted: `${hours}h ${minutes}m`,
+  };
+};
+
+const getHistoryData = async (userId: string) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  // 1. Total Focus Time (All Time)
+  const allSessions = await FocusSession.find({ userId: userObjectId });
+  const allBreaks = await Break.find({ userId: userObjectId });
+
+  let totalMinutes = 0;
+  allSessions.forEach((s) => {
+    if (s.status === "completed") {
+      totalMinutes += s.durationMinutes || 0;
+    } else {
+      const diff = new Date().getTime() - s.startTime.getTime();
+      totalMinutes += Math.round(diff / 60000);
+    }
+  });
+
+  allBreaks.forEach((b) => {
+    if (b.status === "completed") {
+      totalMinutes -= b.durationMinutes || 0;
+    } else {
+      const diff = new Date().getTime() - b.startTime.getTime();
+      totalMinutes -= Math.round(diff / 60000);
+    }
+  });
+  totalMinutes = Math.max(0, totalMinutes);
+
+  // 2. Mode-wise Today Focus Time
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const todaySessions = await FocusSession.find({
+    userId: userObjectId,
+    $or: [
+      { startTime: { $gte: startOfDay, $lte: endOfDay } },
+      { status: "active" },
+    ],
+  }).populate("modeId");
+
+  const todayBreaks = await Break.find({
+    userId: userObjectId,
+    createdAt: { $gte: startOfDay, $lte: endOfDay },
+  });
+
+  const modeWiseToday: any = {};
+  todaySessions.forEach((s: any) => {
+    const modeName = s.modeId?.name || "Unknown Mode";
+    if (!modeWiseToday[modeName]) {
+      modeWiseToday[modeName] = 0;
+    }
+    if (s.status === "completed") {
+      modeWiseToday[modeName] += s.durationMinutes || 0;
+    } else {
+      const diff = new Date().getTime() - s.startTime.getTime();
+      modeWiseToday[modeName] += Math.round(diff / 60000);
+    }
+  });
+
+  // Subtract today's breaks from mode-wise today focus time
+  // Note: This is simplified; assumes breaks belong to the mode they were taken in
+  for (const b of todayBreaks) {
+    const mode = await Mode.findById(b.modeId);
+    const modeName = mode?.name || "Unknown Mode";
+    if (modeWiseToday[modeName]) {
+      const breakMin = b.status === "completed" 
+        ? (b.durationMinutes || 0) 
+        : Math.round((new Date().getTime() - b.startTime.getTime()) / 60000);
+      modeWiseToday[modeName] = Math.max(0, modeWiseToday[modeName] - breakMin);
+    }
+  }
+
+  // 3. Date-wise Detailed History
+  const historyLogs = await FocusSession.find({ userId: userObjectId })
+    .populate("modeId")
+    .sort({ startTime: -1 });
+
+  const groupedHistory: any = {};
+
+  for (const session of historyLogs) {
+    const dateKey = session.startTime.toISOString().split("T")[0]; // YYYY-MM-DD
+    if (!groupedHistory[dateKey]) {
+      groupedHistory[dateKey] = {
+        date: dateKey,
+        totalFocusMinutes: 0,
+        sessions: [],
+      };
+    }
+
+    let sessionMinutes = 0;
+    if (session.status === "completed") {
+      sessionMinutes = session.durationMinutes || 0;
+    } else {
+      sessionMinutes = Math.round(
+        (new Date().getTime() - session.startTime.getTime()) / 60000
+      );
+    }
+
+    // Find breaks within this session's time range to subtract
+    const sessionBreaks = await Break.find({
+      userId: userObjectId,
+      modeId: session.modeId,
+      startTime: { $gte: session.startTime },
+      endTime: session.status === "completed" ? { $lte: session.endTime } : { $exists: true },
+    });
+
+    let sessionBreakMinutes = 0;
+    sessionBreaks.forEach((b) => {
+      if (b.status === "completed") {
+        sessionBreakMinutes += b.durationMinutes || 0;
+      } else {
+        sessionBreakMinutes += Math.round(
+          (new Date().getTime() - b.startTime.getTime()) / 60000
+        );
+      }
+    });
+
+    const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
+    const duration = formatDuration(netSessionMinutes);
+
+    groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
+    groupedHistory[dateKey].sessions.push({
+      modeName: (session.modeId as any)?.name,
+      startTime: session.startTime,
+      endTime: session.endTime || null,
+      duration,
+      status: session.status,
+    });
+  }
+
+  // Format grouped history for response
+  const history = Object.values(groupedHistory).map((day: any) => ({
+    ...day,
+    totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
+  }));
+
+  return {
+    summary: {
+      totalFocusTime: formatDuration(totalMinutes),
+    },
+    todayStats: Object.keys(modeWiseToday).map((mode) => ({
+      mode,
+      duration: formatDuration(modeWiseToday[mode]),
+    })),
+    history,
+  };
+};
+
 export const DashboardService = {
   getDashboardData,
+  getHistoryData
 };

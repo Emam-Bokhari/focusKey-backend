@@ -1,0 +1,5 @@
+Mon Jun 08 2026 12:0:10 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 567.060 ms
+Mon Jun 08 2026 12:0:22 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 408.329 ms
+Mon Jun 08 2026 12:0:24 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 418.765 ms
+Mon Jun 08 2026 12:1:16 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 409.805 ms
+Mon Jun 08 2026 12:1:46 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 404.201 ms

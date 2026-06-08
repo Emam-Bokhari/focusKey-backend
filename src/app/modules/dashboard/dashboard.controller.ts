@@ -16,6 +16,20 @@ const getDashboardData = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+
+const getHistoryData = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await DashboardService.getHistoryData(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Focus history retrieved successfully",
+    data: result,
+  });
+});
+
 export const DashboardController = {
   getDashboardData,
+  getHistoryData,
 };

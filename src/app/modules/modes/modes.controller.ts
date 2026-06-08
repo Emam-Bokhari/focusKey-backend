@@ -74,7 +74,44 @@ const toggleModeActivation = catchAsync(async (req: Request, res: Response) => {
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Mode status toggled successfully",
+    message: "Mode activation toggled successfully",
+    data: result,
+  });
+});
+
+const getModeAppCounts = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await ModeService.getModeAppCounts(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Mode app counts retrieved successfully",
+    data: result,
+  });
+});
+
+const getModeAppDetails = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await ModeService.getModeAppDetails(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Mode app details retrieved successfully",
+    data: result,
+  });
+});
+
+const getSingleModeAppDetails = catchAsync(async (req: Request, res: Response) => {
+  const modeId = req.params.modeId;
+  const userId = req.user.id;
+  const result = await ModeService.getSingleModeAppDetails(modeId, userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Single mode app details retrieved successfully",
     data: result,
   });
 });
@@ -86,4 +123,7 @@ export const ModeController = {
   updateMode,
   deleteMode,
   toggleModeActivation,
+  getModeAppCounts,
+  getModeAppDetails,
+  getSingleModeAppDetails,
 };

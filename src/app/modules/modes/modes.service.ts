@@ -23,10 +23,21 @@ const createModeToDB = async (
 
 const getModesFromDB = async (userId: string) => {
   const modes = await Mode.find({ userId });
-  
+
   if (!modes || modes.length === 0) {
-    return [];
+    return {
+      modes: [],
+      stats: {
+        totalLockedAppsAcrossModes: 0,
+      },
+    };
   }
+
+  // Calculate total locked apps across all modes
+  const totalLockedAppsAcrossModes = modes.reduce(
+    (acc, mode) => acc + (mode.lockedApps?.length || 0),
+    0,
+  );
 
   // Check if there is an active break for this user
   const activeBreak = await Break.findOne({
@@ -36,7 +47,7 @@ const getModesFromDB = async (userId: string) => {
   });
 
   // Map modes and add isLocked status
-  const result = modes.map((mode) => {
+  const modesWithStatus = modes.map((mode) => {
     const modeObj = mode.toObject();
     return {
       ...modeObj,
@@ -44,7 +55,12 @@ const getModesFromDB = async (userId: string) => {
     };
   });
 
-  return result;
+  return {
+    modes: modesWithStatus,
+    stats: {
+      totalLockedAppsAcrossModes,
+    },
+  };
 };
 
 const getSingleModeFromDB = async (modeId: string) => {
@@ -215,6 +231,76 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
   };
 };
 
+const getModeAppCounts = async (userId: string) => {
+  const modes = await Mode.find({ userId, isDeleted: false });
+
+  const totalFocusAppsCount = modes.reduce(
+    (acc, mode) => acc + (mode.lockedApps?.length || 0),
+    0,
+  );
+
+  return modes.map((mode) => ({
+    _id: mode._id,
+    modeName: mode.name,
+    icon: mode.icon,
+    totalApps: mode.lockedApps?.length || 0,
+    totalFocusAppsCount,
+  }));
+};
+
+const getModeAppDetails = async (userId: string) => {
+  const modes = await Mode.find({ userId, isDeleted: false });
+
+  // Get unique apps across all modes
+  const allLockedApps: any[] = [];
+  const seenPackages = new Set();
+
+  modes.forEach((mode) => {
+    mode.lockedApps?.forEach((app) => {
+      if (!seenPackages.has(app.packageName)) {
+        seenPackages.add(app.packageName);
+        allLockedApps.push(app);
+      }
+    });
+  });
+
+  return modes.map((mode) => ({
+    _id: mode._id,
+    modeName: mode.name,
+    lockedApps: mode.lockedApps || [],
+    totalFocusApps: allLockedApps,
+  }));
+};
+
+const getSingleModeAppDetails = async (modeId: string, userId: string) => {
+  const modes = await Mode.find({ userId, isDeleted: false });
+  const mode = modes.find((m) => m._id.toString() === modeId);
+
+  if (!mode) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
+  }
+
+  // Get unique apps across all modes for the "totalFocusApps" summary
+  const allLockedApps: any[] = [];
+  const seenPackages = new Set();
+
+  modes.forEach((m) => {
+    m.lockedApps?.forEach((app) => {
+      if (!seenPackages.has(app.packageName)) {
+        seenPackages.add(app.packageName);
+        allLockedApps.push(app);
+      }
+    });
+  });
+
+  return {
+    _id: mode._id,
+    modeName: mode.name,
+    lockedApps: mode.lockedApps || [],
+    totalFocusApps: allLockedApps,
+  };
+};
+
 export const ModeService = {
   createModeToDB,
   getModesFromDB,
@@ -222,4 +308,7 @@ export const ModeService = {
   updateModeToDB,
   deleteModeFromDB,
   toggleModeActivation,
+  getModeAppCounts,
+  getModeAppDetails,
+  getSingleModeAppDetails,
 };

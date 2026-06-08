@@ -3,3 +3,54 @@ Mon Jun 08 2026 12:0:22 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/histo
 Mon Jun 08 2026 12:0:24 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 418.765 ms
 Mon Jun 08 2026 12:1:16 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 409.805 ms
 Mon Jun 08 2026 12:1:46 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 404.201 ms
+Mon Jun 08 2026 12:2:24 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:2:24 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:2:24 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:5:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 298.230 ms
+Mon Jun 08 2026 12:6:14 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 491.276 ms
+Mon Jun 08 2026 12:11:0 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:11:0 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:11:0 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:11:53 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 141.805 ms
+Mon Jun 08 2026 12:13:50 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/6a2650b9a32343db847ec9ff 200 - 206.152 ms
+Mon Jun 08 2026 12:17:43 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:17:43 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:17:43 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:17:49 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:17:49 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:17:49 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:17:59 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:17:59 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:17:59 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:19:16 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:19:17 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:19:17 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:19:57 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-details 200 - 92.669 ms
+Mon Jun 08 2026 12:20:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-counts 200 - 83.378 ms
+Mon Jun 08 2026 12:20:52 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:20:52 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:20:52 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:21:1 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:21:1 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:21:1 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:21:3 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-counts 200 - 435.361 ms
+Mon Jun 08 2026 12:21:35 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-details 200 - 84.512 ms
+Mon Jun 08 2026 12:22:46 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:22:46 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:22:46 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:22:57 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-counts 200 - 84.325 ms
+Mon Jun 08 2026 12:23:3 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-details 200 - 80.177 ms
+Mon Jun 08 2026 12:24:46 [SQUALLY] info: 10.10.7.93 - POST /api/v1/modes 200 - 264.359 ms
+Mon Jun 08 2026 12:24:52 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 121.418 ms
+Mon Jun 08 2026 12:25:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-counts 200 - 79.057 ms
+Mon Jun 08 2026 12:25:11 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-details 200 - 83.200 ms
+Mon Jun 08 2026 12:27:47 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:27:47 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:27:47 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:27:59 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-details 200 - 101.390 ms
+Mon Jun 08 2026 12:29:37 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:29:37 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:29:37 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 12:29:42 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 12:29:42 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 12:29:42 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

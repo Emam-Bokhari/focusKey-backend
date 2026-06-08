@@ -183,22 +183,32 @@ const getRemainingBreaks = async (userId: string) => {
 
 const stopBreak = async (userId: string) => {
   const now = new Date();
+  
+  // Find the active break first to calculate duration
+  const activeBreakToStop = await Break.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    status: "active",
+    endTime: { $gt: now },
+  });
+
+  if (!activeBreakToStop) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "No active break found to stop");
+  }
+
+  const durationMs = now.getTime() - activeBreakToStop.startTime.getTime();
+  const durationMinutes = Math.round(durationMs / 60000);
+
   const activeBreak = await Break.findOneAndUpdate(
     {
-      userId: new mongoose.Types.ObjectId(userId),
-      status: "active",
-      endTime: { $gt: now },
+      _id: activeBreakToStop._id,
     },
     {
       status: "completed",
       endTime: now, // End it right now
+      durationMinutes,
     },
     { new: true }
   );
-
-  if (!activeBreak) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "No active break found to stop");
-  }
 
   // Notify user via socket that break stopped (apps locked)
   //@ts-ignore
@@ -216,7 +226,7 @@ const stopBreak = async (userId: string) => {
 const updateExpiredBreaks = async () => {
   const now = new Date();
 
-  // Find expired breaks first to get userIds for notification
+  // Find expired breaks first to get userIds for notification and calculate duration
   const expiredBreaks = await Break.find({
     status: "active",
     endTime: { $lte: now },
@@ -228,17 +238,21 @@ const updateExpiredBreaks = async () => {
 
   const userIds = expiredBreaks.map((b) => b.userId.toString());
 
-  const result = await Break.updateMany(
-    {
-      _id: { $in: expiredBreaks.map((b) => b._id) },
-    },
-    {
-      $set: { status: "completed" },
-    }
-  );
+  // Update each break individually to set correct durationMinutes
+  for (const breakItem of expiredBreaks) {
+    const durationMs = breakItem.endTime.getTime() - breakItem.startTime.getTime();
+    const durationMinutes = Math.round(durationMs / 60000);
+
+    await Break.findByIdAndUpdate(breakItem._id, {
+      $set: { 
+        status: "completed",
+        durationMinutes
+      },
+    });
+  }
 
   return {
-    modifiedCount: result.modifiedCount,
+    modifiedCount: expiredBreaks.length,
     userIds: [...new Set(userIds)], // Unique user IDs
   };
 };

@@ -5,6 +5,7 @@ export interface IBreak {
   modeId: Types.ObjectId;
   startTime: Date;
   endTime: Date;
+  durationMinutes?: number;
   status: "active" | "completed";
   createdAt: Date;
   updatedAt: Date;

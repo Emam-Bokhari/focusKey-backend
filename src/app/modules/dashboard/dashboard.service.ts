@@ -41,6 +41,14 @@ const getDashboardData = async (userId: string) => {
     ],
   });
 
+  const todayBreaks = await Break.find({
+    userId: userObjectId,
+    $or: [
+        { createdAt: { $gte: startOfDay, $lte: endOfDay } },
+        { status: "active" }
+    ]
+  });
+
   let todayFocusMinutes = 0;
   todaySessions.forEach((session) => {
     if (session.status === "completed") {
@@ -52,6 +60,17 @@ const getDashboardData = async (userId: string) => {
     }
   });
 
+  // Subtract today's break time
+  todayBreaks.forEach((breakItem) => {
+    if (breakItem.status === "completed") {
+        todayFocusMinutes -= (breakItem.durationMinutes || 0);
+    } else {
+        const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+        todayFocusMinutes -= Math.round(durationMs / 60000);
+    }
+  });
+  todayFocusMinutes = Math.max(0, todayFocusMinutes);
+
   // 6. Focus Time Stats (This Week)
   const startOfWeek = new Date();
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
@@ -60,6 +79,11 @@ const getDashboardData = async (userId: string) => {
   const weekSessions = await FocusSession.find({
     userId: userObjectId,
     startTime: { $gte: startOfWeek },
+  });
+
+  const weekBreaks = await Break.find({
+    userId: userObjectId,
+    createdAt: { $gte: startOfWeek },
   });
 
   let weekFocusMinutes = 0;
@@ -71,6 +95,17 @@ const getDashboardData = async (userId: string) => {
       weekFocusMinutes += Math.round(durationMs / 60000);
     }
   });
+
+  // Subtract this week's break time
+  weekBreaks.forEach((breakItem) => {
+    if (breakItem.status === "completed") {
+        weekFocusMinutes -= (breakItem.durationMinutes || 0);
+    } else {
+        const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+        weekFocusMinutes -= Math.round(durationMs / 60000);
+    }
+  });
+  weekFocusMinutes = Math.max(0, weekFocusMinutes);
 
   // 7. Break Stats
   let breaksTakenToday = 0;

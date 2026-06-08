@@ -22,6 +22,10 @@ const breakSchema = new Schema<IBreak>(
       type: Date,
       required: true,
     },
+    durationMinutes: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       enum: ["active", "completed"],

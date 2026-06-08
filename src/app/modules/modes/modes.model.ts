@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
-import { IMode } from "./modes.interface";
+import { IMode, TModeModel } from "./modes.interface";
+import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
 
 const lockedAppSchema = new Schema(
@@ -18,22 +19,7 @@ const lockedAppSchema = new Schema(
   { _id: false }
 );
 
-const scheduleSchema = new Schema(
-  {
-    startTime: {
-      type: String,
-      required: true,
-      trim: true,
-    }, // "09:00"
 
-    endTime: {
-      type: String,
-      required: true,
-      trim: true,
-    }, // "15:00"
-  },
-  { _id: false }
-);
 
 const breakConfigSchema = new Schema(
   {
@@ -52,7 +38,7 @@ const breakConfigSchema = new Schema(
   { _id: false }
 );
 
-const modeSchema = new Schema<IMode>(
+const modeSchema = new Schema<IMode, TModeModel>(
   {
     userId: {
       type: Schema.Types.ObjectId,
@@ -94,12 +80,6 @@ const modeSchema = new Schema<IMode>(
       type: [lockedAppSchema],
       default: [],
     },
-
-    schedule: {
-      type: scheduleSchema,
-      required: true,
-    },
-
     breakConfig: {
       type: breakConfigSchema,
       default: {
@@ -108,9 +88,20 @@ const modeSchema = new Schema<IMode>(
       },
     },
 
+    totalLockedApps: {
+      type: Number,
+      default: 0,
+    },
+
     isActive: {
       type: Boolean,
-      default: true,
+      default: false,
+      index: true,
+    },
+
+    isDeleted: {
+      type: Boolean,
+      default: false,
       index: true,
     },
   },
@@ -119,8 +110,16 @@ const modeSchema = new Schema<IMode>(
     versionKey: false,
   }
 );
+modeSchema.plugin(softDeletePlugin);
 
+// Auto update totalLockedApps count before saving
+modeSchema.pre("save", function (next) {
+  if (this.lockedApps) {
+    this.totalLockedApps = this.lockedApps.length;
+  }
+  next();
+});
 
 modeSchema.index({ userId: 1, isActive: 1 });
 
-export const Mode = model<IMode>("Mode", modeSchema);
+export const Mode = model<IMode, TModeModel>("Mode", modeSchema);

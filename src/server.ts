@@ -14,6 +14,7 @@ import {
 } from "./queues";
 import "./queues";
 import 'dotenv/config';
+import { CronJobs } from "./app/cronJobs/breakCron";
 
 
 let server: any;
@@ -80,6 +81,9 @@ async function main() {
     socketHelper.socket(io);
     //@ts-ignore
     global.io = io;
+
+    // Initialize Cron Jobs
+    CronJobs.initBreakCron();
   } catch (error) {
     errorLogger.error(colors.red("🤢 Failed to connect Database"));
     process.exit(1);

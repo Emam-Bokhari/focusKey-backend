@@ -1,3 +1,5 @@
 Sun Jun 07 2026 15:42:12 [SQUALLY] error: 10.10.7.93 - POST /api/v1/modes 401 - 21.836 ms
 Sun Jun 07 2026 15:42:52 [SQUALLY] error: 10.10.7.93 - GET /api/v1/modes 401 - 1.665 ms
 Sun Jun 07 2026 15:43:23 [SQUALLY] error: 10.10.7.93 - GET /api/v1/modes/6a253cf89ebc85a4361023a3 401 - 2.745 ms
+Sun Jun 07 2026 15:47:25 [SQUALLY] error: 10.10.7.93 - DELETE /api/v1/modes/6a253cf89ebc85a4361023a3 404 - 101.385 ms
+Sun Jun 07 2026 15:47:47 [SQUALLY] error: 10.10.7.93 - DELETE /api/v1/modes/6a253cf89ebc85a4361023a3 404 - 108.117 ms

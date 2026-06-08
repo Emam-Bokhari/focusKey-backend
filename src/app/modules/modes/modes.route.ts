@@ -10,9 +10,16 @@ router
   .get(isUser, ModeController.getModes);
 
 router
-  .route("/:id")
+  .route("/:modeId")
   .get(isUser, ModeController.getSingleMode)
   .patch(isUser, ModeController.updateMode)
   .delete(isUser, ModeController.deleteMode);
+
+// lock/unlock
+router.patch(
+  "/:modeId/toggle-activation",
+  isUser,
+  ModeController.toggleModeActivation,
+);
 
 export const ModeRoutes = router;

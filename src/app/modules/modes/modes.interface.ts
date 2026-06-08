@@ -1,4 +1,5 @@
 import { Types } from "mongoose";
+import { ISoftDeleteModel } from "../../../types/softDelete";
 
 type IconType =
   | "gym"
@@ -21,13 +22,14 @@ export interface IMode {
     packageName: string;
     appName: string;
   }[];
-  schedule: {
-    startTime: string; // "09:00"
-    endTime: string; // "15:00"
-  };
   breakConfig: {
     breaksPerDay: number;
     breakDurationMinutes: number;
   };
+  totalLockedApps: number;
   isActive: boolean;
+  isDeleted: boolean;
 }
+
+
+export type TModeModel = ISoftDeleteModel<IMode>;

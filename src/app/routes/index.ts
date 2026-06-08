@@ -11,6 +11,9 @@ import { SupportRoutes } from "../modules/support/support.route";
 import { BannerRoutes } from "../modules/banner/banner.route";
 import { SettingsRoutes } from "../modules/settings/settings.route";
 import { ModeRoutes } from "../modules/modes/modes.route";
+import { BreakRoutes } from "../modules/breaks/breaks.route";
+import { DashboardRoutes } from "../modules/dashboard/dashboard.route";
+
 
 const router = express.Router();
 
@@ -62,6 +65,14 @@ const apiRoutes = [
   {
     path: "/modes",
     route: ModeRoutes,
+  },
+  {
+    path: "/breaks",
+    route: BreakRoutes,
+  },
+  {
+    path: "/dashboard",
+    route: DashboardRoutes,
   },
 ];
 

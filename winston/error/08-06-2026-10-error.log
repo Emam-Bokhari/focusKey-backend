@@ -1,0 +1,2 @@
+Mon Jun 08 2026 10:19:35 [SQUALLY] error: 10.10.7.93 - GET /api/v1/dashboard/focus-session 401 - 11.235 ms
+Mon Jun 08 2026 10:22:40 [SQUALLY] error: 10.10.7.93 - GET /api/v1/dashboard/focus-session 500 - 131.175 ms

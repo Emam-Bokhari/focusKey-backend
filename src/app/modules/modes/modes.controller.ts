@@ -30,8 +30,8 @@ const getModes = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getSingleMode = catchAsync(async (req: Request, res: Response) => {
-  const id = req.params.id;
-  const result = await ModeService.getSingleModeFromDB(id);
+  const modeId = req.params.modeId;
+  const result = await ModeService.getSingleModeFromDB(modeId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -42,9 +42,9 @@ const getSingleMode = catchAsync(async (req: Request, res: Response) => {
 });
 
 const updateMode = catchAsync(async (req: Request, res: Response) => {
-  const id = req.params.id;
+  const modeId = req.params.modeId;
   const payload = req.body;
-  const result = await ModeService.updateModeToDB(id, payload);
+  const result = await ModeService.updateModeToDB(modeId, payload);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -55,13 +55,26 @@ const updateMode = catchAsync(async (req: Request, res: Response) => {
 });
 
 const deleteMode = catchAsync(async (req: Request, res: Response) => {
-  const id = req.params.id;
-  const result = await ModeService.deleteModeFromDB(id);
+  const modeId = req.params.modeId;
+  const result = await ModeService.deleteModeFromDB(modeId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
     message: "Mode deleted successfully",
+    data: result,
+  });
+});
+
+const toggleModeActivation = catchAsync(async (req: Request, res: Response) => {
+  const modeId = req.params.modeId;
+  const userId = req.user.id;
+  const result = await ModeService.toggleModeActivation(modeId, userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Mode status toggled successfully",
     data: result,
   });
 });
@@ -72,4 +85,5 @@ export const ModeController = {
   getSingleMode,
   updateMode,
   deleteMode,
+  toggleModeActivation,
 };

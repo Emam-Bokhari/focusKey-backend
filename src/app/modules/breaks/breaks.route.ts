@@ -9,4 +9,8 @@ router.post("/stop", isUser, BreakController.stopBreak);
 router.get("/status", isUser, BreakController.getActiveBreakStatus);
 router.get("/remaining", isUser, BreakController.getRemainingBreaks);
 
+// Global Break Config
+router.get("/config", isUser, BreakController.getGlobalBreakConfig);
+router.patch("/config", isUser, BreakController.updateGlobalBreakConfig);
+
 export const BreakRoutes = router;

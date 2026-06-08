@@ -22,10 +22,6 @@ export interface IMode {
     packageName: string;
     appName: string;
   }[];
-  breakConfig: {
-    breaksPerDay: number;
-    breakDurationMinutes: number;
-  };
   totalLockedApps: number;
   isActive: boolean;
   isDeleted: boolean;

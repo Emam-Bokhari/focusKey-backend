@@ -10,3 +10,9 @@ export interface IBreak {
   createdAt: Date;
   updatedAt: Date;
 }
+
+export interface IBreakConfig {
+  userId: Types.ObjectId;
+  breaksPerDay: number;
+  breakDurationMinutes: number;
+}

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { User } from "../user/user.model";
 import { Mode } from "../modes/modes.model";
-import { Break } from "../breaks/breaks.model";
+import { Break, BreakConfig } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
 
 const getDashboardData = async (userId: string) => {
@@ -112,14 +112,21 @@ const getDashboardData = async (userId: string) => {
   let remainingBreaksToday = 0;
   let activeBreakRemainingMinutes = 0;
 
-  if (activeMode) {
-    breaksTakenToday = await Break.countDocuments({
+  // Get global break config
+  let breakConfig = await BreakConfig.findOne({ userId: userObjectId });
+  if (!breakConfig) {
+    breakConfig = await BreakConfig.create({
       userId: userObjectId,
-      modeId: activeMode._id,
-      createdAt: { $gte: startOfDay, $lte: endOfDay },
+      breaksPerDay: 4,
+      breakDurationMinutes: 15,
     });
-    remainingBreaksToday = Math.max(0, activeMode.breakConfig.breaksPerDay - breaksTakenToday);
   }
+
+  breaksTakenToday = await Break.countDocuments({
+    userId: userObjectId,
+    createdAt: { $gte: startOfDay, $lte: endOfDay },
+  });
+  remainingBreaksToday = Math.max(0, breakConfig.breaksPerDay - breaksTakenToday);
 
   if (activeBreak) {
     const remainingTimeMs = activeBreak.endTime.getTime() - new Date().getTime();

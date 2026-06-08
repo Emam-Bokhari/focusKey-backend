@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IBreak } from "./breaks.interface";
+import { IBreak, IBreakConfig } from "./breaks.interface";
 
 const breakSchema = new Schema<IBreak>(
   {
@@ -39,3 +39,30 @@ const breakSchema = new Schema<IBreak>(
 );
 
 export const Break = model<IBreak>("Break", breakSchema);
+
+const breakConfigSchema = new Schema<IBreakConfig>(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      unique: true,
+    },
+    breaksPerDay: {
+      type: Number,
+      required: true,
+      default: 4,
+    },
+    breakDurationMinutes: {
+      type: Number,
+      required: true,
+      default: 15,
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  }
+);
+
+export const BreakConfig = model<IBreakConfig>("BreakConfig", breakConfigSchema);

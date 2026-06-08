@@ -1,8 +1,9 @@
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiErrors";
 import { Mode } from "../modes/modes.model";
-import { Break } from "./breaks.model";
+import { Break, BreakConfig } from "./breaks.model";
 import mongoose from "mongoose";
+import { IBreakConfig } from "./breaks.interface";
 
 const startBreak = async (userId: string) => {
   // 1. Find the active mode for the user
@@ -16,10 +17,24 @@ const startBreak = async (userId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "No active mode found to take a break");
   }
 
-  const { breaksPerDay, breakDurationMinutes } = activeMode.breakConfig;
+  // Get global break config or use defaults
+  let breakConfig = await BreakConfig.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+  });
+
+  if (!breakConfig) {
+    // Create default config if not exists
+    breakConfig = await BreakConfig.create({
+      userId: new mongoose.Types.ObjectId(userId),
+      breaksPerDay: 4,
+      breakDurationMinutes: 15,
+    });
+  }
+
+  const { breaksPerDay, breakDurationMinutes } = breakConfig;
 
   if (breaksPerDay <= 0) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Breaks are not allowed in this mode");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Breaks are not allowed");
   }
 
   // 2. Count breaks taken today
@@ -31,12 +46,12 @@ const startBreak = async (userId: string) => {
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
-    modeId: activeMode._id,
+    // modeId: activeMode._id, // Now it's global, so we don't necessarily need modeId for limit check, but keeping it for history
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
   if (breaksToday >= breaksPerDay) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached for this mode");
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached");
   }
 
   // 3. Check if there's an already active break
@@ -84,22 +99,21 @@ const getActiveBreakStatus = async (userId: string) => {
     endTime: { $gt: now },
   }).populate("modeId");
 
-  if (!activeBreak) {
-    return {
-      isBreakActive: false,
-      remainingBreaksToday: 0,
-    };
-  }
-
-  // Calculate remaining breaks for the active mode
-  const activeMode = await Mode.findOne({
+  // Get global break config
+  let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
-    isActive: true,
-    isDeleted: false,
   });
 
-  if (!activeMode) {
-     return {
+  if (!breakConfig) {
+    breakConfig = await BreakConfig.create({
+      userId: new mongoose.Types.ObjectId(userId),
+      breaksPerDay: 4,
+      breakDurationMinutes: 15,
+    });
+  }
+
+  if (!activeBreak) {
+    return {
       isBreakActive: false,
       remainingBreaksToday: 0,
     };
@@ -112,7 +126,6 @@ const getActiveBreakStatus = async (userId: string) => {
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
-    modeId: activeMode._id,
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
@@ -125,23 +138,22 @@ const getActiveBreakStatus = async (userId: string) => {
       ...activeBreak.toObject(),
       remainingMinutes,
     },
-    remainingBreaksToday: Math.max(0, activeMode.breakConfig.breaksPerDay - breaksToday),
+    remainingBreaksToday: Math.max(0, breakConfig.breaksPerDay - breaksToday),
   };
 };
 
 const getRemainingBreaks = async (userId: string) => {
-    const activeMode = await Mode.findOne({
+  // Get global break config
+  let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
-    isActive: true,
-    isDeleted: false,
   });
 
-  if (!activeMode) {
-    return {
-        totalAllowed: 0,
-        takenToday: 0,
-        remaining: 0
-    };
+  if (!breakConfig) {
+    breakConfig = await BreakConfig.create({
+      userId: new mongoose.Types.ObjectId(userId),
+      breaksPerDay: 4,
+      breakDurationMinutes: 15,
+    });
   }
 
   const startOfDay = new Date();
@@ -151,7 +163,6 @@ const getRemainingBreaks = async (userId: string) => {
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
-    modeId: activeMode._id,
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
@@ -162,11 +173,10 @@ const getRemainingBreaks = async (userId: string) => {
   });
 
   return {
-    modeName: activeMode.name,
-    totalAllowed: activeMode.breakConfig.breaksPerDay,
-    durationMinutes: activeMode.breakConfig.breakDurationMinutes,
+    totalAllowed: breakConfig.breaksPerDay,
+    durationMinutes: breakConfig.breakDurationMinutes,
     takenToday: breaksToday,
-    remaining: Math.max(0, activeMode.breakConfig.breaksPerDay - breaksToday),
+    remaining: Math.max(0, breakConfig.breaksPerDay - breaksToday),
     activeBreak: activeBreak
       ? {
           endTime: activeBreak.endTime,
@@ -257,10 +267,45 @@ const updateExpiredBreaks = async () => {
   };
 };
 
+const getGlobalBreakConfig = async (userId: string) => {
+  let breakConfig = await BreakConfig.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+  });
+
+  if (!breakConfig) {
+    breakConfig = await BreakConfig.create({
+      userId: new mongoose.Types.ObjectId(userId),
+      breaksPerDay: 4,
+      breakDurationMinutes: 15,
+    });
+  }
+
+  return breakConfig;
+};
+
+const updateGlobalBreakConfig = async (
+  userId: string,
+  payload: Partial<IBreakConfig>
+) => {
+  const result = await BreakConfig.findOneAndUpdate(
+    { userId: new mongoose.Types.ObjectId(userId) },
+    { $set: payload },
+    {
+      new: true,
+      upsert: true,
+      runValidators: true,
+    }
+  );
+
+  return result;
+};
+
 export const BreakService = {
   startBreak,
   getActiveBreakStatus,
   getRemainingBreaks,
   stopBreak,
   updateExpiredBreaks,
+  getGlobalBreakConfig,
+  updateGlobalBreakConfig,
 };

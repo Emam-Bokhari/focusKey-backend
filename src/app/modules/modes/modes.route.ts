@@ -11,6 +11,7 @@ router
 
 router.get("/app-counts", isUser, ModeController.getModeAppCounts);
 router.get("/app-details", isUser, ModeController.getModeAppDetails);
+router.get("/total-focus-apps", isUser, ModeController.getTotalFocusApps);
 router.get(
   "/app-details/:modeId",
   isUser,

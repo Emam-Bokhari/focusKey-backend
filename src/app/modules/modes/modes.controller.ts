@@ -116,6 +116,18 @@ const getSingleModeAppDetails = catchAsync(async (req: Request, res: Response) =
   });
 });
 
+const getTotalFocusApps = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await ModeService.getTotalFocusApps(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Total focus apps retrieved successfully",
+    data: result,
+  });
+});
+
 export const ModeController = {
   createMode,
   getModes,
@@ -126,4 +138,5 @@ export const ModeController = {
   getModeAppCounts,
   getModeAppDetails,
   getSingleModeAppDetails,
+  getTotalFocusApps,
 };

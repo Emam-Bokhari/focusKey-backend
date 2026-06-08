@@ -251,6 +251,30 @@ const getModeAppCounts = async (userId: string) => {
 const getModeAppDetails = async (userId: string) => {
   const modes = await Mode.find({ userId, isDeleted: false });
 
+  return modes.map((mode) => ({
+    _id: mode._id,
+    modeName: mode.name,
+    lockedApps: mode.lockedApps || [],
+  }));
+};
+
+const getSingleModeAppDetails = async (modeId: string, userId: string) => {
+  const mode = await Mode.findOne({ _id: modeId, userId, isDeleted: false });
+
+  if (!mode) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
+  }
+
+  return {
+    _id: mode._id,
+    modeName: mode.name,
+    lockedApps: mode.lockedApps || [],
+  };
+};
+
+const getTotalFocusApps = async (userId: string) => {
+  const modes = await Mode.find({ userId, isDeleted: false });
+
   // Get unique apps across all modes
   const allLockedApps: any[] = [];
   const seenPackages = new Set();
@@ -264,41 +288,7 @@ const getModeAppDetails = async (userId: string) => {
     });
   });
 
-  return modes.map((mode) => ({
-    _id: mode._id,
-    modeName: mode.name,
-    lockedApps: mode.lockedApps || [],
-    totalFocusApps: allLockedApps,
-  }));
-};
-
-const getSingleModeAppDetails = async (modeId: string, userId: string) => {
-  const modes = await Mode.find({ userId, isDeleted: false });
-  const mode = modes.find((m) => m._id.toString() === modeId);
-
-  if (!mode) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
-  }
-
-  // Get unique apps across all modes for the "totalFocusApps" summary
-  const allLockedApps: any[] = [];
-  const seenPackages = new Set();
-
-  modes.forEach((m) => {
-    m.lockedApps?.forEach((app) => {
-      if (!seenPackages.has(app.packageName)) {
-        seenPackages.add(app.packageName);
-        allLockedApps.push(app);
-      }
-    });
-  });
-
-  return {
-    _id: mode._id,
-    modeName: mode.name,
-    lockedApps: mode.lockedApps || [],
-    totalFocusApps: allLockedApps,
-  };
+  return allLockedApps;
 };
 
 export const ModeService = {
@@ -311,4 +301,5 @@ export const ModeService = {
   getModeAppCounts,
   getModeAppDetails,
   getSingleModeAppDetails,
+  getTotalFocusApps,
 };

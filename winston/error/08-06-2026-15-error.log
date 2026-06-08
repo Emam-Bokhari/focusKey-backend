@@ -1,0 +1,5 @@
+Mon Jun 08 2026 15:0:27 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/config 401 - 4.140 ms
+Mon Jun 08 2026 15:0:41 [SQUALLY] error: 10.10.7.93 - PATCH /api/v1/breaks/config 401 - 1.205 ms
+Mon Jun 08 2026 15:13:29 [SQUALLY] error: 10.10.7.93 - GET /api/v1/modes/app-details/6a2650b9a32343db847ec9ff 404 - 177.156 ms
+Mon Jun 08 2026 15:27:21 [SQUALLY] error: 10.10.7.93 - GET /api/v1/modes/total-focus-apps 401 - 5.100 ms
+Mon Jun 08 2026 15:28:43 [SQUALLY] error: 10.10.7.93 - POST /api/v1/modes 400 - 53.915 ms

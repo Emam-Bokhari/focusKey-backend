@@ -21,23 +21,6 @@ const lockedAppSchema = new Schema(
 
 
 
-const breakConfigSchema = new Schema(
-  {
-    breaksPerDay: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-
-    breakDurationMinutes: {
-      type: Number,
-      default: 0,
-      min: 0,
-    },
-  },
-  { _id: false }
-);
-
 const modeSchema = new Schema<IMode, TModeModel>(
   {
     userId: {
@@ -79,13 +62,6 @@ const modeSchema = new Schema<IMode, TModeModel>(
     lockedApps: {
       type: [lockedAppSchema],
       default: [],
-    },
-    breakConfig: {
-      type: breakConfigSchema,
-      default: {
-        breaksPerDay: 0,
-        breakDurationMinutes: 0,
-      },
     },
 
     totalLockedApps: {

@@ -19,12 +19,11 @@ app.use(Morgan.errorHandler);
 
 //body parser
 app.use(
-  cors({ 
-    origin: true, 
-    credentials: true 
+  cors({
+    origin: true,
+    credentials: true,
   }),
 );
-
 
 app.use(express.json());
 

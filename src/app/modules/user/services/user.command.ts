@@ -18,7 +18,6 @@ import unlinkFile from "../../../../shared/unlinkFile";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 
-
 const generatePairingCode = (): string => {
   return crypto.randomBytes(3).toString("hex").toUpperCase(); // 6 character hex code
 };
@@ -58,7 +57,6 @@ const handleUserPairing = async (
   await user.save();
   return user;
 };
-
 
 const createUserToDB = async (payload: any) => {
   const isExistUser = await User.findOne({ email: payload.email });
@@ -179,8 +177,6 @@ const updateUserStatusByIdToDB = async (
 
   return result;
 };
-
-
 
 const deleteUserByIdFromDB = async (id: string) => {
   const user = await User.findById(id);

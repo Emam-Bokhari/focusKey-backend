@@ -8,7 +8,9 @@ const getDashboardData = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   // 1. Get User Info
-  const user = await User.findById(userId).select("name email phone countryCode profileImage");
+  const user = await User.findById(userId).select(
+    "name email phone countryCode profileImage",
+  );
 
   // 2. Get Active Mode
   const activeMode = await Mode.findOne({
@@ -37,16 +39,16 @@ const getDashboardData = async (userId: string) => {
     userId: userObjectId,
     $or: [
       { startTime: { $gte: startOfDay, $lte: endOfDay } },
-      { status: "active" } // Include currently active session
+      { status: "active" }, // Include currently active session
     ],
   });
 
   const todayBreaks = await Break.find({
     userId: userObjectId,
     $or: [
-        { createdAt: { $gte: startOfDay, $lte: endOfDay } },
-        { status: "active" }
-    ]
+      { createdAt: { $gte: startOfDay, $lte: endOfDay } },
+      { status: "active" },
+    ],
   });
 
   let todayFocusMinutes = 0;
@@ -63,10 +65,10 @@ const getDashboardData = async (userId: string) => {
   // Subtract today's break time
   todayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
-        todayFocusMinutes -= (breakItem.durationMinutes || 0);
+      todayFocusMinutes -= breakItem.durationMinutes || 0;
     } else {
-        const durationMs = new Date().getTime() - breakItem.startTime.getTime();
-        todayFocusMinutes -= Math.round(durationMs / 60000);
+      const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+      todayFocusMinutes -= Math.round(durationMs / 60000);
     }
   });
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
@@ -99,10 +101,10 @@ const getDashboardData = async (userId: string) => {
   // Subtract this week's break time
   weekBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
-        weekFocusMinutes -= (breakItem.durationMinutes || 0);
+      weekFocusMinutes -= breakItem.durationMinutes || 0;
     } else {
-        const durationMs = new Date().getTime() - breakItem.startTime.getTime();
-        weekFocusMinutes -= Math.round(durationMs / 60000);
+      const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+      weekFocusMinutes -= Math.round(durationMs / 60000);
     }
   });
   weekFocusMinutes = Math.max(0, weekFocusMinutes);
@@ -136,16 +138,26 @@ const getDashboardData = async (userId: string) => {
     userId: userObjectId,
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
-  remainingBreaksToday = Math.max(0, breakConfig.breaksPerDay - breaksTakenToday);
+  remainingBreaksToday = Math.max(
+    0,
+    breakConfig.breaksPerDay - breaksTakenToday,
+  );
 
   if (activeBreak) {
-    const remainingTimeMs = activeBreak.endTime.getTime() - new Date().getTime();
-    activeBreakRemainingMinutes = Math.max(0, Math.ceil(remainingTimeMs / 60000));
+    const remainingTimeMs =
+      activeBreak.endTime.getTime() - new Date().getTime();
+    activeBreakRemainingMinutes = Math.max(
+      0,
+      Math.ceil(remainingTimeMs / 60000),
+    );
   }
 
   // 8. Total Blocked Apps (Across all modes for this user)
   const allModes = await Mode.find({ userId: userObjectId, isDeleted: false });
-  const totalBlockedAppsAcrossModes = allModes.reduce((acc, mode) => acc + (mode.lockedApps?.length || 0), 0);
+  const totalBlockedAppsAcrossModes = allModes.reduce(
+    (acc, mode) => acc + (mode.lockedApps?.length || 0),
+    0,
+  );
 
   return {
     user,
@@ -154,10 +166,12 @@ const getDashboardData = async (userId: string) => {
       activeModeName: activeMode?.name || null,
       // activeModeId: activeMode?._id || null,
     },
-    activeMode: activeMode ? {
-        ...activeMode.toObject(),
-        isLocked // Include the lock status in mode data too
-    } : null,
+    activeMode: activeMode
+      ? {
+          ...activeMode.toObject(),
+          isLocked, // Include the lock status in mode data too
+        }
+      : null,
     focusStats: {
       todayMinutes: todayFocusMinutes,
       weekMinutes: weekFocusMinutes,
@@ -165,13 +179,15 @@ const getDashboardData = async (userId: string) => {
     breakStats: {
       takenToday: breaksTakenToday,
       remainingToday: remainingBreaksToday,
-      activeBreak: activeBreak ? {
-          ...activeBreak.toObject(),
-          remainingMinutes: activeBreakRemainingMinutes
-      } : null
+      activeBreak: activeBreak
+        ? {
+            ...activeBreak.toObject(),
+            remainingMinutes: activeBreakRemainingMinutes,
+          }
+        : null,
     },
     totalBlockedApps: activeMode?.lockedApps?.length || 0,
-    totalBlockedAppsAcrossModes
+    totalBlockedAppsAcrossModes,
   };
 };
 
@@ -261,9 +277,10 @@ const getHistoryData = async (userId: string) => {
     const mode = await Mode.findById(b.modeId);
     const modeName = mode?.name || "Unknown Mode";
     if (modeWiseToday[modeName]) {
-      const breakMin = b.status === "completed" 
-        ? (b.durationMinutes || 0) 
-        : Math.round((new Date().getTime() - b.startTime.getTime()) / 60000);
+      const breakMin =
+        b.status === "completed"
+          ? b.durationMinutes || 0
+          : Math.round((new Date().getTime() - b.startTime.getTime()) / 60000);
       modeWiseToday[modeName] = Math.max(0, modeWiseToday[modeName] - breakMin);
     }
   }
@@ -290,7 +307,7 @@ const getHistoryData = async (userId: string) => {
       sessionMinutes = session.durationMinutes || 0;
     } else {
       sessionMinutes = Math.round(
-        (new Date().getTime() - session.startTime.getTime()) / 60000
+        (new Date().getTime() - session.startTime.getTime()) / 60000,
       );
     }
 
@@ -299,7 +316,10 @@ const getHistoryData = async (userId: string) => {
       userId: userObjectId,
       modeId: session.modeId,
       startTime: { $gte: session.startTime },
-      endTime: session.status === "completed" ? { $lte: session.endTime } : { $exists: true },
+      endTime:
+        session.status === "completed"
+          ? { $lte: session.endTime }
+          : { $exists: true },
     });
 
     let sessionBreakMinutes = 0;
@@ -308,7 +328,7 @@ const getHistoryData = async (userId: string) => {
         sessionBreakMinutes += b.durationMinutes || 0;
       } else {
         sessionBreakMinutes += Math.round(
-          (new Date().getTime() - b.startTime.getTime()) / 60000
+          (new Date().getTime() - b.startTime.getTime()) / 60000,
         );
       }
     });
@@ -350,5 +370,5 @@ const getHistoryData = async (userId: string) => {
 
 export const DashboardService = {
   getDashboardData,
-  getHistoryData
+  getHistoryData,
 };

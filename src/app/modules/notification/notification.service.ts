@@ -34,9 +34,7 @@ const getNotificationsFromDB = async (
   };
 };
 
-const readNotificationsToDB = async (
-  user: JwtPayload,
-) => {
+const readNotificationsToDB = async (user: JwtPayload) => {
   const result = await Notification.updateMany(
     { receiver: user.id, read: false },
     { $set: { read: true } },

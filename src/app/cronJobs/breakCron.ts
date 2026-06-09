@@ -8,7 +8,7 @@ const handleExpiredBreaks = async () => {
 
     if (result.modifiedCount > 0) {
       logger.info(
-        `Cron Job: ${result.modifiedCount} expired breaks marked as completed.`
+        `Cron Job: ${result.modifiedCount} expired breaks marked as completed.`,
       );
 
       // Notify users via socket that their break has ended and apps are locked

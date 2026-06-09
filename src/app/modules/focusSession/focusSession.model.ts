@@ -35,9 +35,12 @@ const focusSessionSchema = new Schema<IFocusSession>(
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 focusSessionSchema.plugin(softDeletePlugin);
 
-export const FocusSession = model<IFocusSession>("FocusSession", focusSessionSchema);
+export const FocusSession = model<IFocusSession>(
+  "FocusSession",
+  focusSessionSchema,
+);

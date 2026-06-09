@@ -13,9 +13,8 @@ import {
   notificationQueue,
 } from "./queues";
 import "./queues";
-import 'dotenv/config';
+import "dotenv/config";
 import { CronJobs } from "./app/cronJobs/breakCron";
-
 
 let server: any;
 

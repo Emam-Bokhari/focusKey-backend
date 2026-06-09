@@ -6,10 +6,7 @@ import mongoose from "mongoose";
 import { Break } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
 
-const createModeToDB = async (
-  payload: IMode,
-  userId: string,
-): Promise<any> => {
+const createModeToDB = async (payload: IMode, userId: string): Promise<any> => {
   payload.userId = new mongoose.Types.ObjectId(userId);
   const result = await Mode.create(payload);
   if (!result) {
@@ -239,7 +236,6 @@ const getModeAppCounts = async (userId: string) => {
     (acc, mode) => acc + (mode.lockedApps?.length || 0),
     0,
   );
-
 
   return modes.map((mode) => ({
     _id: mode._id,

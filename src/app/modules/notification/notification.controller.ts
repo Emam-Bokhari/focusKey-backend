@@ -19,7 +19,6 @@ const getNotifications = catchAsync(async (req: Request, res: Response) => {
     data: result.data,
     meta: result.meta,
   });
-  
 });
 
 const readNotifications = catchAsync(async (req: Request, res: Response) => {
@@ -33,84 +32,98 @@ const readNotifications = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getSingleNotification = catchAsync(async (req: Request, res: Response) => {
-  const result = await NotificationService.getSingleNotificationFromDB(
-    req.user,
-    req.params.id,
-  );
+const getSingleNotification = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await NotificationService.getSingleNotificationFromDB(
+      req.user,
+      req.params.id,
+    );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Notification retrieved successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Notification retrieved successfully",
+      data: result,
+    });
+  },
+);
 
-const readSingleNotification = catchAsync(async (req: Request, res: Response) => {
-  const result = await NotificationService.readSingleNotificationToDB(
-    req.user,
-    req.params.id,
-  );
+const readSingleNotification = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await NotificationService.readSingleNotificationToDB(
+      req.user,
+      req.params.id,
+    );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Notification marked as read successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Notification marked as read successfully",
+      data: result,
+    });
+  },
+);
 
 // --- ADMIN & SUPER_ADMIN CONTROLLERS ---
 
-const getAdminNotifications = catchAsync(async (req: Request, res: Response) => {
-  const result = await NotificationService.getAdminNotificationsFromDB(req.query);
+const getAdminNotifications = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await NotificationService.getAdminNotificationsFromDB(
+      req.query,
+    );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Admin notifications retrieved successfully",
-    data: result.data,
-    meta: result.meta,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Admin notifications retrieved successfully",
+      data: result.data,
+      meta: result.meta,
+    });
+  },
+);
 
-const readAdminNotifications = catchAsync(async (req: Request, res: Response) => {
-  const result = await NotificationService.readAdminNotificationsToDB();
+const readAdminNotifications = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await NotificationService.readAdminNotificationsToDB();
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Admin notifications marked as read successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Admin notifications marked as read successfully",
+      data: result,
+    });
+  },
+);
 
-const getAdminSingleNotification = catchAsync(async (req: Request, res: Response) => {
-  const result = await NotificationService.getAdminSingleNotificationFromDB(
-    req.params.id,
-  );
+const getAdminSingleNotification = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await NotificationService.getAdminSingleNotificationFromDB(
+      req.params.id,
+    );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Admin notification retrieved successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Admin notification retrieved successfully",
+      data: result,
+    });
+  },
+);
 
-const readAdminSingleNotification = catchAsync(async (req: Request, res: Response) => {
-  const result = await NotificationService.readAdminSingleNotificationToDB(
-    req.params.id,
-  );
+const readAdminSingleNotification = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await NotificationService.readAdminSingleNotificationToDB(
+      req.params.id,
+    );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Admin notification marked as read successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Admin notification marked as read successfully",
+      data: result,
+    });
+  },
+);
 
 export const NotificationController = {
   getNotifications,

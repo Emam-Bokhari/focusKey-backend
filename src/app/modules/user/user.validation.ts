@@ -15,7 +15,8 @@ const handleUserPairingZodSchema = z.object({
     deviceFingerprint: z.string().optional(),
     platform: z.enum(["android", "ios", "web"]).optional(),
   }),
-});export const UserValidation = {
+});
+export const UserValidation = {
   createAdminZodSchema,
   handleUserPairingZodSchema,
 };

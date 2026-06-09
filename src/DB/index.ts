@@ -18,7 +18,7 @@ const seedSuperAdmin = async () => {
   });
 
   if (!isExistSuperAdmin) {
-   await User.create(superUser);
+    await User.create(superUser);
 
     logger.info(colors.green("✔ Super admin created successfully!"));
   }

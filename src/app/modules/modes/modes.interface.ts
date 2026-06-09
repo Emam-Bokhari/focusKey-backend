@@ -27,5 +27,4 @@ export interface IMode {
   isDeleted: boolean;
 }
 
-
 export type TModeModel = ISoftDeleteModel<IMode>;

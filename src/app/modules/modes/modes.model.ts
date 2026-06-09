@@ -2,7 +2,6 @@ import { Schema, model } from "mongoose";
 import { IMode, TModeModel } from "./modes.interface";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
-
 const lockedAppSchema = new Schema(
   {
     packageName: {
@@ -16,10 +15,8 @@ const lockedAppSchema = new Schema(
       trim: true,
     },
   },
-  { _id: false }
+  { _id: false },
 );
-
-
 
 const modeSchema = new Schema<IMode, TModeModel>(
   {
@@ -84,7 +81,7 @@ const modeSchema = new Schema<IMode, TModeModel>(
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 modeSchema.plugin(softDeletePlugin);
 

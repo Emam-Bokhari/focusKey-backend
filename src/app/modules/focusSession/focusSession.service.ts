@@ -56,7 +56,9 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
   totalMinutes = Math.max(0, totalMinutes);
 
   // 2. First Focus Date
-  const firstSession = await FocusSession.findOne({ userId: userObjectId }).sort({
+  const firstSession = await FocusSession.findOne({
+    userId: userObjectId,
+  }).sort({
     startTime: 1,
   });
   const firstFocusDate = firstSession ? firstSession.startTime : null;
@@ -94,11 +96,8 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
     let dayMinutes = 0;
     daySessions.forEach((s) => {
       const sStart = s.startTime > startOfDay ? s.startTime : startOfDay;
-      let sEnd =
-        s.status === "active"
-          ? new Date()
-          : s.endTime || new Date();
-      
+      let sEnd = s.status === "active" ? new Date() : s.endTime || new Date();
+
       if (sEnd > endOfDay) sEnd = endOfDay;
 
       if (sEnd > sStart) {
@@ -108,11 +107,8 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
 
     dayBreaks.forEach((b) => {
       const bStart = b.startTime > startOfDay ? b.startTime : startOfDay;
-      let bEnd =
-        b.status === "active"
-          ? new Date()
-          : b.endTime || new Date();
-      
+      let bEnd = b.status === "active" ? new Date() : b.endTime || new Date();
+
       if (bEnd > endOfDay) bEnd = endOfDay;
 
       if (bEnd > bStart) {
@@ -201,7 +197,7 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
       sessionMinutes = session.durationMinutes || 0;
     } else {
       sessionMinutes = Math.round(
-        (new Date().getTime() - session.startTime.getTime()) / 60000
+        (new Date().getTime() - session.startTime.getTime()) / 60000,
       );
     }
 
@@ -222,7 +218,7 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
         sessionBreakMinutes += b.durationMinutes || 0;
       } else {
         sessionBreakMinutes += Math.round(
-          (new Date().getTime() - b.startTime.getTime()) / 60000
+          (new Date().getTime() - b.startTime.getTime()) / 60000,
         );
       }
     });
@@ -293,15 +289,19 @@ const getFocusStatsFromDB = async (userId: string) => {
   totalMinutes = Math.max(0, totalMinutes);
 
   // 3. Date Range
-  const firstSession = await FocusSession.findOne({ userId: userObjectId }).sort({
+  const firstSession = await FocusSession.findOne({
+    userId: userObjectId,
+  }).sort({
     startTime: 1,
   });
-  const lastSession = await FocusSession.findOne({ userId: userObjectId }).sort({
-    startTime: -1,
-  });
+  const lastSession = await FocusSession.findOne({ userId: userObjectId }).sort(
+    {
+      startTime: -1,
+    },
+  );
 
   const startDate = firstSession ? firstSession.startTime : null;
-  const endDate = lastSession ? (lastSession.endTime || new Date()) : null;
+  const endDate = lastSession ? lastSession.endTime || new Date() : null;
 
   return {
     totalSessions,
@@ -326,14 +326,14 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
   for (const session of sessions) {
     const date = session.startTime.toISOString().split("T")[0];
     const modeName = (session.modeId as any)?.name || "Unknown Mode";
-    
+
     // Calculate net duration (subtracting breaks)
     let sessionMinutes = 0;
     if (session.status === "completed") {
       sessionMinutes = session.durationMinutes || 0;
     } else {
       sessionMinutes = Math.round(
-        (new Date().getTime() - session.startTime.getTime()) / 60000
+        (new Date().getTime() - session.startTime.getTime()) / 60000,
       );
     }
 
@@ -341,7 +341,10 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
       userId: userObjectId,
       modeId: session.modeId,
       startTime: { $gte: session.startTime },
-      endTime: session.status === "completed" ? { $lte: session.endTime } : { $exists: true },
+      endTime:
+        session.status === "completed"
+          ? { $lte: session.endTime }
+          : { $exists: true },
     });
 
     let sessionBreakMinutes = 0;
@@ -350,7 +353,7 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
         sessionBreakMinutes += b.durationMinutes || 0;
       } else {
         sessionBreakMinutes += Math.round(
-          (new Date().getTime() - b.startTime.getTime()) / 60000
+          (new Date().getTime() - b.startTime.getTime()) / 60000,
         );
       }
     });

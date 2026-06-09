@@ -36,7 +36,7 @@ const breakSchema = new Schema<IBreak>(
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 breakSchema.plugin(softDeletePlugin);
@@ -48,7 +48,7 @@ const breakConfigSchema = new Schema<IBreakConfig>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     },
     breaksPerDay: {
       type: Number,
@@ -64,9 +64,12 @@ const breakConfigSchema = new Schema<IBreakConfig>(
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 breakConfigSchema.plugin(softDeletePlugin);
 
-export const BreakConfig = model<IBreakConfig>("BreakConfig", breakConfigSchema);
+export const BreakConfig = model<IBreakConfig>(
+  "BreakConfig",
+  breakConfigSchema,
+);

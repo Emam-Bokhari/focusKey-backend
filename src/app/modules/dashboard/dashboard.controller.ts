@@ -16,7 +16,6 @@ const getDashboardData = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const getHistoryData = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const result = await DashboardService.getHistoryData(userId);

@@ -103,18 +103,20 @@ const getModeAppDetails = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getSingleModeAppDetails = catchAsync(async (req: Request, res: Response) => {
-  const modeId = req.params.modeId;
-  const userId = req.user.id;
-  const result = await ModeService.getSingleModeAppDetails(modeId, userId);
+const getSingleModeAppDetails = catchAsync(
+  async (req: Request, res: Response) => {
+    const modeId = req.params.modeId;
+    const userId = req.user.id;
+    const result = await ModeService.getSingleModeAppDetails(modeId, userId);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Single mode app details retrieved successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Single mode app details retrieved successfully",
+      data: result,
+    });
+  },
+);
 
 const getTotalFocusApps = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;

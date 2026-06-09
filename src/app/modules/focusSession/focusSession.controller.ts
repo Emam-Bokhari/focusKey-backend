@@ -10,7 +10,7 @@ const getFocusHistory = catchAsync(async (req: Request, res: Response) => {
 
   const result = await FocusSessionService.getFocusHistoryFromDB(
     userId,
-    modeId as string
+    modeId as string,
   );
 
   sendResponse(res, {
@@ -35,7 +35,8 @@ const getFocusStats = catchAsync(async (req: Request, res: Response) => {
 
 const exportHistoryToCSV = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await FocusSessionService.exportFocusHistoryToCSVFromDB(userId);
+  const result =
+    await FocusSessionService.exportFocusHistoryToCSVFromDB(userId);
 
   const fileName = `focus_history_${new Date().toISOString().split("T")[0]}.csv`;
 

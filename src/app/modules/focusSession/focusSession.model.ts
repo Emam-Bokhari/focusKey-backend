@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { IFocusSession } from "./focusSession.interface";
+import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
 const focusSessionSchema = new Schema<IFocusSession>(
   {
@@ -36,5 +37,7 @@ const focusSessionSchema = new Schema<IFocusSession>(
     versionKey: false,
   }
 );
+
+focusSessionSchema.plugin(softDeletePlugin);
 
 export const FocusSession = model<IFocusSession>("FocusSession", focusSessionSchema);

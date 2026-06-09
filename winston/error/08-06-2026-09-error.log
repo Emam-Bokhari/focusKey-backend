@@ -1,5 +1,0 @@
-Mon Jun 08 2026 9:31:37 [SQUALLY] error: [31m🤢 Failed to connect Database[39m
-Mon Jun 08 2026 9:47:45 [SQUALLY] error: 10.10.7.93 - POST /api/v1/breaks/start 401 - 13.027 ms
-Mon Jun 08 2026 9:47:51 [SQUALLY] error: 10.10.7.93 - POST /api/v1/breaks/start 400 - 102.590 ms
-Mon Jun 08 2026 9:54:21 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/status 401 - 12.109 ms
-Mon Jun 08 2026 9:55:20 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 401 - 1.490 ms

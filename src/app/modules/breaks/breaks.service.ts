@@ -143,9 +143,10 @@ const getActiveBreakStatus = async (userId: string) => {
 };
 
 const getRemainingBreaks = async (userId: string) => {
-  // Get global break config
+  // Get global break config (explicitly bypass soft-delete filter to find existing record)
   let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
+    isDeleted: { $in: [true, false] },
   });
 
   if (!breakConfig) {
@@ -154,6 +155,12 @@ const getRemainingBreaks = async (userId: string) => {
       breaksPerDay: 4,
       breakDurationMinutes: 15,
     });
+  } else if (breakConfig.isDeleted) {
+    // If it was soft-deleted, restore it instead of creating a new one to avoid duplicate key error
+    breakConfig.isDeleted = false;
+    //@ts-ignore
+    breakConfig.deletedAt = null;
+    await breakConfig.save();
   }
 
   const startOfDay = new Date();

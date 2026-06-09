@@ -112,14 +112,24 @@ const getDashboardData = async (userId: string) => {
   let remainingBreaksToday = 0;
   let activeBreakRemainingMinutes = 0;
 
-  // Get global break config
-  let breakConfig = await BreakConfig.findOne({ userId: userObjectId });
+  // Get global break config (explicitly bypass soft-delete filter to find existing record)
+  let breakConfig = await BreakConfig.findOne({
+    userId: userObjectId,
+    isDeleted: { $in: [true, false] },
+  });
+
   if (!breakConfig) {
     breakConfig = await BreakConfig.create({
       userId: userObjectId,
       breaksPerDay: 4,
       breakDurationMinutes: 15,
     });
+  } else if (breakConfig.isDeleted) {
+    // Restore if soft-deleted to avoid duplicate key error
+    breakConfig.isDeleted = false;
+    //@ts-ignore
+    breakConfig.deletedAt = null;
+    await breakConfig.save();
   }
 
   breaksTakenToday = await Break.countDocuments({

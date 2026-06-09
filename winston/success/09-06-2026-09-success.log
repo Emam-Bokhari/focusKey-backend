@@ -50,3 +50,10 @@ Tue Jun 09 2026 9:31:15 [SQUALLY] info: [33m♻️ Application listening on por
 Tue Jun 09 2026 9:33:30 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/export-csv 200 - 285.968 ms
 Tue Jun 09 2026 9:33:50 [SQUALLY] info: 🛑 Graceful shutdown started...
 Tue Jun 09 2026 9:33:50 [SQUALLY] info: ✅ Server closed
+Tue Jun 09 2026 9:34:3 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 9:34:3 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 9:34:3 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 9:34:39 [SQUALLY] info: 🛑 Graceful shutdown started...
+Tue Jun 09 2026 9:34:59 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 9:34:59 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 9:34:59 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

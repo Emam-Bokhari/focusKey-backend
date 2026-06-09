@@ -48,8 +48,21 @@ const exportHistoryToCSV = catchAsync(async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).send(result);
 });
 
+const clearAllData = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await FocusSessionService.clearAllDataFromDB(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Everything cleared successfully",
+    data: result,
+  });
+});
+
 export const FocusSessionController = {
   getFocusHistory,
   getFocusStats,
   exportHistoryToCSV,
+  clearAllData,
 };

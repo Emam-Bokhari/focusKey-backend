@@ -1,5 +1,6 @@
 import { Schema, model } from "mongoose";
 import { IBreak, IBreakConfig } from "./breaks.interface";
+import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
 const breakSchema = new Schema<IBreak>(
   {
@@ -38,6 +39,8 @@ const breakSchema = new Schema<IBreak>(
   }
 );
 
+breakSchema.plugin(softDeletePlugin);
+
 export const Break = model<IBreak>("Break", breakSchema);
 
 const breakConfigSchema = new Schema<IBreakConfig>(
@@ -45,8 +48,7 @@ const breakConfigSchema = new Schema<IBreakConfig>(
     userId: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
-      unique: true,
+      required: true
     },
     breaksPerDay: {
       type: Number,
@@ -64,5 +66,7 @@ const breakConfigSchema = new Schema<IBreakConfig>(
     versionKey: false,
   }
 );
+
+breakConfigSchema.plugin(softDeletePlugin);
 
 export const BreakConfig = model<IBreakConfig>("BreakConfig", breakConfigSchema);

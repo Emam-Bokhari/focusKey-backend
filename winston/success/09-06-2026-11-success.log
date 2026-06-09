@@ -1,0 +1,17 @@
+Tue Jun 09 2026 11:0:3 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 11:0:3 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 11:0:3 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 11:0:8 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 11:0:8 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 11:0:8 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 11:0:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/remaining 200 - 250.858 ms
+Tue Jun 09 2026 11:1:21 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/config 200 - 97.387 ms
+Tue Jun 09 2026 11:1:25 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/config 200 - 103.178 ms
+Tue Jun 09 2026 11:1:26 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/config 200 - 93.441 ms
+Tue Jun 09 2026 11:1:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/config 200 - 110.794 ms
+Tue Jun 09 2026 11:1:47 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 283.490 ms
+Tue Jun 09 2026 11:1:52 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 145.093 ms
+Tue Jun 09 2026 11:1:58 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 93.425 ms
+Tue Jun 09 2026 11:2:3 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 516.239 ms
+Tue Jun 09 2026 11:2:13 [SQUALLY] info: 🛑 Graceful shutdown started...
+Tue Jun 09 2026 11:2:13 [SQUALLY] info: ✅ Server closed

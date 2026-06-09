@@ -1,7 +1,8 @@
 import mongoose from "mongoose";
 import { FocusSession } from "./focusSession.model";
-import { Break } from "../breaks/breaks.model";
+import { Break, BreakConfig } from "../breaks/breaks.model";
 import { Mode } from "../modes/modes.model";
+import { User } from "../user/user.model";
 
 const formatDuration = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -369,8 +370,44 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
   return csvContent;
 };
 
+const clearAllDataFromDB = async (userId: string) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  // 1. Soft delete all focus sessions
+  await FocusSession.updateMany(
+    { userId: userObjectId, isDeleted: { $ne: true } },
+    { $set: { isDeleted: true, deletedAt: new Date(), status: "completed" } },
+  );
+
+  // 2. Soft delete all modes
+  await Mode.updateMany(
+    { userId: userObjectId, isDeleted: { $ne: true } },
+    { $set: { isDeleted: true, deletedAt: new Date(), isActive: false } },
+  );
+
+  // 3. Soft delete all breaks
+  await Break.updateMany(
+    { userId: userObjectId, isDeleted: { $ne: true } },
+    { $set: { isDeleted: true, deletedAt: new Date(), status: "completed" } },
+  );
+
+  // 4. Soft delete break config
+  await BreakConfig.updateMany(
+    { userId: userObjectId, isDeleted: { $ne: true } },
+    { $set: { isDeleted: true, deletedAt: new Date() } },
+  );
+
+  // 5. Clear user-specific settings (like installedApps)
+  // await User.findByIdAndUpdate(userId, {
+  //   $set: { installedApps: [], isPaired: false },
+  // });
+
+  return { message: "All data cleared successfully" };
+};
+
 export const FocusSessionService = {
   getFocusHistoryFromDB,
   getFocusStatsFromDB,
   exportFocusHistoryToCSVFromDB,
+  clearAllDataFromDB,
 };

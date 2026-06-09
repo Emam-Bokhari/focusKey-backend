@@ -7,4 +7,6 @@ export interface IFocusSession {
   endTime?: Date;
   durationMinutes?: number;
   status: "active" | "completed";
+  isDeleted: boolean;
+  deletedAt?: Date;
 }

@@ -7,6 +7,8 @@ export interface IBreak {
   endTime: Date;
   durationMinutes?: number;
   status: "active" | "completed";
+  isDeleted?: boolean;
+  deletedAt?: Date;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,4 +17,6 @@ export interface IBreakConfig {
   userId: Types.ObjectId;
   breaksPerDay: number;
   breakDurationMinutes: number;
+  isDeleted?: boolean;
+  deletedAt?: Date;
 }

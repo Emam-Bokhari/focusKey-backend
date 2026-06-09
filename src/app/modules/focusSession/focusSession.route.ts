@@ -10,4 +10,6 @@ router.get("/stats", isUser, FocusSessionController.getFocusStats);
 
 router.get("/export-csv", isUser, FocusSessionController.exportHistoryToCSV);
 
+router.delete("/clear-all", isUser, FocusSessionController.clearAllData);
+
 export const FocusSessionRoutes = router;

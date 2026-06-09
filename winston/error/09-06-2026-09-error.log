@@ -1,0 +1,7 @@
+Tue Jun 09 2026 9:10:59 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-sessions/stats 401 - 36.262 ms
+Tue Jun 09 2026 9:19:35 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-sessions/export-csv 401 - 7.675 ms
+Tue Jun 09 2026 9:22:12 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-sessions/export-csv 401 - 5.576 ms
+Tue Jun 09 2026 9:22:13 [SQUALLY] error: 10.10.7.93 - GET /favicon.ico 404 - 0.987 ms
+Tue Jun 09 2026 9:22:56 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-sessions/export-csv 401 - 2.460 ms
+Tue Jun 09 2026 9:23:12 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-sessions/export-csv 401 - 2.870 ms
+Tue Jun 09 2026 9:23:14 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-sessions/export-csv 401 - 1.427 ms

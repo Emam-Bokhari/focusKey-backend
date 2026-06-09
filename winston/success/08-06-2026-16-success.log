@@ -1,0 +1,6 @@
+Mon Jun 08 2026 16:50:38 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 16:50:38 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 16:50:38 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 16:51:0 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes/app-counts 200 - 107.172 ms
+Mon Jun 08 2026 16:51:11 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 427.022 ms
+Mon Jun 08 2026 16:51:29 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 456.488 ms

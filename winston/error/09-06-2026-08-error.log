@@ -1,0 +1,2 @@
+Tue Jun 09 2026 8:43:48 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-session/history 404 - 2.379 ms
+Tue Jun 09 2026 8:44:5 [SQUALLY] error: 10.10.7.93 - GET /api/v1/focus-sessions/history 401 - 8.963 ms

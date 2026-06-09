@@ -175,6 +175,16 @@ const formatDuration = (totalMinutes: number) => {
   };
 };
 
+const formatTime = (date: Date) => {
+  return date
+    .toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })
+    .toLowerCase();
+};
+
 const getHistoryData = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
@@ -295,12 +305,16 @@ const getHistoryData = async (userId: string) => {
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
     const duration = formatDuration(netSessionMinutes);
+    const timeRange = `${formatTime(session.startTime)} - ${
+      session.endTime ? formatTime(session.endTime) : "Active"
+    }`;
 
     groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
       modeName: (session.modeId as any)?.name,
       startTime: session.startTime,
       endTime: session.endTime || null,
+      timeRange,
       duration,
       status: session.status,
     });
@@ -316,10 +330,10 @@ const getHistoryData = async (userId: string) => {
     summary: {
       totalFocusTime: formatDuration(totalMinutes),
     },
-    todayStats: Object.keys(modeWiseToday).map((mode) => ({
-      mode,
-      duration: formatDuration(modeWiseToday[mode]),
-    })),
+    // todayStats: Object.keys(modeWiseToday).map((mode) => ({
+    //   mode,
+    //   duration: formatDuration(modeWiseToday[mode]),
+    // })),
     history,
   };
 };

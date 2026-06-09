@@ -1,0 +1,24 @@
+Mon Jun 08 2026 17:3:28 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 17:3:28 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 17:3:28 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 17:3:33 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 17:3:33 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 17:3:33 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 17:4:15 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 17:4:15 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 17:4:15 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 17:4:16 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 17:4:16 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 17:4:16 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 17:4:34 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Mon Jun 08 2026 17:4:34 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Mon Jun 08 2026 17:4:34 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Mon Jun 08 2026 17:5:15 [SQUALLY] info: 10.10.7.93 - POST /api/v1/breaks/start 200 - 263.024 ms
+Mon Jun 08 2026 17:5:19 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 208.792 ms
+Mon Jun 08 2026 17:5:31 [SQUALLY] info: 10.10.7.93 - POST /api/v1/breaks/stop 200 - 127.168 ms
+Mon Jun 08 2026 17:5:37 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 126.721 ms
+Mon Jun 08 2026 17:5:42 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/remaining 200 - 163.778 ms
+Mon Jun 08 2026 17:7:38 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 121.414 ms
+Mon Jun 08 2026 17:7:43 [SQUALLY] info: 10.10.7.93 - POST /api/v1/breaks/start 200 - 294.442 ms
+Mon Jun 08 2026 17:7:50 [SQUALLY] info: 10.10.7.93 - POST /api/v1/breaks/stop 200 - 126.542 ms
+Mon Jun 08 2026 17:9:21 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 124.895 ms

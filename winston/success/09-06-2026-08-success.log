@@ -1,0 +1,24 @@
+Tue Jun 09 2026 8:31:42 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 8:31:42 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 8:31:42 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 8:37:28 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 459.669 ms
+Tue Jun 09 2026 8:42:1 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 8:42:1 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 8:42:1 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 8:42:7 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 8:42:7 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 8:42:7 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 8:44:11 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/history 200 - 1055.130 ms
+Tue Jun 09 2026 8:46:10 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 135.421 ms
+Tue Jun 09 2026 8:46:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/history?modeId=6a2684687aa9b9adb0638f5d 200 - 971.852 ms
+Tue Jun 09 2026 8:46:38 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/history?modeId=6a268b0cacb9db9bbe2d9878 200 - 862.953 ms
+Tue Jun 09 2026 8:50:21 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/history?modeId=6a2684687aa9b9adb0638f5d 200 - 1129.570 ms
+Tue Jun 09 2026 8:56:59 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 8:56:59 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 8:56:59 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 8:57:4 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 8:57:4 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 8:57:4 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 8:57:26 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/history?modeId=6a2684687aa9b9adb0638f5d 200 - 1105.725 ms
+Tue Jun 09 2026 8:57:56 [SQUALLY] info: 10.10.7.93 - PATCH /api/v1/modes/6a2684687aa9b9adb0638f5d/toggle-activation 200 - 517.697 ms
+Tue Jun 09 2026 8:58:5 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/history?modeId=6a2684687aa9b9adb0638f5d 200 - 977.693 ms

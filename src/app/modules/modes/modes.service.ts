@@ -15,6 +15,7 @@ const createModeToDB = async (
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create mode");
   }
+
   return {
     ...result.toObject(),
     isLocked: false, // Newly created modes are not active by default
@@ -111,7 +112,7 @@ const deleteModeFromDB = async (modeId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
   }
 
-  // If deleting an active mode, stop the focus session
+  // if deleting an active mode, stop the focus session
   if (mode.isActive) {
     const activeSessions = await FocusSession.find({
       userId: mode.userId,
@@ -134,7 +135,7 @@ const deleteModeFromDB = async (modeId: string) => {
 
   const result = await Mode.findByIdAndUpdate(
     modeId,
-    { isDeleted: true, isActive: false }, // Also deactivate on delete
+    { isDeleted: true, isActive: false }, // also deactivate on delete
     {
       new: true,
       runValidators: true,
@@ -238,6 +239,7 @@ const getModeAppCounts = async (userId: string) => {
     (acc, mode) => acc + (mode.lockedApps?.length || 0),
     0,
   );
+
 
   return modes.map((mode) => ({
     _id: mode._id,

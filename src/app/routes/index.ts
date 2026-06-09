@@ -13,6 +13,7 @@ import { SettingsRoutes } from "../modules/settings/settings.route";
 import { ModeRoutes } from "../modules/modes/modes.route";
 import { BreakRoutes } from "../modules/breaks/breaks.route";
 import { DashboardRoutes } from "../modules/dashboard/dashboard.route";
+import { FocusSessionRoutes } from "../modules/focusSession/focusSession.route";
 
 
 const router = express.Router();
@@ -73,6 +74,10 @@ const apiRoutes = [
   {
     path: "/dashboard",
     route: DashboardRoutes,
+  },
+  {
+    path: "/focus-sessions",
+    route: FocusSessionRoutes,
   },
 ];
 

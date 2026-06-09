@@ -51,6 +51,10 @@ const deviceSchema = new Schema(
       trim: true,
       index: true,
     },
+
+    nfcChip: {
+      type: String,
+    },
   },
   {
     timestamps: true,

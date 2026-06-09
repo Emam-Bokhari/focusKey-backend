@@ -4,4 +4,9 @@
   }; -->
 
 
-1. currently break ase mode wise but aita k change kore globally korte hobe, mode wise break hobe na, r default break o add korte hobe
+1. personal reminder niye kaj korte hobe
+2. key status
+3. focus history
+4. clear all data
+5. export data
+6. whole friends section

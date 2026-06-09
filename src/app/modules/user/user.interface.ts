@@ -10,7 +10,8 @@ export interface IDevice {
   deviceName: string;
   platform: "android" | "ios" | "web";
   deviceFingerprint: string;
-}/* ================= USER ================= */
+  nfcChip?: string;
+} /* ================= USER ================= */
 export type IUser = {
   name: string;
 
@@ -31,7 +32,6 @@ export type IUser = {
   verified: boolean;
   isPaired: boolean;
   pairingCode?: string;
-  
 
   status?: STATUS;
   userName?: string;

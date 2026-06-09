@@ -15,3 +15,18 @@ Tue Jun 09 2026 11:1:58 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 93.
 Tue Jun 09 2026 11:2:3 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 516.239 ms
 Tue Jun 09 2026 11:2:13 [SQUALLY] info: 🛑 Graceful shutdown started...
 Tue Jun 09 2026 11:2:13 [SQUALLY] info: ✅ Server closed
+Tue Jun 09 2026 11:16:1 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 11:16:1 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 11:16:1 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 11:24:54 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 11:24:54 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 11:24:54 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 11:25:23 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 11:25:23 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 11:25:23 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 11:28:46 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 11:28:46 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 11:28:46 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 11:29:46 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 11:29:46 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 11:29:46 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

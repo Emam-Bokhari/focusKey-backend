@@ -2,7 +2,6 @@ import mongoose from "mongoose";
 import { FocusSession } from "./focusSession.model";
 import { Break, BreakConfig } from "../breaks/breaks.model";
 import { Mode } from "../modes/modes.model";
-import { User } from "../user/user.model";
 
 const formatDuration = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -13,6 +12,8 @@ const formatDuration = (totalMinutes: number) => {
     formatted: `${hours}h ${minutes}m`,
   };
 };
+
+
 
 const formatTime = (date: Date) => {
   return date
@@ -404,7 +405,6 @@ const clearAllDataFromDB = async (userId: string) => {
   // await User.findByIdAndUpdate(userId, {
   //   $set: { installedApps: [], isPaired: false },
   // });
-
   return { message: "All data cleared successfully" };
 };
 

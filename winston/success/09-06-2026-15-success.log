@@ -1,0 +1,83 @@
+Tue Jun 09 2026 15:0:2 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/friend-details 200 - 238.788 ms
+Tue Jun 09 2026 15:0:6 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/friend-details 200 - 493.820 ms
+Tue Jun 09 2026 15:0:47 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:0:47 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:0:47 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:0:49 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/users 200 - 1431.703 ms
+Tue Jun 09 2026 15:0:52 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/friend-details 200 - 235.916 ms
+Tue Jun 09 2026 15:1:10 [SQUALLY] info: Mail send successfully
+Tue Jun 09 2026 15:1:10 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/create-nudge 200 - 4039.891 ms
+Tue Jun 09 2026 15:3:55 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:3:55 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:3:55 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:4:33 [SQUALLY] info: 10.10.7.93 - PATCH /api/v1/modes/6a27d1f28dac1a38dacda428/toggle-activation 200 - 308.198 ms
+Tue Jun 09 2026 15:4:54 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:4:54 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:4:54 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:5:6 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:5:6 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:5:6 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:5:9 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:5:9 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:5:9 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:5:12 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:5:12 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:5:12 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:5:20 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:5:20 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:5:20 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:5:30 [SQUALLY] info: Mail send successfully
+Tue Jun 09 2026 15:5:30 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/create-nudge 200 - 3627.829 ms
+Tue Jun 09 2026 15:7:20 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:7:20 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:7:20 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:7:26 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:7:26 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:7:26 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:7:54 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:7:54 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:7:54 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:8:54 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:8:54 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:8:54 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:9:49 [SQUALLY] info: Mail send successfully
+Tue Jun 09 2026 15:9:49 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/create-nudge 200 - 3852.106 ms
+Tue Jun 09 2026 15:11:2 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:11:2 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:11:2 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:11:10 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:11:10 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:11:10 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:11:34 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:11:34 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:11:34 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:13:31 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 200 - 174.568 ms
+Tue Jun 09 2026 15:14:8 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:14:8 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:14:8 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:14:15 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:14:15 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:14:15 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:14:32 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:14:32 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:14:32 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:14:35 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:14:35 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:14:35 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:14:38 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:14:38 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:14:38 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:15:12 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:15:12 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:15:12 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:16:10 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/nudge-history 200 - 210.366 ms
+Tue Jun 09 2026 15:18:30 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:18:30 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:18:30 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:18:37 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:18:37 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:18:37 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:18:43 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:18:43 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:18:43 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:21:39 [SQUALLY] info: 🛑 Graceful shutdown started...

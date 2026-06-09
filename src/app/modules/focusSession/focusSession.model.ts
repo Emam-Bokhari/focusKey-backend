@@ -15,6 +15,10 @@ const focusSessionSchema = new Schema<IFocusSession>(
       ref: "Mode",
       required: true,
     },
+    nudgeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Nudge",
+    },
     startTime: {
       type: Date,
       required: true,

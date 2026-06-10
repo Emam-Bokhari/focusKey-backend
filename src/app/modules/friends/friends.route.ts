@@ -24,5 +24,7 @@ router.post("/unlock-nudge/:nudgeId", isUser, FriendsController.unlockNudge);
 
 router.post("/take-nudge-break/:nudgeId", isUser, FriendsController.takeNudgeBreak);
 
+router.get("/current-nudge-status", isUser, FriendsController.getCurrentNudgeStatus);
+
 
 export const FriendsRoutes = router;

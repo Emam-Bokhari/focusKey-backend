@@ -581,6 +581,180 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
   };
 };
 
+const getCurrentNudgeStatusInDB = async (userId: string) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  // 1. Find the active focus session with a nudgeId
+  const activeSession = await FocusSession.findOne({
+    userId: userObjectId,
+    status: "active",
+    nudgeId: { $exists: true },
+  }).populate("modeId");
+
+  if (!activeSession) {
+    return {
+      isActive: false,
+      message: "No active nudge session found",
+    };
+  }
+
+  const nudgeId = activeSession.nudgeId;
+  const nudge = await Nudge.findById(nudgeId)
+    .populate("creatorId", "name profileImage email")
+    .populate("participants", "name profileImage email")
+    .populate("joinedParticipants", "name profileImage email")
+    .populate("modeId");
+
+  if (!nudge) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Nudge not found");
+  }
+
+  // 2. Check for active break
+  const activeBreak = await Break.findOne({
+    userId: userObjectId,
+    nudgeId: nudge._id,
+    status: "active",
+    endTime: { $gt: new Date() },
+  });
+
+  // 3. Calculate lock status
+  const isLocked = !activeBreak;
+
+  // 4. Break statistics
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const breaksTakenToday = await Break.countDocuments({
+    userId: userObjectId,
+    nudgeId: nudge._id,
+    startTime: { $gte: startOfDay, $lte: endOfDay },
+  });
+
+  const totalAllowedBreaks = nudge.breakConfig?.breaksPerDay || 0;
+  const remainingBreaks = Math.max(0, totalAllowedBreaks - breaksTakenToday);
+
+  // 5. Focus Time Stats (Today & This Week)
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const sessionsThisWeek = await FocusSession.find({
+    userId: userObjectId,
+    startTime: { $gte: startOfWeek },
+    status: "completed",
+  });
+
+  let todayFocusMinutes = 0;
+  let weekFocusMinutes = 0;
+
+  sessionsThisWeek.forEach((session) => {
+    const duration = session.durationMinutes || 0;
+    weekFocusMinutes += duration;
+    if (session.startTime >= startOfDay) {
+      todayFocusMinutes += duration;
+    }
+  });
+
+  // Add current active session time
+  const currentSessionDuration = Math.round(
+    (new Date().getTime() - activeSession.startTime.getTime()) / 60000,
+  );
+  todayFocusMinutes += currentSessionDuration;
+  weekFocusMinutes += currentSessionDuration;
+
+  // 6. Participants focus and break status
+  const participantsWithStatus = await Promise.all(
+    nudge.participants.map(async (participant: any) => {
+      const participantId = participant._id;
+
+      // Check if participant is currently in this nudge's focus session
+      const isJoined = nudge.joinedParticipants.some((p: any) =>
+        p._id.equals(participantId),
+      );
+
+      // Check if they have an active break
+      const participantActiveBreak = await Break.findOne({
+        userId: participantId,
+        nudgeId: nudge._id,
+        status: "active",
+        endTime: { $gt: new Date() },
+      });
+
+      return {
+        _id: participant._id,
+        name: participant.name,
+        profileImage: participant.profileImage,
+        email: participant.email,
+        isJoined,
+        isFocused: isJoined && !participantActiveBreak,
+        isOnBreak: !!participantActiveBreak,
+      };
+    }),
+  );
+
+  // Also handle joinedParticipants (which includes the creator)
+  const joinedParticipantsWithStatus = await Promise.all(
+    nudge.joinedParticipants.map(async (participant: any) => {
+      const participantId = participant._id;
+
+      // Check if they have an active break
+      const participantActiveBreak = await Break.findOne({
+        userId: participantId,
+        nudgeId: nudge._id,
+        status: "active",
+        endTime: { $gt: new Date() },
+      });
+
+      return {
+        _id: participant._id,
+        name: participant.name,
+        profileImage: participant.profileImage,
+        email: participant.email,
+        isFocused: !participantActiveBreak,
+        isOnBreak: !!participantActiveBreak,
+      };
+    }),
+  );
+
+  return {
+    isActive: true,
+    nudgeId: nudge._id,
+    status: nudge.status,
+    isLocked,
+    currentMode: nudge.modeId,
+    lockedApps: (nudge.modeId as any)?.lockedApps || [],
+    totalLockedApps: (nudge.modeId as any)?.lockedApps?.length || 0,
+    participants: participantsWithStatus,
+    joinedParticipants: joinedParticipantsWithStatus,
+    breakStats: {
+      totalAllowed: totalAllowedBreaks,
+      takenToday: breaksTakenToday,
+      remaining: remainingBreaks,
+      durationMinutes: nudge.breakConfig?.breakDurationMinutes || 0,
+      activeBreak: activeBreak
+        ? {
+            startTime: activeBreak.startTime,
+            endTime: activeBreak.endTime,
+            remainingMinutes: Math.max(
+              0,
+              Math.ceil(
+                (activeBreak.endTime.getTime() - new Date().getTime()) / 60000,
+              ),
+            ),
+          }
+        : null,
+    },
+    focusStats: {
+      todayMinutes: todayFocusMinutes,
+      weekMinutes: weekFocusMinutes,
+      todayFormatted: `${Math.floor(todayFocusMinutes / 60)}h ${todayFocusMinutes % 60}m`,
+      weekFormatted: `${Math.floor(weekFocusMinutes / 60)}h ${weekFocusMinutes % 60}m`,
+    },
+  };
+};
+
 export const FriendsService = {
   getUsersFromDB,
   createNudgeInDB,
@@ -590,4 +764,5 @@ export const FriendsService = {
   removeFriendFromDB,
   unlockNudgeInDB,
   takeNudgeBreakInDB,
+  getCurrentNudgeStatusInDB,
 };

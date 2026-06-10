@@ -137,6 +137,19 @@ const takeNudgeBreak = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getCurrentNudgeStatus = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+
+  const result = await FriendsService.getCurrentNudgeStatusInDB(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Current nudge status fetched successfully",
+    data: result,
+  });
+});
+
 export const FriendsController = {
   getUsers,
   createNudge,
@@ -146,4 +159,5 @@ export const FriendsController = {
   removeFriend,
   unlockNudge,
   takeNudgeBreak,
+  getCurrentNudgeStatus,
 };

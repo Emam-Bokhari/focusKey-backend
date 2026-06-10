@@ -25,3 +25,37 @@ Wed Jun 10 2026 12:6:59 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/config 2
 Wed Jun 10 2026 12:7:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 667.710 ms
 Wed Jun 10 2026 12:7:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/nudge-history 200 - 237.435 ms
 Wed Jun 10 2026 12:7:26 [SQUALLY] info: 🛑 Graceful shutdown started...
+Wed Jun 10 2026 12:20:4 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:20:4 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:20:4 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jun 10 2026 12:20:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 658.667 ms
+Wed Jun 10 2026 12:20:38 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/stats 200 - 632.848 ms
+Wed Jun 10 2026 12:20:45 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/history 200 - 3147.428 ms
+Wed Jun 10 2026 12:20:59 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 736.298 ms
+Wed Jun 10 2026 12:21:11 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/nudge-history 200 - 251.789 ms
+Wed Jun 10 2026 12:21:52 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 1075.867 ms
+Wed Jun 10 2026 12:22:0 [SQUALLY] info: Cron Job: 1 expired breaks marked as completed.
+Wed Jun 10 2026 12:22:31 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/stats 200 - 670.220 ms
+Wed Jun 10 2026 12:22:33 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/stats 200 - 653.495 ms
+Wed Jun 10 2026 12:22:46 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 924.351 ms
+Wed Jun 10 2026 12:23:4 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 1089.268 ms
+Wed Jun 10 2026 12:23:42 [SQUALLY] info: 10.10.7.93 - POST /api/v1/auth/login 200 - 453.670 ms
+Wed Jun 10 2026 12:23:53 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 1103.535 ms
+Wed Jun 10 2026 12:24:13 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 1097.550 ms
+Wed Jun 10 2026 12:24:45 [SQUALLY] info: 10.10.7.93 - POST /api/v1/auth/login 200 - 344.829 ms
+Wed Jun 10 2026 12:24:51 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 199.116 ms
+Wed Jun 10 2026 12:40:4 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:40:4 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:40:4 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jun 10 2026 12:47:57 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:47:57 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:47:57 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jun 10 2026 12:48:7 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:48:7 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:48:7 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jun 10 2026 12:48:13 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:48:13 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:48:13 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jun 10 2026 12:48:21 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:48:21 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:48:21 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

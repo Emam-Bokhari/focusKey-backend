@@ -1,1 +1,2 @@
 Wed Jun 10 2026 14:42:15 [SQUALLY] error: 10.10.7.93 - GET /api/v1/friends/current-nudge-status 401 - 44.395 ms
+Wed Jun 10 2026 14:54:24 [SQUALLY] error: 10.10.7.93 - GET /api/v1/modes/app-details/6a2684687aa9b9adb0638f5d 404 - 148.001 ms

@@ -274,6 +274,10 @@ const getModeAppDetails = async (userId: string) => {
   }));
 };
 
+/*
+
+*/
+
 const getSingleModeAppDetails = async (modeId: string, userId: string) => {
   const mode = await Mode.findOne({ _id: modeId, userId, isDeleted: false });
 

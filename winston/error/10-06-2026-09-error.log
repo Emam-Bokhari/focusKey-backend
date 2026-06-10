@@ -1,0 +1,10 @@
+Wed Jun 10 2026 9:33:45 [SQUALLY] error: 10.10.7.93 - POST /api/v1/breaks/start 400 - 119.109 ms
+Wed Jun 10 2026 9:45:0 [SQUALLY] error: 10.10.7.93 - PATCH /api/v1/modes/6a27d1f28dac1a38dacda428/toggle-activation 403 - 102.477 ms
+Wed Jun 10 2026 9:45:13 [SQUALLY] error: 10.10.7.93 - PATCH /api/v1/modes/6a27d1f28dac1a38dacda428/toggle-activation 403 - 87.269 ms
+Wed Jun 10 2026 9:46:46 [SQUALLY] error: 10.10.7.93 - PATCH /api/v1/modes/6a27d10c8dac1a38dacda3e6/toggle-activation 403 - 111.473 ms
+Wed Jun 10 2026 9:47:43 [SQUALLY] error: 10.10.7.93 - PATCH /api/v1/modes/6a27d10c8dac1a38dacda3e6/toggle-activation 403 - 508.531 ms
+Wed Jun 10 2026 9:52:24 [SQUALLY] error: 10.10.7.93 - DELETE /api/v1/friends/remove-friend/6a27d09386f7394629c2f10b 401 - 12.723 ms
+Wed Jun 10 2026 9:52:29 [SQUALLY] error: 10.10.7.93 - DELETE /api/v1/friends/remove-friend/6a27d09386f7394629c2f10b 404 - 97.180 ms
+Wed Jun 10 2026 9:55:18 [SQUALLY] error: 10.10.7.93 - POST /api/v1/friends/create-nudge 400 - 103.060 ms
+Wed Jun 10 2026 9:56:19 [SQUALLY] error: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a28dfb90d72c640f50860e2?userId=6a27d09386f7394629c2f10b 403 - 47.800 ms
+Wed Jun 10 2026 9:56:51 [SQUALLY] error: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a28dfb90d72c640f50860e2?userId=6a27d09386f7394629c2f10b 403 - 43.122 ms

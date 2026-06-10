@@ -221,7 +221,11 @@ const getHistoryData = async (userId: string) => {
   let totalMinutes = 0;
   allSessions.forEach((s) => {
     if (s.status === "completed") {
-      totalMinutes += s.durationMinutes || 0;
+      totalMinutes +=
+        s.durationMinutes ||
+        (s.endTime
+          ? Math.round((s.endTime.getTime() - s.startTime.getTime()) / 60000)
+          : 0);
     } else {
       const diff = new Date().getTime() - s.startTime.getTime();
       totalMinutes += Math.round(diff / 60000);
@@ -230,7 +234,11 @@ const getHistoryData = async (userId: string) => {
 
   allBreaks.forEach((b) => {
     if (b.status === "completed") {
-      totalMinutes -= b.durationMinutes || 0;
+      totalMinutes -=
+        b.durationMinutes ||
+        (b.endTime
+          ? Math.round((b.endTime.getTime() - b.startTime.getTime()) / 60000)
+          : 0);
     } else {
       const diff = new Date().getTime() - b.startTime.getTime();
       totalMinutes -= Math.round(diff / 60000);
@@ -264,7 +272,11 @@ const getHistoryData = async (userId: string) => {
       modeWiseToday[modeName] = 0;
     }
     if (s.status === "completed") {
-      modeWiseToday[modeName] += s.durationMinutes || 0;
+      modeWiseToday[modeName] +=
+        s.durationMinutes ||
+        (s.endTime
+          ? Math.round((s.endTime.getTime() - s.startTime.getTime()) / 60000)
+          : 0);
     } else {
       const diff = new Date().getTime() - s.startTime.getTime();
       modeWiseToday[modeName] += Math.round(diff / 60000);
@@ -279,7 +291,12 @@ const getHistoryData = async (userId: string) => {
     if (modeWiseToday[modeName]) {
       const breakMin =
         b.status === "completed"
-          ? b.durationMinutes || 0
+          ? b.durationMinutes ||
+            (b.endTime
+              ? Math.round(
+                  (b.endTime.getTime() - b.startTime.getTime()) / 60000,
+                )
+              : 0)
           : Math.round((new Date().getTime() - b.startTime.getTime()) / 60000);
       modeWiseToday[modeName] = Math.max(0, modeWiseToday[modeName] - breakMin);
     }
@@ -304,7 +321,13 @@ const getHistoryData = async (userId: string) => {
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      sessionMinutes = session.durationMinutes || 0;
+      sessionMinutes =
+        session.durationMinutes ||
+        (session.endTime
+          ? Math.round(
+              (session.endTime.getTime() - session.startTime.getTime()) / 60000,
+            )
+          : 0);
     } else {
       sessionMinutes = Math.round(
         (new Date().getTime() - session.startTime.getTime()) / 60000,

@@ -81,3 +81,56 @@ Tue Jun 09 2026 15:18:43 [SQUALLY] info: [32m🚀 Database connected successful
 Tue Jun 09 2026 15:18:43 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
 Tue Jun 09 2026 15:18:43 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
 Tue Jun 09 2026 15:21:39 [SQUALLY] info: 🛑 Graceful shutdown started...
+Tue Jun 09 2026 15:39:19 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:39:19 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:39:19 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:41:6 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:41:6 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:41:6 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:41:16 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:41:16 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:41:16 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:42:27 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:42:27 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:42:27 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:42:32 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:42:32 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:42:32 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:43:22 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:43:22 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:43:22 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:44:22 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 200 - 53.205 ms
+Tue Jun 09 2026 15:44:26 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 45.239 ms
+Tue Jun 09 2026 15:44:26 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 45.629 ms
+Tue Jun 09 2026 15:44:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 45.176 ms
+Tue Jun 09 2026 15:44:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 43.559 ms
+Tue Jun 09 2026 15:44:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 43.719 ms
+Tue Jun 09 2026 15:44:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 52.614 ms
+Tue Jun 09 2026 15:44:28 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 43.837 ms
+Tue Jun 09 2026 15:44:28 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.387 ms
+Tue Jun 09 2026 15:44:28 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.176 ms
+Tue Jun 09 2026 15:44:28 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 48.088 ms
+Tue Jun 09 2026 15:44:28 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 43.302 ms
+Tue Jun 09 2026 15:44:28 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 42.475 ms
+Tue Jun 09 2026 15:45:6 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.259 ms
+Tue Jun 09 2026 15:45:6 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 45.519 ms
+Tue Jun 09 2026 15:45:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 45.165 ms
+Tue Jun 09 2026 15:45:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.288 ms
+Tue Jun 09 2026 15:45:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 47.183 ms
+Tue Jun 09 2026 15:45:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.948 ms
+Tue Jun 09 2026 15:45:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 43.096 ms
+Tue Jun 09 2026 15:45:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 43.646 ms
+Tue Jun 09 2026 15:45:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.331 ms
+Tue Jun 09 2026 15:45:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 42.890 ms
+Tue Jun 09 2026 15:45:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.622 ms
+Tue Jun 09 2026 15:45:10 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 44.337 ms
+Tue Jun 09 2026 15:49:15 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 51.043 ms
+Tue Jun 09 2026 15:49:50 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a27d85a0f577bfc1188ba9b?userId=6a23b1c30775b325fd8ad3c1 304 - 43.013 ms
+Tue Jun 09 2026 15:54:20 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/nudge-history 200 - 372.395 ms
+Tue Jun 09 2026 15:55:53 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:55:53 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:55:53 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:55:57 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Tue Jun 09 2026 15:55:57 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Tue Jun 09 2026 15:55:57 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Tue Jun 09 2026 15:56:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/nudge-history 200 - 263.355 ms

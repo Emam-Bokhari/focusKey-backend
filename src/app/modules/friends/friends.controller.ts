@@ -78,13 +78,47 @@ const getFriendDetails = catchAsync(async (req: Request, res: Response) => {
 
 const getNudgeHistory = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
+  const { page, limit } = req.query;
 
-  const result = await FriendsService.getNudgeHistoryFromDB(userId);
+  const result = await FriendsService.getNudgeHistoryFromDB(
+    userId,
+    Number(page) || 1,
+    Number(limit) || 10,
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
     message: "Nudge history fetched successfully",
+    meta: result.meta,
+    data: result.data,
+  });
+});
+
+const removeFriend = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const { friendId } = req.params;
+
+  const result = await FriendsService.removeFriendFromDB(userId, friendId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Friend removed successfully",
+    data: result,
+  });
+});
+
+const unlockNudge = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const { nudgeId } = req.params;
+
+  const result = await FriendsService.unlockNudgeInDB(userId, nudgeId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Nudge unlocked and focus session ended successfully",
     data: result,
   });
 });
@@ -95,4 +129,6 @@ export const FriendsController = {
   joinNudge,
   getFriendDetails,
   getNudgeHistory,
+  removeFriend,
+  unlockNudge,
 };

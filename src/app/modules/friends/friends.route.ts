@@ -10,10 +10,16 @@ router.get("/users", isUser, FriendsController.getUsers);
 
 router.post("/create-nudge", isUser, FriendsController.createNudge);
 
+router.get("/join-nudge/:nudgeId", optionalAuth(USER_ROLES.USER), FriendsController.joinNudge);
+
 router.post("/join-nudge/:nudgeId", optionalAuth(USER_ROLES.USER), FriendsController.joinNudge);
 
 router.post("/friend-details", isUser, FriendsController.getFriendDetails);
 
 router.get("/nudge-history", isUser, FriendsController.getNudgeHistory);
+
+router.delete("/remove-friend/:friendId", isUser, FriendsController.removeFriend);
+
+router.post("/unlock-nudge/:nudgeId", isUser, FriendsController.unlockNudge);
 
 export const FriendsRoutes = router;

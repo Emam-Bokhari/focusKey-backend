@@ -129,7 +129,7 @@ const deleteModeFromDB = async (modeId: string) => {
       });
     }
   }
-
+  
   const result = await Mode.findByIdAndUpdate(
     modeId,
     { isDeleted: true, isActive: false }, // also deactivate on delete
@@ -149,7 +149,7 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
   }
 
   if (mode.userId.toString() !== userId) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "You are not authorized");
+    throw new ApiError(StatusCodes.FORBIDDEN, "You are not the owner of this mode");
   }
 
   const newStatus = !mode.isActive;

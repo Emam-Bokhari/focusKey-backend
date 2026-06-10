@@ -149,7 +149,10 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
   }
 
   if (mode.userId.toString() !== userId) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "You are not the owner of this mode");
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "You are not the owner of this mode",
+    );
   }
 
   const newStatus = !mode.isActive;
@@ -187,7 +190,22 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
       status: "active",
     });
   } else {
-    // If we are deactivating, stop the current focus session
+    // 1. Check if this mode is active because of a Nudge session
+    const activeNudgeSession = await FocusSession.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      modeId: modeId,
+      status: "active",
+      nudgeId: { $exists: true },
+    });
+
+    if (activeNudgeSession) {
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        "This mode is active because of a Nudge session. To deactivate, please use the 'Unlock Nudge' option.",
+      );
+    }
+
+    // 2. If we are deactivating, stop the current focus session
     const activeSessions = await FocusSession.find({
       userId: new mongoose.Types.ObjectId(userId),
       modeId: modeId,

@@ -9,6 +9,7 @@ import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiErrors";
 import { USER_ROLES } from "../../../enums/user";
 import config from "../../../config";
+import { Mode } from "../modes/modes.model";
 
 const getUsersFromDB = async (
   userId: string,
@@ -167,7 +168,14 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
 
   const result = await Nudge.create(nudgeData);
 
-  // 3. Start Focus Session for Creator
+  // 3. Set the selected mode as active for the creator and deactivate others
+  await Mode.updateMany(
+    { userId: new mongoose.Types.ObjectId(userId), isDeleted: false },
+    { $set: { isActive: false } },
+  );
+  await Mode.findByIdAndUpdate(modeId, { $set: { isActive: true } });
+
+  // 4. Start Focus Session for Creator
   await FocusSession.create({
     userId: new mongoose.Types.ObjectId(userId),
     modeId: nudgeData.modeId,
@@ -176,7 +184,7 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
     status: "active",
   });
 
-  // 4. Send Emails
+  // 5. Send Emails
   const invitedUsers = await User.find({ _id: { $in: participants } });
   const creator = await User.findById(userId);
 
@@ -240,6 +248,13 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
   const result = await Nudge.findByIdAndUpdate(nudgeId, updateData, {
     new: true,
   });
+
+  // Set the selected mode as active for the joining user and deactivate others
+  await Mode.updateMany(
+    { userId: userObjectId, isDeleted: false },
+    { $set: { isActive: false } },
+  );
+  await Mode.findByIdAndUpdate(nudge.modeId, { $set: { isActive: true } });
 
   // Start Focus Session for the user
   await FocusSession.create({
@@ -459,7 +474,12 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
     { new: true },
   );
 
-  // 4. Optional: If no one is left in the nudge, mark it as completed
+  // 4. Deactivate the mode associated with this nudge for the user
+  if (session.modeId) {
+    await Mode.findByIdAndUpdate(session.modeId, { $set: { isActive: false } });
+  }
+
+  // 5. Optional: If no one is left in the nudge, mark it as completed
   if (result && result.joinedParticipants.length === 0) {
     await Nudge.findByIdAndUpdate(nudgeId, { status: "completed" });
   }

@@ -1,0 +1,27 @@
+Wed Jun 10 2026 12:0:3 [SQUALLY] info: 10.10.7.93 - PATCH /api/v1/modes/6a27d10c8dac1a38dacda3e6/toggle-activation 200 - 467.702 ms
+Wed Jun 10 2026 12:0:30 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:0:30 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:0:30 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jun 10 2026 12:0:36 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jun 10 2026 12:0:36 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jun 10 2026 12:0:36 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jun 10 2026 12:1:14 [SQUALLY] info: 10.10.7.93 - PATCH /api/v1/modes/6a27d10c8dac1a38dacda3e6/toggle-activation 200 - 932.922 ms
+Wed Jun 10 2026 12:1:17 [SQUALLY] info: 10.10.7.93 - PATCH /api/v1/modes/6a27d10c8dac1a38dacda3e6/toggle-activation 200 - 449.014 ms
+Wed Jun 10 2026 12:3:57 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 354.413 ms
+Wed Jun 10 2026 12:4:4 [SQUALLY] info: 10.10.7.93 - PATCH /api/v1/modes/6a27d10c8dac1a38dacda3e6/toggle-activation 200 - 373.671 ms
+Wed Jun 10 2026 12:4:9 [SQUALLY] info: 10.10.7.93 - GET /api/v1/modes 200 - 287.729 ms
+Wed Jun 10 2026 12:4:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/users 200 - 650.270 ms
+Wed Jun 10 2026 12:4:30 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/friend-details 200 - 338.322 ms
+Wed Jun 10 2026 12:4:41 [SQUALLY] info: Mail send successfully
+Wed Jun 10 2026 12:4:41 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/create-nudge 200 - 4152.176 ms
+Wed Jun 10 2026 12:5:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/join-nudge/6a28fe7601f0f43c55c97ca5?userId=6a27d09386f7394629c2f10b 200 - 645.031 ms
+Wed Jun 10 2026 12:5:25 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/nudge-history 200 - 571.745 ms
+Wed Jun 10 2026 12:5:42 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 768.966 ms
+Wed Jun 10 2026 12:6:34 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/take-nudge-break/6a28fe7601f0f43c55c97ca5 200 - 438.437 ms
+Wed Jun 10 2026 12:6:49 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/remaining 200 - 234.531 ms
+Wed Jun 10 2026 12:6:50 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/remaining 200 - 231.257 ms
+Wed Jun 10 2026 12:6:55 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/status 200 - 231.573 ms
+Wed Jun 10 2026 12:6:59 [SQUALLY] info: 10.10.7.93 - GET /api/v1/breaks/config 200 - 117.496 ms
+Wed Jun 10 2026 12:7:7 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 667.710 ms
+Wed Jun 10 2026 12:7:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/nudge-history 200 - 237.435 ms
+Wed Jun 10 2026 12:7:26 [SQUALLY] info: 🛑 Graceful shutdown started...

@@ -129,7 +129,7 @@ const deleteModeFromDB = async (modeId: string) => {
       });
     }
   }
-  
+
   const result = await Mode.findByIdAndUpdate(
     modeId,
     { isDeleted: true, isActive: false }, // also deactivate on delete

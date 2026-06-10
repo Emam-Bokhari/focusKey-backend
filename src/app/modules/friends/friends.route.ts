@@ -22,4 +22,7 @@ router.delete("/remove-friend/:friendId", isUser, FriendsController.removeFriend
 
 router.post("/unlock-nudge/:nudgeId", isUser, FriendsController.unlockNudge);
 
+router.post("/take-nudge-break/:nudgeId", isUser, FriendsController.takeNudgeBreak);
+
+
 export const FriendsRoutes = router;

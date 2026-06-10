@@ -123,6 +123,20 @@ const unlockNudge = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const takeNudgeBreak = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const { nudgeId } = req.params;
+
+  const result = await FriendsService.takeNudgeBreakInDB(userId, nudgeId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Nudge break started successfully",
+    data: result,
+  });
+});
+
 export const FriendsController = {
   getUsers,
   createNudge,
@@ -131,4 +145,5 @@ export const FriendsController = {
   getNudgeHistory,
   removeFriend,
   unlockNudge,
+  takeNudgeBreak,
 };

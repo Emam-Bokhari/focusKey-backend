@@ -1,7 +1,0 @@
-Tue Jun 09 2026 10:55:40 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 500 - 201.183 ms
-Tue Jun 09 2026 10:56:57 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 500 - 183.736 ms
-Tue Jun 09 2026 10:57:5 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 500 - 127.478 ms
-Tue Jun 09 2026 10:57:35 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 500 - 125.104 ms
-Tue Jun 09 2026 10:58:53 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 500 - 197.167 ms
-Tue Jun 09 2026 10:59:3 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 500 - 224.572 ms
-Tue Jun 09 2026 10:59:15 [SQUALLY] error: 10.10.7.93 - GET /api/v1/breaks/remaining 500 - 193.747 ms

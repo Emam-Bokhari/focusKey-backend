@@ -15,6 +15,10 @@ const breakSchema = new Schema<IBreak>(
       ref: "Mode",
       required: true,
     },
+    nudgeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Nudge",
+    },
     startTime: {
       type: Date,
       required: true,

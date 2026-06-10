@@ -1,0 +1,3 @@
+Wed Jun 10 2026 11:30:43 [SQUALLY] error: 10.10.7.93 - POST /api/v1/friends/take-nudge-break/6a28f601c46a742a3da3a054 401 - 66.961 ms
+Wed Jun 10 2026 11:30:48 [SQUALLY] error: 10.10.7.93 - POST /api/v1/friends/take-nudge-break/6a28f601c46a742a3da3a054 400 - 292.904 ms
+Wed Jun 10 2026 11:40:58 [SQUALLY] error: 10.10.7.93 - POST /api/v1/friends/take-nudge-break/6a28f601c46a742a3da3a054 400 - 222.268 ms

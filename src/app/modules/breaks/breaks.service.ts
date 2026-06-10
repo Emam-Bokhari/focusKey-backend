@@ -49,7 +49,7 @@ const startBreak = async (userId: string) => {
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
-    // modeId: activeMode._id, // Now it's global, so we don't necessarily need modeId for limit check, but keeping it for history
+    nudgeId: { $exists: false }, // Only count global breaks
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
@@ -57,9 +57,10 @@ const startBreak = async (userId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached");
   }
 
-  // 3. Check if there's an already active break
+  // 3. Check if there's an already active global break
   const existingActiveBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
+    nudgeId: { $exists: false },
     status: "active",
     endTime: { $gt: new Date() },
   });
@@ -101,6 +102,7 @@ const getActiveBreakStatus = async (userId: string) => {
   const now = new Date();
   const activeBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
+    nudgeId: { $exists: false },
     status: "active",
     endTime: { $gt: now },
   }).populate("modeId");
@@ -119,9 +121,20 @@ const getActiveBreakStatus = async (userId: string) => {
   }
 
   if (!activeBreak) {
+    const startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date();
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const breaksToday = await Break.countDocuments({
+      userId: new mongoose.Types.ObjectId(userId),
+      nudgeId: { $exists: false },
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+    });
+
     return {
       isBreakActive: false,
-      remainingBreaksToday: 0,
+      remainingBreaksToday: Math.max(0, breakConfig.breaksPerDay - breaksToday),
     };
   }
 
@@ -132,6 +145,7 @@ const getActiveBreakStatus = async (userId: string) => {
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
+    nudgeId: { $exists: false },
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
@@ -176,11 +190,13 @@ const getRemainingBreaks = async (userId: string) => {
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
+    nudgeId: { $exists: false },
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
   const activeBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
+    nudgeId: { $exists: false },
     status: "active",
     endTime: { $gt: new Date() },
   });

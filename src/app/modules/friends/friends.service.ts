@@ -3,6 +3,7 @@ import { User } from "../user/user.model";
 import { Friend, Nudge } from "./friends.model";
 import { IFriendStats, INudge } from "./friends.interface";
 import { FocusSession } from "../focusSession/focusSession.model";
+import { Break } from "../breaks/breaks.model";
 import { emailHelper } from "../../../helpers/emailHelper";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiErrors";
@@ -262,6 +263,20 @@ const getFriendDetailsFromDB = async (userId: string, friendIds: string[]) => {
 
   const stats: IFriendStats[] = [];
 
+  // 2. Together This Week - Pre-fetch user's nudge sessions for this week
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  const userNudgeSessions = await FocusSession.find({
+    userId: new mongoose.Types.ObjectId(userId),
+    status: "completed",
+    nudgeId: { $exists: true },
+    startTime: { $gte: startOfWeek },
+  });
+
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
   for (const friend of friendsData) {
     // 0. Check current focus status
     const activeSession = await FocusSession.findOne({
@@ -296,46 +311,33 @@ const getFriendDetailsFromDB = async (userId: string, friendIds: string[]) => {
       recentPastFocus = `Last focused ${timeAgoStr}`;
     }
 
-    // 2. Together This Week
-    const startOfWeek = new Date();
-    startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-    startOfWeek.setHours(0, 0, 0, 0);
-
-    // Find nudges where participants match EXACTLY
-    const nudges = await Nudge.find({
-      status: "completed",
-      startTime: { $gte: startOfWeek },
-      $and: [
-        { participants: { $all: friendObjectIds } },
-        { participants: { $size: friendObjectIds.length } },
-        { creatorId: new mongoose.Types.ObjectId(userId) }
-      ]
-    });
-
-    // Actually, the user said "rafi, abong akib, 2 jon frined k select korlam... rafir sathe ai week a ak sathe focus thaka hoise but akib ar sathe thaki nai tahule this week a data show krbe na"
-    // This implies we check if ALL selected friends were in the SAME session.
-    
+    // 2. Together This Week Calculation
     let totalMinutes = 0;
     const daysWorked = new Set<string>();
-    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-    const highlightedDays: string[] = [];
 
-    nudges.forEach((n) => {
-      if (n.endTime) {
-        const duration = Math.round((n.endTime.getTime() - n.startTime.getTime()) / 60000);
-        totalMinutes += duration;
-        const day = n.startTime.getDay();
-        daysWorked.add(dayNames[day]);
+    for (const session of userNudgeSessions) {
+      // Check how many of the requested friends were also in this same nudge session
+      const participantsInNudge = await FocusSession.distinct("userId", {
+        nudgeId: session.nudgeId,
+        userId: { $in: friendObjectIds },
+        status: "completed",
+      });
+
+      if (participantsInNudge.length === friendObjectIds.length) {
+        let sessionMinutes = session.durationMinutes || 0;
+        if (!sessionMinutes && session.endTime) {
+          sessionMinutes = Math.round(
+            (session.endTime.getTime() - session.startTime.getTime()) / 60000,
+          );
+        }
+        totalMinutes += sessionMinutes;
+        daysWorked.add(dayNames[session.startTime.getDay()]);
       }
-    });
+    }
 
     const hours = Math.floor(totalMinutes / 60);
     const mins = totalMinutes % 60;
-    
-    // Streak calculation (consecutive days this week)
-    let streak = 0;
-    const sortedDays = Array.from(daysWorked); // This needs better logic for consecutive days
-    streak = sortedDays.length; // Placeholder
+    const streak = daysWorked.size;
 
     const isFocused = !!activeSession;
 
@@ -465,6 +467,100 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   return result;
 };
 
+const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
+
+  // 1. Check if nudge exists and is active
+  const nudge = await Nudge.findById(nudgeId);
+  if (!nudge) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Nudge not found");
+  }
+
+  // 2. Check if user has an active focus session for this nudge
+  const activeSession = await FocusSession.findOne({
+    userId: userObjectId,
+    nudgeId: nudgeObjectId,
+    status: "active",
+  });
+
+  if (!activeSession) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You don't have an active focus session in this nudge",
+    );
+  }
+
+  // 3. Check if user already has a break in progress (based on time)
+  const lastBreak = await Break.findOne({
+    userId: userObjectId,
+    nudgeId: nudgeObjectId,
+  }).sort({ startTime: -1 });
+
+  if (lastBreak && lastBreak.status === "active") {
+    const now = new Date();
+    const elapsedMinutes = (now.getTime() - lastBreak.startTime.getTime()) / 60000;
+    const durationLimit = nudge.breakConfig?.breakDurationMinutes || 0;
+
+    if (elapsedMinutes < durationLimit) {
+      const remainingMinutes = Math.ceil(durationLimit - elapsedMinutes);
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        `You are already on a break. Please wait ${remainingMinutes} more minute(s) for it to finish automatically.`,
+      );
+    } else {
+      // If time passed, we can implicitly treat it as completed if we want, 
+      // but for simplicity, we just allow a new break if the limit allows.
+      await Break.findByIdAndUpdate(lastBreak._id, { status: "completed", durationMinutes: durationLimit, endTime: new Date(lastBreak.startTime.getTime() + durationLimit * 60000) });
+    }
+  }
+
+  // 4. Check breaksPerDay limit
+  const startOfDay = new Date();
+  startOfDay.setHours(0, 0, 0, 0);
+  const endOfDay = new Date();
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const breaksTodayCount = await Break.countDocuments({
+    userId: userObjectId,
+    nudgeId: nudgeObjectId,
+    startTime: { $gte: startOfDay, $lte: endOfDay },
+  });
+
+  const maxBreaks = nudge.breakConfig?.breaksPerDay || 0;
+  const remainingBreaks = maxBreaks - breaksTodayCount;
+
+  if (remainingBreaks <= 0) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      `You have reached your daily break limit of ${maxBreaks} for this nudge. No breaks remaining today.`,
+    );
+  }
+
+  // 5. Create a new break with calculated endTime
+  const startTime = new Date();
+  const breakDurationMinutes = nudge.breakConfig?.breakDurationMinutes || 0;
+  const endTime = new Date(startTime.getTime() + breakDurationMinutes * 60000);
+
+  const breakData = {
+    userId: userObjectId,
+    modeId: nudge.modeId,
+    nudgeId: nudgeObjectId,
+    startTime,
+    endTime,
+    status: "active",
+  };
+
+  const createdBreak = await Break.create(breakData);
+
+  return {
+    break: createdBreak,
+    remainingBreaks: remainingBreaks - 1,
+    breakDurationMinutes: nudge.breakConfig?.breakDurationMinutes || 0,
+    message: `Break started. You have ${nudge.breakConfig?.breakDurationMinutes} minutes. After this, apps will lock again.`,
+  };
+};
+
 export const FriendsService = {
   getUsersFromDB,
   createNudgeInDB,
@@ -473,4 +569,5 @@ export const FriendsService = {
   getNudgeHistoryFromDB,
   removeFriendFromDB,
   unlockNudgeInDB,
+  takeNudgeBreakInDB,
 };

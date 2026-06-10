@@ -19,15 +19,24 @@ const getDashboardData = async (userId: string) => {
     isDeleted: false,
   });
 
-  // 3. Check for Active Break
+  // 3. Check for Active Global Break
   const activeBreak = await Break.findOne({
     userId: userObjectId,
+    nudgeId: { $exists: false },
     status: "active",
     endTime: { $gt: new Date() },
   });
 
-  // 4. Calculate Lock Status
-  const isLocked = activeMode ? !activeBreak : false;
+  // 3a. Check for Active Nudge Break (Priority for unlocking)
+  const activeNudgeBreak = await Break.findOne({
+    userId: userObjectId,
+    nudgeId: { $exists: true },
+    status: "active",
+    endTime: { $gt: new Date() },
+  });
+
+  // 4. Calculate Lock Status (Unlock if EITHER global OR nudge break is active)
+  const isLocked = activeMode ? !(activeBreak || activeNudgeBreak) : false;
 
   // 5. Focus Time Stats (Today)
   const startOfDay = new Date();
@@ -43,8 +52,20 @@ const getDashboardData = async (userId: string) => {
     ],
   });
 
-  const todayBreaks = await Break.find({
+  // Today's Global Breaks
+  const todayGlobalBreaks = await Break.find({
     userId: userObjectId,
+    nudgeId: { $exists: false },
+    $or: [
+      { createdAt: { $gte: startOfDay, $lte: endOfDay } },
+      { status: "active" },
+    ],
+  });
+
+  // Today's Nudge Breaks
+  const todayNudgeBreaks = await Break.find({
+    userId: userObjectId,
+    nudgeId: { $exists: true },
     $or: [
       { createdAt: { $gte: startOfDay, $lte: endOfDay } },
       { status: "active" },
@@ -62,8 +83,9 @@ const getDashboardData = async (userId: string) => {
     }
   });
 
-  // Subtract today's break time
-  todayBreaks.forEach((breakItem) => {
+  // Subtract today's break time (Both global and nudge)
+  const allTodayBreaks = [...todayGlobalBreaks, ...todayNudgeBreaks];
+  allTodayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       todayFocusMinutes -= breakItem.durationMinutes || 0;
     } else {
@@ -109,7 +131,7 @@ const getDashboardData = async (userId: string) => {
   });
   weekFocusMinutes = Math.max(0, weekFocusMinutes);
 
-  // 7. Break Stats
+  // 7. Break Stats (Only Global Breaks for Dashboard)
   let breaksTakenToday = 0;
   let remainingBreaksToday = 0;
   let activeBreakRemainingMinutes = 0;
@@ -136,6 +158,7 @@ const getDashboardData = async (userId: string) => {
 
   breaksTakenToday = await Break.countDocuments({
     userId: userObjectId,
+    nudgeId: { $exists: false },
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
   remainingBreaksToday = Math.max(
@@ -183,6 +206,18 @@ const getDashboardData = async (userId: string) => {
         ? {
             ...activeBreak.toObject(),
             remainingMinutes: activeBreakRemainingMinutes,
+          }
+        : null,
+      activeNudgeBreak: activeNudgeBreak
+        ? {
+            ...activeNudgeBreak.toObject(),
+            remainingMinutes: Math.max(
+              0,
+              Math.ceil(
+                (activeNudgeBreak.endTime.getTime() - new Date().getTime()) /
+                  60000,
+              ),
+            ),
           }
         : null,
     },

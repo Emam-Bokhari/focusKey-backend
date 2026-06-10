@@ -52,7 +52,7 @@ const exportHistoryToCSV = catchAsync(async (req: Request, res: Response) => {
 const clearAllData = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const result = await FocusSessionService.clearAllDataFromDB(userId);
-  
+
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,

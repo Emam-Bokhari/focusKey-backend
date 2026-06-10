@@ -21,7 +21,7 @@ const getUsersFromDB = async (
   const query: any = {
     _id: { $ne: new mongoose.Types.ObjectId(userId) },
     isDeleted: { $ne: true },
-    role:USER_ROLES.USER,
+    role: USER_ROLES.USER,
   };
 
   if (searchTerm) {
@@ -37,7 +37,7 @@ const getUsersFromDB = async (
     .skip(skip)
     .limit(limit)
     .lean();
-  
+
   const usersWithStatus = await Promise.all(
     users.map(async (user) => {
       // Check active focus session
@@ -269,8 +269,13 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 };
 
 const getFriendDetailsFromDB = async (userId: string, friendIds: string[]) => {
-  const friendObjectIds = friendIds.map((id) => new mongoose.Types.ObjectId(id));
-  const allParticipants = [new mongoose.Types.ObjectId(userId), ...friendObjectIds].sort();
+  const friendObjectIds = friendIds.map(
+    (id) => new mongoose.Types.ObjectId(id),
+  );
+  const allParticipants = [
+    new mongoose.Types.ObjectId(userId),
+    ...friendObjectIds,
+  ].sort();
 
   const friendsData = await User.find({ _id: { $in: friendObjectIds } }).select(
     "name userName profileImage email",
@@ -519,7 +524,8 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
 
   if (lastBreak && lastBreak.status === "active") {
     const now = new Date();
-    const elapsedMinutes = (now.getTime() - lastBreak.startTime.getTime()) / 60000;
+    const elapsedMinutes =
+      (now.getTime() - lastBreak.startTime.getTime()) / 60000;
     const durationLimit = nudge.breakConfig?.breakDurationMinutes || 0;
 
     if (elapsedMinutes < durationLimit) {
@@ -529,9 +535,15 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
         `You are already on a break. Please wait ${remainingMinutes} more minute(s) for it to finish automatically.`,
       );
     } else {
-      // If time passed, we can implicitly treat it as completed if we want, 
+      // If time passed, we can implicitly treat it as completed if we want,
       // but for simplicity, we just allow a new break if the limit allows.
-      await Break.findByIdAndUpdate(lastBreak._id, { status: "completed", durationMinutes: durationLimit, endTime: new Date(lastBreak.startTime.getTime() + durationLimit * 60000) });
+      await Break.findByIdAndUpdate(lastBreak._id, {
+        status: "completed",
+        durationMinutes: durationLimit,
+        endTime: new Date(
+          lastBreak.startTime.getTime() + durationLimit * 60000,
+        ),
+      });
     }
   }
 

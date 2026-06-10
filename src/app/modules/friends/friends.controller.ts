@@ -47,7 +47,8 @@ const joinNudge = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
-      message: "userId is required for joining nudge (pass as ?userId=... if not logged in)",
+      message:
+        "userId is required for joining nudge (pass as ?userId=... if not logged in)",
     });
     return;
   }
@@ -137,18 +138,20 @@ const takeNudgeBreak = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getCurrentNudgeStatus = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req.user as any).id;
+const getCurrentNudgeStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any).id;
 
-  const result = await FriendsService.getCurrentNudgeStatusInDB(userId);
+    const result = await FriendsService.getCurrentNudgeStatusInDB(userId);
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Current nudge status fetched successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Current nudge status fetched successfully",
+      data: result,
+    });
+  },
+);
 
 export const FriendsController = {
   getUsers,

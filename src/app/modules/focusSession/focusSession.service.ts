@@ -13,8 +13,6 @@ const formatDuration = (totalMinutes: number) => {
   };
 };
 
-
-
 const formatTime = (date: Date) => {
   return date
     .toLocaleTimeString("en-US", {

@@ -16,6 +16,7 @@ import { DashboardRoutes } from "../modules/dashboard/dashboard.route";
 import { FocusSessionRoutes } from "../modules/focusSession/focusSession.route";
 import { FriendsRoutes } from "../modules/friends/friends.route";
 import { PersonalReminderRoutes } from "../modules/personalReminder/personalReminder.route";
+import { AnalyticsRoutes } from "../modules/analytics/analytics.route";
 
 const router = express.Router();
 
@@ -87,6 +88,10 @@ const apiRoutes = [
   {
     path: "/personal-reminders",
     route: PersonalReminderRoutes,
+  },
+  {
+    path: "/analytics",
+    route: AnalyticsRoutes,
   },
 ];
 

@@ -3,6 +3,8 @@
     endTime: string; // "15:00"
   }; -->
 
-1. personal reminder niye kaj korte hobe
-2. key status
-3. nudge pathanor email template ta thik korte hobe
+1. key status
+2. nudge pathanor email template ta thik korte hobe
+3. Recent Social Activity
+4. Devices
+5. notification

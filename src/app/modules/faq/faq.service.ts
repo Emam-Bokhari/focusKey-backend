@@ -21,20 +21,6 @@ const faqsFromDB = async () => {
   return faqs;
 };
 
-const deleteFaqToDB = async (id: string) => {
-  if (!mongoose.Types.ObjectId.isValid(id)) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
-  }
-
-  const result = await Faq.findByIdAndDelete(id);
-
-  if (!result) {
-    return {};
-  }
-
-  return result;
-};
-
 const updateFaqToDB = async (id: string, payload: TFaq) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
@@ -48,6 +34,20 @@ const updateFaqToDB = async (id: string, payload: TFaq) => {
   }
 
   return updatedFaq;
+};
+
+const deleteFaqToDB = async (id: string) => {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");
+  }
+
+  const result = await Faq.softDeleteById(id);
+
+  if (!result) {
+    return {};
+  }
+
+  return result;
 };
 
 export const FaqService = {

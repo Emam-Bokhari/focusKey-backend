@@ -250,7 +250,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
       firstFocusDate,
     },
     sevenDaysStats,
-    // todayStats,
     history,
   };
 };

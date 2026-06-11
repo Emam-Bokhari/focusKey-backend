@@ -48,3 +48,14 @@ Thu Jun 11 2026 12:18:29 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/user
 Thu Jun 11 2026 12:19:3 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/users?searchTerm=mosh 200 - 299.271 ms
 Thu Jun 11 2026 12:19:8 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/users 200 - 307.196 ms
 Thu Jun 11 2026 12:19:16 [SQUALLY] info: 🛑 Graceful shutdown started...
+Thu Jun 11 2026 12:22:40 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:22:40 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:22:40 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:22:59 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/users?status=INACTIVE 200 - 122.545 ms
+Thu Jun 11 2026 12:23:5 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/users?status=ACTIVE 200 - 308.312 ms
+Thu Jun 11 2026 12:30:35 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/users/6a27d09386f7394629c2f10b 200 - 304.992 ms
+Thu Jun 11 2026 12:30:46 [SQUALLY] info: 🛑 Graceful shutdown started...
+Thu Jun 11 2026 12:31:7 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:31:7 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:31:7 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:32:27 [SQUALLY] info: 🛑 Graceful shutdown started...

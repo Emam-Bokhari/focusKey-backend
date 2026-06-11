@@ -19,7 +19,10 @@ const getStatsFromDB = async () => {
   const totalUsers = await User.countDocuments({ isDeleted: false });
 
   // activated Users (verified)
-  const activatedUsers = await User.countDocuments({ verified: true, isDeleted: false });
+  const activatedUsers = await User.countDocuments({
+    verified: true,
+    isDeleted: false,
+  });
 
   // 7-Day Active Users (users who logged in in last 7 days)
   const sevenDayActiveUsers = await User.countDocuments({
@@ -37,7 +40,10 @@ const getStatsFromDB = async () => {
   const totalBreaksTaken = await Break.countDocuments({ isDeleted: false });
 
   // Cooldown Completed (completed breaks)
-  const cooldownCompleted = await Break.countDocuments({ status: "completed", isDeleted: false });
+  const cooldownCompleted = await Break.countDocuments({
+    status: "completed",
+    isDeleted: false,
+  });
 
   // Users With Partners (users with at least one accepted friend)
   const usersWithPartnersAggregation = await Friend.aggregate([
@@ -129,7 +135,7 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
 
   const endDate = new Date();
   endDate.setHours(23, 59, 59, 999);
-  
+
   const startDate = new Date();
   startDate.setDate(startDate.getDate() - (actualDays - 1));
   startDate.setHours(0, 0, 0, 0);
@@ -154,15 +160,15 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   for (let i = 0; i < actualDays; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
-    const dateKey = date.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dateKey = date.toISOString().split("T")[0]; // YYYY-MM-DD
     dateWiseData[dateKey] = 0;
   }
 
   // calculate focus minutes for each day
-  sessions.forEach(session => {
-    const dateKey = session.startTime.toISOString().split('T')[0];
+  sessions.forEach((session) => {
+    const dateKey = session.startTime.toISOString().split("T")[0];
     let minutes = 0;
-    if (session.status === 'completed') {
+    if (session.status === "completed") {
       minutes = session.durationMinutes || 0;
     } else {
       const durationMs = new Date().getTime() - session.startTime.getTime();
@@ -174,10 +180,12 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   });
 
   // convert to array format
-  const focusTimeOverTime = Object.entries(dateWiseData).map(([date, minutes]) => ({
-    date,
-    focusMinutes: minutes,
-  }));
+  const focusTimeOverTime = Object.entries(dateWiseData).map(
+    ([date, minutes]) => ({
+      date,
+      focusMinutes: minutes,
+    }),
+  );
 
   return {
     year: targetYear,
@@ -192,11 +200,13 @@ const getUsersAnalyticsFromDB = async (query: Record<string, unknown>) => {
 
   // Use QueryBuilder to handle search, filter, sort, and pagination
   const userQueryBuilder = new QueryBuilder(baseQuery, query)
-    .search(['name', 'email'])
+    .search(["name", "email"])
     .filter()
     .sort()
     .paginate()
-    .fields('name email role profileImage isPaired status createdAt lastLoginAt');
+    .fields(
+      "name email role profileImage isPaired status createdAt lastLoginAt",
+    );
 
   // Get total count and pagination meta
   const meta = await userQueryBuilder.countTotal();
@@ -205,70 +215,72 @@ const getUsersAnalyticsFromDB = async (query: Record<string, unknown>) => {
   const users = await userQueryBuilder.modelQuery.lean();
 
   // For each user, calculate additional metrics
-  const usersWithAnalytics = await Promise.all(users.map(async (user: any) => {
-    // Total sessions
-    const totalSessions = await FocusSession.countDocuments({ 
-      userId: user._id, 
-      isDeleted: false 
-    });
+  const usersWithAnalytics = await Promise.all(
+    users.map(async (user: any) => {
+      // Total sessions
+      const totalSessions = await FocusSession.countDocuments({
+        userId: user._id,
+        isDeleted: false,
+      });
 
-    // Total focus time
-    const totalFocusTimeResult = await FocusSession.aggregate([
-      { $match: { userId: user._id, status: 'completed', isDeleted: false } },
-      { $group: { _id: null, totalMinutes: { $sum: '$durationMinutes' } } }
-    ]);
-    const totalFocusTime = totalFocusTimeResult[0]?.totalMinutes || 0;
+      // Total focus time
+      const totalFocusTimeResult = await FocusSession.aggregate([
+        { $match: { userId: user._id, status: "completed", isDeleted: false } },
+        { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } },
+      ]);
+      const totalFocusTime = totalFocusTimeResult[0]?.totalMinutes || 0;
 
-    // Break count
-    const breakCount = await Break.countDocuments({ 
-      userId: user._id, 
-      isDeleted: false 
-    });
+      // Break count
+      const breakCount = await Break.countDocuments({
+        userId: user._id,
+        isDeleted: false,
+      });
 
-    // Total locks and unlocks from Mode.lockEvents
-    const lockEventsResult = await Mode.aggregate([
-      { $match: { userId: user._id, isDeleted: false } },
-      { $unwind: '$lockEvents' },
-      { 
-        $group: {
-          _id: null,
-          totalLocks: { 
-            $sum: { 
-              $cond: [{ $eq: ['$lockEvents.type', 'lock'] }, 1, 0] 
-            }
+      // Total locks and unlocks from Mode.lockEvents
+      const lockEventsResult = await Mode.aggregate([
+        { $match: { userId: user._id, isDeleted: false } },
+        { $unwind: "$lockEvents" },
+        {
+          $group: {
+            _id: null,
+            totalLocks: {
+              $sum: {
+                $cond: [{ $eq: ["$lockEvents.type", "lock"] }, 1, 0],
+              },
+            },
+            totalUnlocks: {
+              $sum: {
+                $cond: [{ $eq: ["$lockEvents.type", "unlock"] }, 1, 0],
+              },
+            },
           },
-          totalUnlocks: {
-            $sum: {
-              $cond: [{ $eq: ['$lockEvents.type', 'unlock'] }, 1, 0]
-            }
-          }
-        }
-      }
-    ]);
-    const totalLocks = lockEventsResult[0]?.totalLocks || 0;
-    const totalUnlocks = lockEventsResult[0]?.totalUnlocks || 0;
+        },
+      ]);
+      const totalLocks = lockEventsResult[0]?.totalLocks || 0;
+      const totalUnlocks = lockEventsResult[0]?.totalUnlocks || 0;
 
-    return {
-      userId: user._id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      profileImage: user.profileImage,
-      isPaired: user.isPaired,
-      status: user.status,
-      totalSessions,
-      totalLocks,
-      totalUnlocks,
-      totalFocusTime,
-      breakCount,
-      registeredAt: user.createdAt,
-      lastActiveAt: user.lastLoginAt
-    };
-  }));
+      return {
+        userId: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        profileImage: user.profileImage,
+        isPaired: user.isPaired,
+        status: user.status,
+        totalSessions,
+        totalLocks,
+        totalUnlocks,
+        totalFocusTime,
+        breakCount,
+        registeredAt: user.createdAt,
+        lastActiveAt: user.lastLoginAt,
+      };
+    }),
+  );
 
   return {
     meta,
-    data: usersWithAnalytics
+    data: usersWithAnalytics,
   };
 };
 
@@ -278,40 +290,40 @@ const getSingleUserAnalyticsFromDB = async (userId: string) => {
     return null;
   }
 
-  const totalSessions = await FocusSession.countDocuments({ 
-    userId: user._id, 
-    isDeleted: false 
+  const totalSessions = await FocusSession.countDocuments({
+    userId: user._id,
+    isDeleted: false,
   });
 
   const totalFocusTimeResult = await FocusSession.aggregate([
-    { $match: { userId: user._id, status: 'completed', isDeleted: false } },
-    { $group: { _id: null, totalMinutes: { $sum: '$durationMinutes' } } }
+    { $match: { userId: user._id, status: "completed", isDeleted: false } },
+    { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } },
   ]);
   const totalFocusTime = totalFocusTimeResult[0]?.totalMinutes || 0;
 
-  const breakCount = await Break.countDocuments({ 
-    userId: user._id, 
-    isDeleted: false 
+  const breakCount = await Break.countDocuments({
+    userId: user._id,
+    isDeleted: false,
   });
 
   const lockEventsResult = await Mode.aggregate([
     { $match: { userId: user._id, isDeleted: false } },
-    { $unwind: '$lockEvents' },
-    { 
+    { $unwind: "$lockEvents" },
+    {
       $group: {
         _id: null,
-        totalLocks: { 
-          $sum: { 
-            $cond: [{ $eq: ['$lockEvents.type', 'lock'] }, 1, 0] 
-          }
+        totalLocks: {
+          $sum: {
+            $cond: [{ $eq: ["$lockEvents.type", "lock"] }, 1, 0],
+          },
         },
         totalUnlocks: {
           $sum: {
-            $cond: [{ $eq: ['$lockEvents.type', 'unlock'] }, 1, 0]
-          }
-        }
-      }
-    }
+            $cond: [{ $eq: ["$lockEvents.type", "unlock"] }, 1, 0],
+          },
+        },
+      },
+    },
   ]);
   const totalLocks = lockEventsResult[0]?.totalLocks || 0;
   const totalUnlocks = lockEventsResult[0]?.totalUnlocks || 0;
@@ -330,7 +342,7 @@ const getSingleUserAnalyticsFromDB = async (userId: string) => {
     totalFocusTime,
     breakCount,
     registeredAt: user.createdAt,
-    lastActiveAt: user.lastLoginAt
+    lastActiveAt: user.lastLoginAt,
   };
 };
 

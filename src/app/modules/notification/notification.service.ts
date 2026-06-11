@@ -16,8 +16,6 @@ const getNotificationsFromDB = async (
     { path: "referenceId" },
   ]);
 
-  
-
   const unreadCount = await Notification.countDocuments({
     receiver: user.id,
     read: false,

@@ -121,7 +121,9 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
   // 2. Check if any participant is currently focused
   const focusedParticipants = await FocusSession.find({
     userId: {
-      $in: participants.map((id: any) => new mongoose.Types.ObjectId(id.userId || id)),
+      $in: participants.map(
+        (id: any) => new mongoose.Types.ObjectId(id.userId || id),
+      ),
     },
     status: "active",
   }).populate("userId", "name");
@@ -202,8 +204,8 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
   });
 
   // 5. Send Emails
-  const participantIds = participants.map((id: any) => 
-    new mongoose.Types.ObjectId(id.userId || id)
+  const participantIds = participants.map(
+    (id: any) => new mongoose.Types.ObjectId(id.userId || id),
   );
   const invitedUsers = await User.find({ _id: { $in: participantIds } });
   const creator = await User.findById(userId);
@@ -241,7 +243,7 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 
   // Check if user is an invited participant (and not deleted)
   const isInvited = nudge.participants.some(
-    (p) => !p.isDeleted && p.userId.equals(userObjectId)
+    (p) => !p.isDeleted && p.userId.equals(userObjectId),
   );
   if (!isInvited) {
     throw new ApiError(
@@ -252,7 +254,7 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 
   // Check if already joined and not deleted
   const existingJoined = nudge.joinedParticipants.find(
-    (p) => !p.isDeleted && p.userId.equals(userObjectId)
+    (p) => !p.isDeleted && p.userId.equals(userObjectId),
   );
   if (existingJoined) {
     return nudge;
@@ -260,7 +262,7 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 
   // Check if user was previously joined but deleted - restore if so
   const previouslyJoined = nudge.joinedParticipants.find(
-    (p) => p.isDeleted && p.userId.equals(userObjectId)
+    (p) => p.isDeleted && p.userId.equals(userObjectId),
   );
 
   const updateData: any = {};
@@ -438,7 +440,10 @@ const getNudgeHistoryFromDB = async (
   const query = {
     $or: [
       { creatorId: userObjectId },
-      { "participants.userId": userObjectId, "participants.isDeleted": { $ne: true } },
+      {
+        "participants.userId": userObjectId,
+        "participants.isDeleted": { $ne: true },
+      },
     ],
     isDeleted: { $ne: true },
   };
@@ -552,7 +557,7 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   // 5. Optional: If no active users left in the nudge, mark it as completed
   if (result) {
     const activeJoinedCount = result.joinedParticipants.filter(
-      (p) => !p.isDeleted
+      (p) => !p.isDeleted,
     ).length;
     if (activeJoinedCount === 0) {
       await Nudge.findByIdAndUpdate(nudgeId, { status: "completed" });
@@ -747,14 +752,15 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   weekFocusMinutes += currentSessionDuration;
 
   // 6. Participants focus and break status
-  const activeParticipants = nudge.participants.filter(p => !p.isDeleted);
+  const activeParticipants = nudge.participants.filter((p) => !p.isDeleted);
   const participantsWithStatus = await Promise.all(
     activeParticipants.map(async (participant: any) => {
       const participantId = participant.userId._id || participant.userId;
 
       // Check if participant is currently in this nudge's focus session
       const isJoined = nudge.joinedParticipants.some(
-        (p: any) => !p.isDeleted && (p.userId._id || p.userId).equals(participantId),
+        (p: any) =>
+          !p.isDeleted && (p.userId._id || p.userId).equals(participantId),
       );
 
       // Check if they have an active break
@@ -778,7 +784,9 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   );
 
   // Also handle joinedParticipants (which includes the creator)
-  const activeJoinedParticipants = nudge.joinedParticipants.filter(p => !p.isDeleted);
+  const activeJoinedParticipants = nudge.joinedParticipants.filter(
+    (p) => !p.isDeleted,
+  );
   const joinedParticipantsWithStatus = await Promise.all(
     activeJoinedParticipants.map(async (participant: any) => {
       const participantId = participant.userId._id || participant.userId;

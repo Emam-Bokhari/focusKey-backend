@@ -34,7 +34,7 @@ const getUsersAnalytics = catchAsync(async (req: Request, res: Response) => {
   if (query.search && !query.searchTerm) {
     query.searchTerm = query.search;
   }
-  
+
   const result = await AnalyticsServices.getUsersAnalyticsFromDB(query);
 
   sendResponse(res, {
@@ -46,16 +46,20 @@ const getUsersAnalytics = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getSingleUserAnalytics = catchAsync(async (req: Request, res: Response) => {
-  const result = await AnalyticsServices.getSingleUserAnalyticsFromDB(req.params.userId);
+const getSingleUserAnalytics = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await AnalyticsServices.getSingleUserAnalyticsFromDB(
+      req.params.userId,
+    );
 
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Single user analytics data retrieved successfully",
-    data: result,
-  });
-});
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Single user analytics data retrieved successfully",
+      data: result,
+    });
+  },
+);
 
 export const AnalyticsControllers = {
   getStats,

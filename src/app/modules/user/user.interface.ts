@@ -64,6 +64,8 @@ export type IUser = {
   isDeleted?: boolean;
   deletedAt?: Date | null;
   lastLoginAt?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 /* ================= STATIC METHODS ================= */

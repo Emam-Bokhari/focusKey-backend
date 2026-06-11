@@ -1,0 +1,20 @@
+Thu Jun 11 2026 12:0:6 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:0:6 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:0:6 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:0:10 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:0:10 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:0:10 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:0:37 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:0:37 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:0:37 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:0:49 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:0:49 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:0:49 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:0:54 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:0:54 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:0:54 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:1:43 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/users 200 - 654.102 ms
+Thu Jun 11 2026 12:6:2 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 12:6:3 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 12:6:3 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 12:9:0 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/users 200 - 392.909 ms

@@ -29,12 +29,13 @@ const getFocusTimeOverTime = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getUsersAnalytics = catchAsync(async (req: Request, res: Response) => {
-  const page = req.query.page ? Number(req.query.page) : 1;
-  const limit = req.query.limit ? Number(req.query.limit) : 10;
-  const search = req.query.search as string | undefined;
-  const status = req.query.status as string | undefined;
-
-  const result = await AnalyticsServices.getUsersAnalyticsFromDB(page, limit, search, status);
+  // Support both "search" and "searchTerm"
+  const query = { ...req.query };
+  if (query.search && !query.searchTerm) {
+    query.searchTerm = query.search;
+  }
+  
+  const result = await AnalyticsServices.getUsersAnalyticsFromDB(query);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -45,8 +46,20 @@ const getUsersAnalytics = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getSingleUserAnalytics = catchAsync(async (req: Request, res: Response) => {
+  const result = await AnalyticsServices.getSingleUserAnalyticsFromDB(req.params.userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Single user analytics data retrieved successfully",
+    data: result,
+  });
+});
+
 export const AnalyticsControllers = {
   getStats,
   getFocusTimeOverTime,
   getUsersAnalytics,
+  getSingleUserAnalytics,
 };

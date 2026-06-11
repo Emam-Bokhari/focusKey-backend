@@ -3,6 +3,7 @@ import { FocusSession } from "../focusSession/focusSession.model";
 import { Break } from "../breaks/breaks.model";
 import { Friend, Nudge } from "../friends/friends.model";
 import { Mode } from "../modes/modes.model";
+import QueryBuilder from "../../builder/queryBuilder";
 
 const getStatsFromDB = async () => {
   // calculate date ranges
@@ -185,41 +186,26 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   };
 };
 
-const getUsersAnalyticsFromDB = async (
-  page: number = 1,
-  limit: number = 10,
-  search?: string,
-  statusFilter?: string
-) => {
-  const skip = (page - 1) * limit;
+const getUsersAnalyticsFromDB = async (query: Record<string, unknown>) => {
+  // Create base query with isDeleted: false
+  const baseQuery = User.find({ isDeleted: false });
 
-  // Build query
-  const query: any = { isDeleted: false };
-  
-  if (search) {
-    query.$or = [
-      { name: { $regex: search, $options: 'i' } },
-      { email: { $regex: search, $options: 'i' } }
-    ];
-  }
+  // Use QueryBuilder to handle search, filter, sort, and pagination
+  const userQueryBuilder = new QueryBuilder(baseQuery, query)
+    .search(['name', 'email'])
+    .filter()
+    .sort()
+    .paginate()
+    .fields('name email role profileImage isPaired status createdAt lastLoginAt');
 
-  if (statusFilter) {
-    query.status = statusFilter;
-  }
+  // Get total count and pagination meta
+  const meta = await userQueryBuilder.countTotal();
 
-  // Get total users matching query for pagination
-  const totalUsers = await User.countDocuments(query);
-
-  // Get users with pagination
-  const users = await User.find(query)
-    .select('name email role profileImage isPaired status createdAt lastLoginAt')
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  // Get users
+  const users = await userQueryBuilder.modelQuery.lean();
 
   // For each user, calculate additional metrics
-  const usersWithAnalytics = await Promise.all(users.map(async (user) => {
+  const usersWithAnalytics = await Promise.all(users.map(async (user: any) => {
     // Total sessions
     const totalSessions = await FocusSession.countDocuments({ 
       userId: user._id, 
@@ -281,13 +267,70 @@ const getUsersAnalyticsFromDB = async (
   }));
 
   return {
-    meta: {
-      page,
-      limit,
-      total: totalUsers,
-      totalPages: Math.ceil(totalUsers / limit)
-    },
+    meta,
     data: usersWithAnalytics
+  };
+};
+
+const getSingleUserAnalyticsFromDB = async (userId: string) => {
+  const user = await User.findOne({ _id: userId, isDeleted: false }).lean();
+  if (!user) {
+    return null;
+  }
+
+  const totalSessions = await FocusSession.countDocuments({ 
+    userId: user._id, 
+    isDeleted: false 
+  });
+
+  const totalFocusTimeResult = await FocusSession.aggregate([
+    { $match: { userId: user._id, status: 'completed', isDeleted: false } },
+    { $group: { _id: null, totalMinutes: { $sum: '$durationMinutes' } } }
+  ]);
+  const totalFocusTime = totalFocusTimeResult[0]?.totalMinutes || 0;
+
+  const breakCount = await Break.countDocuments({ 
+    userId: user._id, 
+    isDeleted: false 
+  });
+
+  const lockEventsResult = await Mode.aggregate([
+    { $match: { userId: user._id, isDeleted: false } },
+    { $unwind: '$lockEvents' },
+    { 
+      $group: {
+        _id: null,
+        totalLocks: { 
+          $sum: { 
+            $cond: [{ $eq: ['$lockEvents.type', 'lock'] }, 1, 0] 
+          }
+        },
+        totalUnlocks: {
+          $sum: {
+            $cond: [{ $eq: ['$lockEvents.type', 'unlock'] }, 1, 0]
+          }
+        }
+      }
+    }
+  ]);
+  const totalLocks = lockEventsResult[0]?.totalLocks || 0;
+  const totalUnlocks = lockEventsResult[0]?.totalUnlocks || 0;
+
+  return {
+    userId: user._id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    profileImage: user.profileImage,
+    isPaired: user.isPaired,
+    status: user.status,
+    totalSessions,
+    totalLocks,
+    totalUnlocks,
+    totalFocusTime,
+    breakCount,
+    registeredAt: user.createdAt,
+    lastActiveAt: user.lastLoginAt
   };
 };
 
@@ -295,4 +338,5 @@ export const AnalyticsServices = {
   getStatsFromDB,
   getFocusTimeOverTime,
   getUsersAnalyticsFromDB,
+  getSingleUserAnalyticsFromDB,
 };

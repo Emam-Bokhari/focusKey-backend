@@ -117,9 +117,11 @@ class QueryBuilder<T> {
   }
 
   //  FIELD SELECTION
-  fields() {
+  fields(customFields?: string) {
     const fields =
-      (this.query.fields as string)?.split(",").join(" ") || "-__v";
+      customFields ||
+      (this.query.fields as string)?.split(",").join(" ") ||
+      "-__v";
 
     this.modelQuery = this.modelQuery.select(fields);
 

@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IFriend, INudge } from "./friends.interface";
+import { IFriend, INudge, INudgeParticipant } from "./friends.interface";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
 const friendSchema = new Schema<IFriend>(
@@ -28,6 +28,26 @@ const friendSchema = new Schema<IFriend>(
 
 friendSchema.plugin(softDeletePlugin);
 
+const nudgeParticipantSchema = new Schema<INudgeParticipant>(
+  {
+    userId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+    deletedAt: {
+      type: Date,
+    },
+  },
+  {
+    _id: false,
+  },
+);
+
 const nudgeSchema = new Schema<INudge>(
   {
     creatorId: {
@@ -35,18 +55,8 @@ const nudgeSchema = new Schema<INudge>(
       ref: "User",
       required: true,
     },
-    participants: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
-    joinedParticipants: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    participants: [nudgeParticipantSchema],
+    joinedParticipants: [nudgeParticipantSchema],
     modeId: {
       type: Schema.Types.ObjectId,
       ref: "Mode",

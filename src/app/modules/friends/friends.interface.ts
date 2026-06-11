@@ -1,5 +1,11 @@
 import { Types } from "mongoose";
 
+export interface INudgeParticipant {
+  userId: Types.ObjectId;
+  isDeleted?: boolean;
+  deletedAt?: Date;
+}
+
 export interface IFriend {
   userId: Types.ObjectId;
   friendId: Types.ObjectId;
@@ -15,8 +21,8 @@ export interface INudgeBreakConfig {
 
 export interface INudge {
   creatorId: Types.ObjectId;
-  participants: Types.ObjectId[];
-  joinedParticipants: Types.ObjectId[];
+  participants: INudgeParticipant[];
+  joinedParticipants: INudgeParticipant[];
   modeId: Types.ObjectId;
   breakConfig: INudgeBreakConfig;
   startTime: Date;

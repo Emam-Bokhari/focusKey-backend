@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IMode, TModeModel } from "./modes.interface";
+import { IMode, TModeModel, ILockEvent } from "./modes.interface";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
 const lockedAppSchema = new Schema(
@@ -13,6 +13,26 @@ const lockedAppSchema = new Schema(
       type: String,
       required: true,
       trim: true,
+    },
+  },
+  { _id: false },
+);
+
+const lockEventSchema = new Schema<ILockEvent>(
+  {
+    type: {
+      type: String,
+      enum: ["lock", "unlock"],
+      required: true,
+    },
+    source: {
+      type: String,
+      enum: ["mode", "nudge"],
+      required: true,
+    },
+    timestamp: {
+      type: Date,
+      required: true,
     },
   },
   { _id: false },
@@ -76,6 +96,11 @@ const modeSchema = new Schema<IMode, TModeModel>(
       type: Boolean,
       default: false,
       index: true,
+    },
+
+    lockEvents: {
+      type: [lockEventSchema],
+      default: [],
     },
   },
   {

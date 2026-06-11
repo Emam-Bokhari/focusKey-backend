@@ -13,6 +13,12 @@ type IconType =
   | "sleep"
   | "creative";
 
+export interface ILockEvent {
+  type: "lock" | "unlock";
+  source: "mode" | "nudge";
+  timestamp: Date;
+}
+
 export interface IMode {
   userId: Types.ObjectId;
   name: string;
@@ -25,6 +31,7 @@ export interface IMode {
   totalLockedApps: number;
   isActive: boolean;
   isDeleted: boolean;
+  lockEvents: ILockEvent[];
 }
 
 export type TModeModel = ISoftDeleteModel<IMode>;

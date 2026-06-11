@@ -225,9 +225,19 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
     }
   }
 
+  const now = new Date();
   const result = await Mode.findByIdAndUpdate(
     modeId,
-    { isActive: newStatus },
+    {
+      isActive: newStatus,
+      $push: {
+        lockEvents: {
+          type: newStatus ? "lock" : "unlock",
+          source: "mode",
+          timestamp: now,
+        },
+      },
+    },
     { new: true },
   );
 

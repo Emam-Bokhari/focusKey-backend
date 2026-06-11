@@ -1,8 +1,11 @@
 import { User } from "../user/user.model";
 import { FocusSession } from "../focusSession/focusSession.model";
+import { Break } from "../breaks/breaks.model";
+import { Friend, Nudge } from "../friends/friends.model";
+import { Mode } from "../modes/modes.model";
 
 const getStatsFromDB = async () => {
-  // Calculate date ranges
+  // calculate date ranges
   const startOfWeek = new Date();
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
@@ -29,11 +32,88 @@ const getStatsFromDB = async () => {
     isDeleted: false,
   });
 
+  // Total Breaks Taken
+  const totalBreaksTaken = await Break.countDocuments({ isDeleted: false });
+
+  // Cooldown Completed (completed breaks)
+  const cooldownCompleted = await Break.countDocuments({ status: "completed", isDeleted: false });
+
+  // Users With Partners (users with at least one accepted friend)
+  const usersWithPartnersAggregation = await Friend.aggregate([
+    { $match: { status: "accepted", isDeleted: false } },
+    // Collect both userId and friendId
+    { $project: { users: ["$userId", "$friendId"] } },
+    // Unwind the array to get individual user IDs
+    { $unwind: "$users" },
+    // Group to get unique user IDs
+    { $group: { _id: "$users" } },
+    // Count them
+    { $count: "total" },
+  ]);
+  const uniqueUsersWithPartners = usersWithPartnersAggregation[0]?.total || 0;
+
+  // Joint Sessions (nudges with at least 2 joined participants)
+  const jointSessionsAggregation = await Nudge.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
+    // Only count non-deleted joined participants
+    {
+      $addFields: {
+        activeJoinedCount: {
+          $size: {
+            $filter: {
+              input: "$joinedParticipants",
+              as: "jp",
+              cond: { $eq: ["$$jp.isDeleted", false] },
+            },
+          },
+        },
+      },
+    },
+    { $match: { activeJoinedCount: { $gte: 2 } } },
+    { $count: "total" },
+  ]);
+
+  // Unlock Attempts: count all soft-deleted joined participants across all nudges
+  const unlockAttemptsAggregation = await Nudge.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
+    // Unwind joinedParticipants
+    { $unwind: "$joinedParticipants" },
+    // Only count soft-deleted participants
+    { $match: { "joinedParticipants.isDeleted": true } },
+    { $count: "total" },
+  ]);
+
+  // Total Locks (from mode.lockEvents)
+  const totalLocksAggregation = await Mode.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
+    // Unwind lockEvents
+    { $unwind: "$lockEvents" },
+    // Only count locks
+    { $match: { "lockEvents.type": "lock" } },
+    { $count: "total" },
+  ]);
+
+  // Total Unlocks (from mode.lockEvents)
+  const totalUnlocksAggregation = await Mode.aggregate([
+    { $match: { isDeleted: { $ne: true } } },
+    // Unwind lockEvents
+    { $unwind: "$lockEvents" },
+    // Only count unlocks
+    { $match: { "lockEvents.type": "unlock" } },
+    { $count: "total" },
+  ]);
+
   return {
     totalUsers,
     activatedUsers,
     sevenDayActiveUsers,
     totalFocusSessionsThisWeek,
+    totalBreaksTaken,
+    cooldownCompleted,
+    usersWithPartners: uniqueUsersWithPartners,
+    jointSessions: jointSessionsAggregation[0]?.total || 0,
+    totalLocks: totalLocksAggregation[0]?.total || 0,
+    totalUnlocks: totalUnlocksAggregation[0]?.total || 0,
   };
 };
 
@@ -42,7 +122,7 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   const targetYear = year || currentYear;
   const targetDays = days || 7;
 
-  // Validate days
+  // validate days
   const validDays = [7, 14, 30];
   const actualDays = validDays.includes(targetDays) ? targetDays : 7;
 
@@ -53,11 +133,11 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   startDate.setDate(startDate.getDate() - (actualDays - 1));
   startDate.setHours(0, 0, 0, 0);
 
-  // Filter for the target year
+  // flter for the target year
   const startOfYear = new Date(targetYear, 0, 1);
   const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999);
 
-  // Get all sessions in the date range
+  // get all sessions in the date range
   const sessions = await FocusSession.find({
     startTime: {
       $gte: startDate > startOfYear ? startDate : startOfYear,
@@ -66,10 +146,10 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
     isDeleted: false,
   });
 
-  // Group by date
+  // group by date
   const dateWiseData: Record<string, number> = {};
 
-  // Initialize all dates in the range with 0
+  // initialize all dates in the range with 0
   for (let i = 0; i < actualDays; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
@@ -77,7 +157,7 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
     dateWiseData[dateKey] = 0;
   }
 
-  // Calculate focus minutes for each day
+  // calculate focus minutes for each day
   sessions.forEach(session => {
     const dateKey = session.startTime.toISOString().split('T')[0];
     let minutes = 0;
@@ -92,7 +172,7 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
     }
   });
 
-  // Convert to array format
+  // convert to array format
   const focusTimeOverTime = Object.entries(dateWiseData).map(([date, minutes]) => ({
     date,
     focusMinutes: minutes,

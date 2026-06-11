@@ -1,0 +1,9 @@
+Thu Jun 11 2026 10:28:28 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 10:28:28 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 10:28:28 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 10:29:52 [SQUALLY] info: 10.10.7.93 - POST /api/v1/personal-reminders 200 - 92.532 ms
+Thu Jun 11 2026 10:30:29 [SQUALLY] info: 10.10.7.93 - GET /api/v1/personal-reminders 200 - 73.841 ms
+Thu Jun 11 2026 10:30:38 [SQUALLY] info: 10.10.7.93 - POST /api/v1/personal-reminders 200 - 126.962 ms
+Thu Jun 11 2026 10:30:45 [SQUALLY] info: 10.10.7.93 - GET /api/v1/personal-reminders 200 - 73.914 ms
+Thu Jun 11 2026 10:30:50 [SQUALLY] info: 10.10.7.93 - POST /api/v1/personal-reminders 200 - 90.927 ms
+Thu Jun 11 2026 10:30:59 [SQUALLY] info: 🛑 Graceful shutdown started...

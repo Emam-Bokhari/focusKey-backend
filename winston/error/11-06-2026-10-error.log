@@ -1,0 +1,2 @@
+Thu Jun 11 2026 10:29:47 [SQUALLY] error: 10.10.7.93 - POST /api/v1/personal-reminders 401 - 33.486 ms
+Thu Jun 11 2026 10:30:25 [SQUALLY] error: 10.10.7.93 - GET /api/v1/personal-reminders 401 - 1.527 ms

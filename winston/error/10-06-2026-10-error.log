@@ -1,2 +1,0 @@
-Wed Jun 10 2026 10:20:35 [SQUALLY] error: 10.10.7.93 - POST /api/v1/friends/create-nudge 400 - 133.631 ms
-Wed Jun 10 2026 10:28:51 [SQUALLY] error: 10.10.7.93 - POST /api/v1/friends/unlock-nudge/6a28e6524918b4cfaa03785d 401 - 12.873 ms

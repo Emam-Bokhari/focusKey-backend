@@ -15,6 +15,7 @@ import { BreakRoutes } from "../modules/breaks/breaks.route";
 import { DashboardRoutes } from "../modules/dashboard/dashboard.route";
 import { FocusSessionRoutes } from "../modules/focusSession/focusSession.route";
 import { FriendsRoutes } from "../modules/friends/friends.route";
+import { PersonalReminderRoutes } from "../modules/personalReminder/personalReminder.route";
 
 const router = express.Router();
 
@@ -82,6 +83,10 @@ const apiRoutes = [
   {
     path: "/friends",
     route: FriendsRoutes,
+  },
+  {
+    path: "/personal-reminders",
+    route: PersonalReminderRoutes,
   },
 ];
 

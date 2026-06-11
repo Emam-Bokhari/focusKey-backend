@@ -18,6 +18,20 @@ const createPersonalReminder = catchAsync(async (req, res) => {
   });
 });
 
+const getPersonalReminders = catchAsync(async (req, res) => {
+  const userId = req.user.id;
+  const result =
+    await PersonalReminderServices.getPersonalRemindersFromDB(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "Personal reminders retrieved successfully",
+    data: result,
+  });
+});
+
 export const PersonalReminderControllers = {
   createPersonalReminder,
+  getPersonalReminders,
 };

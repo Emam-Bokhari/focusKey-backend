@@ -1,0 +1,9 @@
+Wed Jun 10 2026 17:0:14 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/unlock-nudge/6a28fe7601f0f43c55c97ca5 200 - 260.413 ms
+Wed Jun 10 2026 17:0:29 [SQUALLY] info: 10.10.7.93 - POST /api/v1/auth/login 200 - 350.149 ms
+Wed Jun 10 2026 17:0:43 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/current-nudge-status 200 - 499.759 ms
+Wed Jun 10 2026 17:1:14 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/unlock-nudge/6a28fe7601f0f43c55c97ca5 200 - 387.850 ms
+Wed Jun 10 2026 17:1:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/current-nudge-status 200 - 111.287 ms
+Wed Jun 10 2026 17:1:25 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/stats 200 - 344.394 ms
+Wed Jun 10 2026 17:1:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/stats 200 - 344.394 ms
+Wed Jun 10 2026 17:1:33 [SQUALLY] info: 10.10.7.93 - GET /api/v1/friends/users 200 - 285.118 ms
+Wed Jun 10 2026 17:1:48 [SQUALLY] info: 10.10.7.93 - POST /api/v1/friends/friend-details 200 - 338.179 ms

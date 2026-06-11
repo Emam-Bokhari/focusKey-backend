@@ -1,7 +1,7 @@
-import mongoose from "mongoose";
+import mongoose, { model } from "mongoose";
 import { TPersonalReminder } from "./personalReminder.interface";
 
-export const personalReminderSchema = new mongoose.Schema<TPersonalReminder>(
+const personalReminderSchema = new mongoose.Schema<TPersonalReminder>(
   {
     userId: {
       type: mongoose.Types.ObjectId,
@@ -16,4 +16,9 @@ export const personalReminderSchema = new mongoose.Schema<TPersonalReminder>(
     timestamps: true,
     versionKey: false,
   },
+);
+
+export const PersonalReminder = model<TPersonalReminder>(
+  "PersonalReminder",
+  personalReminderSchema,
 );

@@ -61,7 +61,7 @@ const getStatsFromDB = async () => {
 
   // Joint Sessions (nudges with at least 2 joined participants)
   const jointSessionsAggregation = await Nudge.aggregate([
-    { $match: { isDeleted: { $ne: true } } },
+    { $match: { isDeleted: false } },
     // Only count non-deleted joined participants
     {
       $addFields: {
@@ -82,7 +82,7 @@ const getStatsFromDB = async () => {
 
   // Unlock Attempts: count all soft-deleted joined participants across all nudges
   const unlockAttemptsAggregation = await Nudge.aggregate([
-    { $match: { isDeleted: { $ne: true } } },
+    { $match: { isDeleted: false } },
     // Unwind joinedParticipants
     { $unwind: "$joinedParticipants" },
     // Only count soft-deleted participants
@@ -92,7 +92,7 @@ const getStatsFromDB = async () => {
 
   // Total Locks (from mode.lockEvents)
   const totalLocksAggregation = await Mode.aggregate([
-    { $match: { isDeleted: { $ne: true } } },
+    { $match: { isDeleted: false } },
     // Unwind lockEvents
     { $unwind: "$lockEvents" },
     // Only count locks
@@ -102,7 +102,7 @@ const getStatsFromDB = async () => {
 
   // Total Unlocks (from mode.lockEvents)
   const totalUnlocksAggregation = await Mode.aggregate([
-    { $match: { isDeleted: { $ne: true } } },
+    { $match: { isDeleted: false } },
     // Unwind lockEvents
     { $unwind: "$lockEvents" },
     // Only count unlocks
@@ -144,8 +144,9 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   const startOfYear = new Date(targetYear, 0, 1);
   const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999);
 
-  // get all sessions in the date range
+  // get only sessions WITHOUT nudgeId (single sessions)
   const sessions = await FocusSession.find({
+    nudgeId: { $exists: false },
     startTime: {
       $gte: startDate > startOfYear ? startDate : startOfYear,
       $lte: endDate < endOfYear ? endDate : endOfYear,
@@ -160,13 +161,13 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   for (let i = 0; i < actualDays; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
-    const dateKey = date.toISOString().split("T")[0]; // YYYY-MM-DD
+    const dateKey = date.toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
     dateWiseData[dateKey] = 0;
   }
 
   // calculate focus minutes for each day
   sessions.forEach((session) => {
-    const dateKey = session.startTime.toISOString().split("T")[0];
+    const dateKey = session.startTime.toLocaleDateString("en-CA");
     let minutes = 0;
     if (session.status === "completed") {
       minutes = session.durationMinutes || 0;
@@ -191,6 +192,71 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
     year: targetYear,
     days: actualDays,
     focusTimeOverTime,
+  };
+};
+
+const getFocusTimeTogetherOverTime = async (year?: number, days?: number) => {
+  const currentYear = new Date().getFullYear();
+  const targetYear = year || currentYear;
+  const targetDays = days || 7;
+
+  const validDays = [7, 14, 30];
+  const actualDays = validDays.includes(targetDays) ? targetDays : 7;
+
+  const endDate = new Date();
+  endDate.setHours(23, 59, 59, 999);
+
+  const startDate = new Date();
+  startDate.setDate(startDate.getDate() - (actualDays - 1));
+  startDate.setHours(0, 0, 0, 0);
+
+  const startOfYear = new Date(targetYear, 0, 1);
+  const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999);
+
+  // get only sessions WITH nudgeId (joint sessions)
+  const sessions = await FocusSession.find({
+    nudgeId: { $exists: true, $ne: null },
+    startTime: {
+      $gte: startDate > startOfYear ? startDate : startOfYear,
+      $lte: endDate < endOfYear ? endDate : endOfYear,
+    },
+    isDeleted: false,
+  });
+
+  const dateWiseData: Record<string, number> = {};
+
+  for (let i = 0; i < actualDays; i++) {
+    const date = new Date(startDate);
+    date.setDate(date.getDate() + i);
+    const dateKey = date.toLocaleDateString("en-CA");
+    dateWiseData[dateKey] = 0;
+  }
+
+  sessions.forEach((session) => {
+    const dateKey = session.startTime.toLocaleDateString("en-CA");
+    let minutes = 0;
+    if (session.status === "completed") {
+      minutes = session.durationMinutes || 0;
+    } else {
+      const durationMs = new Date().getTime() - session.startTime.getTime();
+      minutes = Math.round(durationMs / 60000);
+    }
+    if (dateWiseData[dateKey] !== undefined) {
+      dateWiseData[dateKey] += minutes;
+    }
+  });
+
+  const focusTimeTogetherOverTime = Object.entries(dateWiseData).map(
+    ([date, minutes]) => ({
+      date,
+      focusMinutes: minutes,
+    }),
+  );
+
+  return {
+    year: targetYear,
+    days: actualDays,
+    focusTimeTogetherOverTime,
   };
 };
 
@@ -346,9 +412,62 @@ const getSingleUserAnalyticsFromDB = async (userId: string) => {
   };
 };
 
+
+
+const getEngagementStatsFromDB = async () => {
+  // Users With Partners
+  const usersWithPartnersAggregation = await Friend.aggregate([
+    { $match: { status: "accepted", isDeleted: false } },
+    { $project: { users: ["$userId", "$friendId"] } },
+    { $unwind: "$users" },
+    { $group: { _id: "$users" } },
+    { $count: "total" },
+  ]);
+  const usersWithPartners = usersWithPartnersAggregation[0]?.total || 0;
+
+  // Partner Requests Accepted
+  const partnerRequestsAccepted = await Friend.countDocuments({
+    status: "accepted",
+    isDeleted: false,
+  });
+
+  // Nudges Sent
+  const nudgesSent = await Nudge.countDocuments({ isDeleted: false });
+
+  // Joint Sessions
+  const jointSessionsAggregation = await Nudge.aggregate([
+    { $match: { isDeleted: false } },
+    {
+      $addFields: {
+        activeJoinedCount: {
+          $size: {
+            $filter: {
+              input: "$joinedParticipants",
+              as: "jp",
+              cond: { $eq: ["$$jp.isDeleted", false] },
+            },
+          },
+        },
+      },
+    },
+    { $match: { activeJoinedCount: { $gte: 2 } } },
+    { $count: "total" },
+  ]);
+  const jointSessions = jointSessionsAggregation[0]?.total || 0;
+
+  return {
+    usersWithPartners,
+    partnerRequestsAccepted,
+    nudgesSent,
+    jointSessions,
+  };
+};
+
 export const AnalyticsServices = {
   getStatsFromDB,
   getFocusTimeOverTime,
+  getFocusTimeTogetherOverTime,
   getUsersAnalyticsFromDB,
   getSingleUserAnalyticsFromDB,
+  getEngagementStatsFromDB,
 };

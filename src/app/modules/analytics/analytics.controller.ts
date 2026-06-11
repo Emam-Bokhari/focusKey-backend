@@ -28,6 +28,19 @@ const getFocusTimeOverTime = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getFocusTimeTogetherOverTime = catchAsync(async (req: Request, res: Response) => {
+  const year = req.query.year ? Number(req.query.year) : undefined;
+  const days = req.query.days ? Number(req.query.days) : undefined;
+  const result = await AnalyticsServices.getFocusTimeTogetherOverTime(year, days);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Focus time together over time data retrieved successfully",
+    data: result,
+  });
+});
+
 const getUsersAnalytics = catchAsync(async (req: Request, res: Response) => {
   // Support both "search" and "searchTerm"
   const query = { ...req.query };
@@ -61,9 +74,22 @@ const getSingleUserAnalytics = catchAsync(
   },
 );
 
+const getEngagementStats = catchAsync(async (req: Request, res: Response) => {
+  const result = await AnalyticsServices.getEngagementStatsFromDB();
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Engagement stats data retrieved successfully",
+    data: result,
+  });
+});
+
 export const AnalyticsControllers = {
   getStats,
   getFocusTimeOverTime,
+  getFocusTimeTogetherOverTime,
   getUsersAnalytics,
   getSingleUserAnalytics,
+  getEngagementStats,
 };

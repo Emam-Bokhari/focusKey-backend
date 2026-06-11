@@ -1,0 +1,25 @@
+Thu Jun 11 2026 11:0:24 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 11:0:24 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 11:0:24 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 11:0:34 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 11:0:34 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 11:0:34 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 11:1:52 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/focus-time-over-time 200 - 82.641 ms
+Thu Jun 11 2026 11:2:23 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 11:2:23 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 11:2:23 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 11:2:26 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Thu Jun 11 2026 11:2:26 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Thu Jun 11 2026 11:2:26 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Thu Jun 11 2026 11:2:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/focus-time-over-time 200 - 652.801 ms
+Thu Jun 11 2026 11:3:18 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 360.726 ms
+Thu Jun 11 2026 11:3:27 [SQUALLY] info: 10.10.7.93 - GET /api/v1/focus-sessions/stats 200 - 498.245 ms
+Thu Jun 11 2026 11:3:33 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/history 200 - 288.611 ms
+Thu Jun 11 2026 11:3:44 [SQUALLY] info: 10.10.7.93 - GET /api/v1/dashboard/focus-session 200 - 483.317 ms
+Thu Jun 11 2026 11:4:3 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/focus-time-over-time 200 - 73.356 ms
+Thu Jun 11 2026 11:4:25 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/focus-time-over-time?year=2025&days=14 200 - 76.039 ms
+Thu Jun 11 2026 11:4:32 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/focus-time-over-time?year=2026&days=14 200 - 72.134 ms
+Thu Jun 11 2026 11:4:44 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/focus-time-over-time?year=2026&days=30 200 - 72.312 ms
+Thu Jun 11 2026 11:5:49 [SQUALLY] info: 10.10.7.93 - GET /api/v1/analytics/focus-time-over-time 200 - 74.333 ms
+Thu Jun 11 2026 11:5:57 [SQUALLY] info: 🛑 Graceful shutdown started...
+Thu Jun 11 2026 11:5:57 [SQUALLY] info: ✅ Server closed

@@ -5,5 +5,6 @@ import { AnalyticsControllers } from "./analytics.controller";
 const router = express.Router();
 
 router.get("/stats", isAdmin, AnalyticsControllers.getStats);
+router.get("/focus-time-over-time", isAdmin, AnalyticsControllers.getFocusTimeOverTime);
 
 export const AnalyticsRoutes = router;

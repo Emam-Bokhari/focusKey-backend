@@ -15,6 +15,20 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getFocusTimeOverTime = catchAsync(async (req: Request, res: Response) => {
+  const year = req.query.year ? Number(req.query.year) : undefined;
+  const days = req.query.days ? Number(req.query.days) : undefined;
+  const result = await AnalyticsServices.getFocusTimeOverTime(year, days);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Focus time over time data retrieved successfully",
+    data: result,
+  });
+});
+
 export const AnalyticsControllers = {
   getStats,
+  getFocusTimeOverTime,
 };

@@ -1,0 +1,5 @@
+Wed Jul 29 2026 16:2:37 [SQUALLY] error: 10.10.7.10 - POST /api/v1/friends/create-nudge 400 - 147.603 ms
+Wed Jul 29 2026 16:2:44 [SQUALLY] error: 10.10.7.10 - PATCH /api/v1/modes/6a69b8c00711bd5db6f212ac/toggle-activation 403 - 209.402 ms
+Wed Jul 29 2026 16:2:54 [SQUALLY] error: 10.10.7.10 - POST /api/v1/friends/unlock-nudge/6a2a46a29f3a4dbcfac1bf66 404 - 107.882 ms
+Wed Jul 29 2026 16:19:18 [SQUALLY] error: 10.10.7.10 - POST /api/v1/friends/unlock-nudge/6a69cfe4beb2f89207cfdce7 404 - 105.609 ms
+Wed Jul 29 2026 16:27:29 [SQUALLY] error: 10.10.7.10 - PATCH /api/v1/users 400 - 48.990 ms

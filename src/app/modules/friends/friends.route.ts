@@ -22,7 +22,6 @@ router.post(
   FriendsController.joinNudge,
 );
 
-router.post("/friend-details", isUser, FriendsController.getFriendDetails);
 
 router.get("/nudge-history", isUser, FriendsController.getNudgeHistory);
 
@@ -45,5 +44,9 @@ router.get(
   isUser,
   FriendsController.getCurrentNudgeStatus,
 );
+
+router.post("/add-friend", isUser, FriendsController.addFriend);
+router.get("/list", isUser, FriendsController.getFriends);
+router.post("/remove-participant", isUser, FriendsController.removeNudgeParticipant);
 
 export const FriendsRoutes = router;

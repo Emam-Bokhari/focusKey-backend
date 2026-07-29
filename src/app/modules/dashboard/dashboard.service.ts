@@ -9,15 +9,22 @@ const getDashboardData = async (userId: string) => {
 
   // 1. Get User Info
   const user = await User.findById(userId).select(
-    "name email phone countryCode profileImage",
+    "name email phone countryCode profileImage installedApps",
   );
 
-  // 2. Get Active Mode
-  const activeMode = await Mode.findOne({
+  // 2. Get Active Focus Session (prioritize active session for mode configuration)
+  const activeSession = await FocusSession.findOne({
     userId: userObjectId,
-    isActive: true,
-    isDeleted: false,
-  });
+    status: "active",
+  }).populate("modeId");
+
+  const activeMode = activeSession
+    ? (activeSession.modeId as any)
+    : await Mode.findOne({
+        userId: userObjectId,
+        isActive: true,
+        isDeleted: false,
+      });
 
   // 3. Check for Active Global Break
   const activeBreak = await Break.findOne({
@@ -189,12 +196,21 @@ const getDashboardData = async (userId: string) => {
       activeModeName: activeMode?.name || null,
       // activeModeId: activeMode?._id || null,
     },
-    activeMode: activeMode
-      ? {
-          ...activeMode.toObject(),
-          isLocked, // Include the lock status in mode data too
-        }
-      : null,
+    activeMode: (() => {
+      if (!activeMode) return null;
+      const installedAppPackages = new Set(
+        (user?.installedApps || []).map((app) => app.packageName)
+      );
+      const filteredLockedApps = (activeMode.lockedApps || []).filter((app: any) =>
+        installedAppPackages.has(app.packageName)
+      );
+      return {
+        ...activeMode.toObject(),
+        lockedApps: filteredLockedApps,
+        totalLockedApps: filteredLockedApps.length,
+        isLocked,
+      };
+    })(),
     focusStats: {
       todayMinutes: todayFocusMinutes,
       weekMinutes: weekFocusMinutes,

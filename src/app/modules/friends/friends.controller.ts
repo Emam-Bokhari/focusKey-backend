@@ -63,20 +63,6 @@ const joinNudge = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getFriendDetails = catchAsync(async (req: Request, res: Response) => {
-  const userId = (req.user as any).id;
-  const { friendIds } = req.body; // Expecting an array of IDs
-
-  const result = await FriendsService.getFriendDetailsFromDB(userId, friendIds);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Friend details fetched successfully",
-    data: result,
-  });
-});
-
 const getNudgeHistory = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
   const { page, limit } = req.query;
@@ -153,14 +139,75 @@ const getCurrentNudgeStatus = catchAsync(
   },
 );
 
+const addFriend = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const friendId = req.body.friendId || req.params.friendId;
+
+  if (!friendId) {
+    sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "friendId is required",
+    });
+    return;
+  }
+
+  const result = await FriendsService.addFriendToDB(userId, friendId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Friend added successfully",
+    data: result,
+  });
+});
+
+const getFriends = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+
+  const result = await FriendsService.getFriendsFromDB(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Friends fetched successfully",
+    data: result,
+  });
+});
+
+const removeNudgeParticipant = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const { nudgeId, participantId } = req.body;
+
+  if (!nudgeId || !participantId) {
+    sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "nudgeId and participantId are required",
+    });
+    return;
+  }
+
+  const result = await FriendsService.removeNudgeParticipantFromDB(userId, nudgeId, participantId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Participant removed from nudge successfully",
+    data: result,
+  });
+});
+
 export const FriendsController = {
   getUsers,
   createNudge,
   joinNudge,
-  getFriendDetails,
   getNudgeHistory,
   removeFriend,
   unlockNudge,
   takeNudgeBreak,
   getCurrentNudgeStatus,
+  addFriend,
+  getFriends,
+  removeNudgeParticipant,
 };

@@ -1,0 +1,2 @@
+Wed Jul 29 2026 15:50:6 [SQUALLY] error: 10.10.7.10 - GET /api/v1/friends 404 - 0.716 ms
+Wed Jul 29 2026 15:59:12 [SQUALLY] error: 10.10.7.10 - POST /api/v1/friends/create-nudge 400 - 135.064 ms

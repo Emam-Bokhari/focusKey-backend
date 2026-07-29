@@ -65,6 +65,17 @@ const createUserToDB = async (payload: any) => {
     throw new ApiError(StatusCodes.CONFLICT, "This Email already taken");
   }
 
+  if (!payload.userName && payload.email) {
+    const baseUsername = payload.email.split("@")[0];
+    let userName = baseUsername;
+    let counter = 1;
+    while (await User.findOne({ userName })) {
+      userName = `${baseUsername}${counter}`;
+      counter++;
+    }
+    payload.userName = userName;
+  }
+
   const createUser = await User.create(payload);
   if (!createUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");

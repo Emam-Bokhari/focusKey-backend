@@ -412,8 +412,6 @@ const getSingleUserAnalyticsFromDB = async (userId: string) => {
   };
 };
 
-
-
 const getEngagementStatsFromDB = async () => {
   // Users With Partners
   const usersWithPartnersAggregation = await Friend.aggregate([

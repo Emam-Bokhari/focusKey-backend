@@ -16,7 +16,21 @@ const startBreak = async (userId: string) => {
   if (!activeMode) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "No active mode found to take a break",
+      "You can only take a break when focus mode is locked",
+    );
+  }
+
+  // Check if there is an active break (global or nudge break) that makes the state already unlocked
+  const activeBreak = await Break.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    status: "active",
+    endTime: { $gt: new Date() },
+  });
+
+  if (activeBreak) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot take a break when you are already in an unlocked state",
     );
   }
 
@@ -55,21 +69,6 @@ const startBreak = async (userId: string) => {
 
   if (breaksToday >= breaksPerDay) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached");
-  }
-
-  // 3. Check if there's an already active global break
-  const existingActiveBreak = await Break.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    nudgeId: { $exists: false },
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
-
-  if (existingActiveBreak) {
-    throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      "A break is already in progress",
-    );
   }
 
   // 4. Create new break
@@ -120,34 +119,70 @@ const getActiveBreakStatus = async (userId: string) => {
     });
   }
 
-  if (!activeBreak) {
-    const startOfDay = new Date();
-    startOfDay.setHours(0, 0, 0, 0);
-    const endOfDay = new Date();
-    endOfDay.setHours(23, 59, 59, 999);
-
-    const breaksToday = await Break.countDocuments({
-      userId: new mongoose.Types.ObjectId(userId),
-      nudgeId: { $exists: false },
-      createdAt: { $gte: startOfDay, $lte: endOfDay },
-    });
-
-    return {
-      isBreakActive: false,
-      remainingBreaksToday: Math.max(0, breakConfig.breaksPerDay - breaksToday),
-    };
-  }
-
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date();
   endOfDay.setHours(23, 59, 59, 999);
+
+  const startOfWeek = new Date();
+  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
+  startOfWeek.setHours(0, 0, 0, 0);
+
+  // Fetch breaks for today to calculate todayMinutes
+  const todayBreaks = await Break.find({
+    userId: new mongoose.Types.ObjectId(userId),
+    $or: [
+      { createdAt: { $gte: startOfDay, $lte: endOfDay } },
+      { status: "active" },
+    ],
+  });
+
+  // Fetch breaks for this week to calculate weekMinutes
+  const weekBreaks = await Break.find({
+    userId: new mongoose.Types.ObjectId(userId),
+    $or: [{ createdAt: { $gte: startOfWeek } }, { status: "active" }],
+  });
+
+  let todayMinutes = 0;
+  todayBreaks.forEach((breakItem) => {
+    if (breakItem.status === "completed") {
+      todayMinutes += breakItem.durationMinutes || 0;
+    } else {
+      const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+      todayMinutes += Math.round(durationMs / 60000);
+    }
+  });
+  todayMinutes = Math.max(0, todayMinutes);
+
+  let weekMinutes = 0;
+  weekBreaks.forEach((breakItem) => {
+    if (breakItem.status === "completed") {
+      weekMinutes += breakItem.durationMinutes || 0;
+    } else {
+      const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+      weekMinutes += Math.round(durationMs / 60000);
+    }
+  });
+  weekMinutes = Math.max(0, weekMinutes);
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
     nudgeId: { $exists: false },
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
+
+  const breakStats = {
+    todayMinutes,
+    weekMinutes,
+  };
+
+  if (!activeBreak) {
+    return {
+      isBreakActive: false,
+      remainingBreaksToday: Math.max(0, breakConfig.breaksPerDay - breaksToday),
+      breakStats,
+    };
+  }
 
   const remainingTimeMs = activeBreak.endTime.getTime() - now.getTime();
   const remainingMinutes = Math.max(0, Math.ceil(remainingTimeMs / 60000));
@@ -159,6 +194,7 @@ const getActiveBreakStatus = async (userId: string) => {
       remainingMinutes,
     },
     remainingBreaksToday: Math.max(0, breakConfig.breaksPerDay - breaksToday),
+    breakStats,
   };
 };
 

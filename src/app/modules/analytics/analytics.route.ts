@@ -6,7 +6,11 @@ const router = express.Router();
 
 router.get("/stats", isAdmin, AnalyticsControllers.getStats);
 
-router.get("/engagement-stats", isAdmin, AnalyticsControllers.getEngagementStats);
+router.get(
+  "/engagement-stats",
+  isAdmin,
+  AnalyticsControllers.getEngagementStats,
+);
 
 router.get(
   "/focus-time-over-time",

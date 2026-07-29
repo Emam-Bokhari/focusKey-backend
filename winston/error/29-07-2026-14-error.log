@@ -1,2 +1,3 @@
 Wed Jul 29 2026 14:23:57 [SQUALLY] error: uncaughtException Detected listen EADDRINUSE: address already in use 10.10.7.10:5002
 Wed Jul 29 2026 14:25:21 [SQUALLY] error: 10.10.7.10 - PATCH /api/v1/modes/6a69b8c00711bd5db6f212ac 500 - 31.941 ms
+Wed Jul 29 2026 14:48:56 [SQUALLY] error: 10.10.7.10 - POST /api/v1/breaks/start 400 - 101.796 ms

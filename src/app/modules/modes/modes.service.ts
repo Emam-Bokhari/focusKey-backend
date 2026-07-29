@@ -5,6 +5,7 @@ import { Mode } from "./modes.model";
 import mongoose from "mongoose";
 import { Break } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
+import { DashboardService } from "../dashboard/dashboard.service";
 
 const ensureDefaultModesExist = async (userId: string): Promise<void> => {
   const count = await Mode.countDocuments({
@@ -384,6 +385,30 @@ const getTotalFocusApps = async (userId: string) => {
   return allLockedApps;
 };
 
+const getLockStatusFromDB = async (userId: string) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const dashboardData = await DashboardService.getDashboardData(userId);
+
+  // Find Active Focus Session
+  const activeSession = await FocusSession.findOne({
+    userId: userObjectId,
+    status: "active",
+  });
+
+  return {
+    ...dashboardData,
+    isLocked: dashboardData.lockStatus.isLocked,
+    activeSession: activeSession
+      ? {
+          ...activeSession.toObject(),
+          elapsedMinutes: Math.round(
+            (new Date().getTime() - activeSession.startTime.getTime()) / 60000,
+          ),
+        }
+      : null,
+  };
+};
+
 export const ModeService = {
   createModeToDB,
   getModesFromDB,
@@ -395,5 +420,6 @@ export const ModeService = {
   getModeAppDetails,
   getSingleModeAppDetails,
   getTotalFocusApps,
+  getLockStatusFromDB,
   ensureDefaultModesExist,
 };

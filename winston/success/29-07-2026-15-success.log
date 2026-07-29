@@ -1,0 +1,11 @@
+Wed Jul 29 2026 15:0:22 [SQUALLY] info: 10.10.7.10 - GET /api/v1/breaks/remaining 200 - 214.713 ms
+Wed Jul 29 2026 15:1:12 [SQUALLY] info: 10.10.7.10 - GET /api/v1/dashboard/history 200 - 909.033 ms
+Wed Jul 29 2026 15:3:30 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 15:3:30 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 15:3:30 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 15:3:33 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 15:3:33 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 15:3:33 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 15:3:37 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 15:3:37 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 15:3:37 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

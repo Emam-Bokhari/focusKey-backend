@@ -130,6 +130,18 @@ const getTotalFocusApps = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getLockStatus = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const result = await ModeService.getLockStatusFromDB(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Lock status retrieved successfully",
+    data: result,
+  });
+});
+
 export const ModeController = {
   createMode,
   getModes,
@@ -141,4 +153,5 @@ export const ModeController = {
   getModeAppDetails,
   getSingleModeAppDetails,
   getTotalFocusApps,
+  getLockStatus,
 };

@@ -1,3 +1,0 @@
-Tue Jul 28 2026 15:0:14 [SQUALLY] info: 10.10.26.162 - POST /api/v1/auth/forget-password 200 - 110.837 ms
-Tue Jul 28 2026 15:0:18 [SQUALLY] info: Mail send successfully
-Tue Jul 28 2026 15:10:46 [SQUALLY] info: 10.10.26.162 - GET /api/v1/rules/about 200 - 51.041 ms

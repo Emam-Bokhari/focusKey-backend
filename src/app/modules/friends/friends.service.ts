@@ -591,35 +591,36 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
     );
   }
 
-  // 3. Check if user already has a break in progress (based on time)
-  const lastBreak = await Break.findOne({
+  // 3. Check if user already has any active break (global or nudge) in progress
+  const activeBreak = await Break.findOne({
     userId: userObjectId,
-    nudgeId: nudgeObjectId,
-  }).sort({ startTime: -1 });
+    status: "active",
+    endTime: { $gt: new Date() },
+  });
 
-  if (lastBreak && lastBreak.status === "active") {
-    const now = new Date();
-    const elapsedMinutes =
-      (now.getTime() - lastBreak.startTime.getTime()) / 60000;
-    const durationLimit = nudge.breakConfig?.breakDurationMinutes || 0;
-
-    if (elapsedMinutes < durationLimit) {
-      const remainingMinutes = Math.ceil(durationLimit - elapsedMinutes);
+  if (activeBreak) {
+    if (
+      activeBreak.nudgeId &&
+      activeBreak.nudgeId.toString() === nudgeObjectId.toString()
+    ) {
+      const now = new Date();
+      const elapsedMinutes =
+        (now.getTime() - activeBreak.startTime.getTime()) / 60000;
+      const durationLimit = nudge.breakConfig?.breakDurationMinutes || 0;
+      const remainingMinutes = Math.max(
+        0,
+        Math.ceil(durationLimit - elapsedMinutes),
+      );
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         `You are already on a break. Please wait ${remainingMinutes} more minute(s) for it to finish automatically.`,
       );
-    } else {
-      // If time passed, we can implicitly treat it as completed if we want,
-      // but for simplicity, we just allow a new break if the limit allows.
-      await Break.findByIdAndUpdate(lastBreak._id, {
-        status: "completed",
-        durationMinutes: durationLimit,
-        endTime: new Date(
-          lastBreak.startTime.getTime() + durationLimit * 60000,
-        ),
-      });
     }
+
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot take a break when you are already in an unlocked state",
+    );
   }
 
   // 4. Check breaksPerDay limit
@@ -642,7 +643,7 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
       StatusCodes.BAD_REQUEST,
       `You have reached your daily break limit of ${maxBreaks} for this nudge. No breaks remaining today.`,
     );
-  } 
+  }
 
   // 5. Create a new break with calculated endTime
   const startTime = new Date();

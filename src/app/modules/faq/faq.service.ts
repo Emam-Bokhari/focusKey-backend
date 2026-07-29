@@ -36,7 +36,6 @@ const updateFaqToDB = async (id: string, payload: TFaq) => {
   return updatedFaq;
 };
 
-
 const deleteFaqToDB = async (id: string) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid ID");

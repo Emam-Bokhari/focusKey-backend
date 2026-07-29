@@ -317,7 +317,7 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
   };
 };
 
-const getModeAppCounts = async (userId: string) => {
+const getModeAppCount = async (userId: string) => {
   await ensureDefaultModesExist(userId);
   const modes = await Mode.find({ userId, isDeleted: false });
 
@@ -416,7 +416,7 @@ export const ModeService = {
   updateModeToDB,
   deleteModeFromDB,
   toggleModeActivation,
-  getModeAppCounts,
+  getModeAppCount,
   getModeAppDetails,
   getSingleModeAppDetails,
   getTotalFocusApps,

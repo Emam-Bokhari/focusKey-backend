@@ -9,7 +9,7 @@ router
   .post(isUser, ModeController.createMode)
   .get(isUser, ModeController.getModes);
 
-router.get("/app-counts", isUser, ModeController.getModeAppCounts);
+router.get("/app-count", isUser, ModeController.getModeAppCount);
 router.get("/app-details", isUser, ModeController.getModeAppDetails);
 router.get("/total-focus-apps", isUser, ModeController.getTotalFocusApps);
 router.get("/lock-status", isUser, ModeController.getLockStatus);

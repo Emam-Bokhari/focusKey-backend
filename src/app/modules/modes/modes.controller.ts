@@ -79,14 +79,14 @@ const toggleModeActivation = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getModeAppCounts = catchAsync(async (req: Request, res: Response) => {
+const getModeAppCount = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await ModeService.getModeAppCounts(userId);
+  const result = await ModeService.getModeAppCount(userId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Mode app counts retrieved successfully",
+    message: "Mode app count retrieved successfully",
     data: result,
   });
 });
@@ -149,7 +149,7 @@ export const ModeController = {
   updateMode,
   deleteMode,
   toggleModeActivation,
-  getModeAppCounts,
+  getModeAppCount,
   getModeAppDetails,
   getSingleModeAppDetails,
   getTotalFocusApps,

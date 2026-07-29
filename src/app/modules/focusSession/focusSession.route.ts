@@ -5,6 +5,7 @@ import { FocusSessionController } from "./focusSession.controller";
 const router = express.Router();
 
 router.get("/history", isUser, FocusSessionController.getFocusHistory);
+router.get("/history-v2", isUser, FocusSessionController.getFocusHistoryV2);
 
 router.get("/stats", isUser, FocusSessionController.getFocusStats);
 

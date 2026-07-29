@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import { FocusSession } from "./focusSession.model";
 import { Break, BreakConfig } from "../breaks/breaks.model";
 import { Mode } from "../modes/modes.model";
+import { ModeService } from "../modes/modes.service";
 
 const formatDuration = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -254,6 +255,236 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
   };
 };
 
+const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  // Ensure default modes exist for this user first
+  await ModeService.ensureDefaultModesExist(userId);
+
+  // Retrieve all modes for the user to be returned in the response
+  const modes = await Mode.find({ userId: userObjectId, isDeleted: false }).select("_id name icon");
+
+  const query: any = { userId: userObjectId };
+  if (modeId) {
+    query.modeId = new mongoose.Types.ObjectId(modeId);
+  }
+
+  // 1. Total Focus Time (Filtered by mode if provided)
+  const allSessions = await FocusSession.find(query);
+  const allBreaks = await Break.find(query);
+
+  let totalMinutes = 0;
+  allSessions.forEach((s) => {
+    if (s.status === "completed") {
+      totalMinutes += s.durationMinutes || 0;
+    } else {
+      const diff = new Date().getTime() - s.startTime.getTime();
+      totalMinutes += Math.round(diff / 60000);
+    }
+  });
+
+  allBreaks.forEach((b) => {
+    if (b.status === "completed") {
+      totalMinutes -= b.durationMinutes || 0;
+    } else {
+      const diff = new Date().getTime() - b.startTime.getTime();
+      totalMinutes -= Math.round(diff / 60000);
+    }
+  });
+  totalMinutes = Math.max(0, totalMinutes);
+
+  // 2. First Focus Date & Since Text
+  const firstSession = await FocusSession.findOne({
+    userId: userObjectId,
+  }).sort({
+    startTime: 1,
+  });
+  const firstFocusDate = firstSession ? firstSession.startTime : null;
+
+  const formatSinceDate = (date: Date | null) => {
+    if (!date) return "No focus history";
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    return `Since ${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
+  };
+  const sinceDate = formatSinceDate(firstFocusDate);
+
+  // 3. 7 Days Stats (Day-wise: Sun, Mon, etc.)
+  const sevenDaysStats = [];
+  for (let i = 6; i >= 0; i--) {
+    const date = new Date();
+    date.setDate(date.getDate() - i);
+    date.setHours(0, 0, 0, 0);
+    const startOfDay = new Date(date);
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+    const dayLabel = dayName[0]; // e.g. "M", "T", "W" etc.
+
+    const daySessions = await FocusSession.find({
+      ...query,
+      $or: [
+        { startTime: { $gte: startOfDay, $lte: endOfDay } },
+        { endTime: { $gte: startOfDay, $lte: endOfDay } },
+        { status: "active", startTime: { $lte: endOfDay } },
+      ],
+    });
+
+    const dayBreaks = await Break.find({
+      ...query,
+      $or: [
+        { startTime: { $gte: startOfDay, $lte: endOfDay } },
+        { endTime: { $gte: startOfDay, $lte: endOfDay } },
+        { status: "active", startTime: { $lte: endOfDay } },
+      ],
+    });
+
+    let dayMinutes = 0;
+    daySessions.forEach((s) => {
+      const sStart = s.startTime > startOfDay ? s.startTime : startOfDay;
+      let sEnd = s.status === "active" ? new Date() : s.endTime || new Date();
+
+      if (sEnd > endOfDay) sEnd = endOfDay;
+
+      if (sEnd > sStart) {
+        dayMinutes += Math.round((sEnd.getTime() - sStart.getTime()) / 60000);
+      }
+    });
+
+    dayBreaks.forEach((b) => {
+      const bStart = b.startTime > startOfDay ? b.startTime : startOfDay;
+      let bEnd = b.status === "active" ? new Date() : b.endTime || new Date();
+
+      if (bEnd > endOfDay) bEnd = endOfDay;
+
+      if (bEnd > bStart) {
+        dayMinutes -= Math.round((bEnd.getTime() - bStart.getTime()) / 60000);
+      }
+    });
+
+    const maxDayMinutes = Math.max(0, dayMinutes);
+    sevenDaysStats.push({
+      day: dayName,
+      dayLabel,
+      date: date.toISOString().split("T")[0],
+      totalMinutes: maxDayMinutes,
+      formatted: formatDuration(maxDayMinutes).formatted,
+    });
+  }
+
+  // 4. Detailed History (Grouped by date)
+  const historyLogs = await FocusSession.find(query)
+    .populate("modeId")
+    .sort({ startTime: -1 });
+
+  const groupedHistory: any = {};
+
+  const formatTimeV2 = (date: Date) => {
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
+
+  const formatHeaderDate = (dateStr: string) => {
+    const todayStr = new Date().toISOString().split("T")[0];
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yesterdayStr = yesterday.toISOString().split("T")[0];
+
+    if (dateStr === todayStr) {
+      return "TODAY";
+    }
+    if (dateStr === yesterdayStr) {
+      return "YESTERDAY";
+    }
+
+    const [year, month, day] = dateStr.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    return `${monthNames[date.getMonth()]} ${date.getDate()}`;
+  };
+
+  for (const session of historyLogs) {
+    const dateKey = session.startTime.toISOString().split("T")[0];
+    if (!groupedHistory[dateKey]) {
+      groupedHistory[dateKey] = {
+        date: dateKey,
+        dateHeader: formatHeaderDate(dateKey),
+        totalFocusMinutes: 0,
+        sessions: [],
+      };
+    }
+
+    let sessionMinutes = 0;
+    if (session.status === "completed") {
+      sessionMinutes = session.durationMinutes || 0;
+    } else {
+      sessionMinutes = Math.round(
+        (new Date().getTime() - session.startTime.getTime()) / 60000,
+      );
+    }
+
+    // Find breaks within this session's time range to subtract
+    const sessionBreaks = await Break.find({
+      userId: userObjectId,
+      modeId: session.modeId,
+      startTime: { $gte: session.startTime },
+      endTime:
+        session.status === "completed"
+          ? { $lte: session.endTime }
+          : { $exists: true },
+    });
+
+    let sessionBreakMinutes = 0;
+    sessionBreaks.forEach((b) => {
+      if (b.status === "completed") {
+        sessionBreakMinutes += b.durationMinutes || 0;
+      } else {
+        sessionBreakMinutes += Math.round(
+          (new Date().getTime() - b.startTime.getTime()) / 60000,
+        );
+      }
+    });
+
+    const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
+    const duration = formatDuration(netSessionMinutes);
+    const timeRange = `${formatTimeV2(session.startTime)} - ${
+      session.endTime ? formatTimeV2(session.endTime) : "Active"
+    }`;
+
+    groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
+    groupedHistory[dateKey].sessions.push({
+      modeName: (session.modeId as any)?.name,
+      startTime: session.startTime,
+      endTime: session.endTime || null,
+      timeRange,
+      duration,
+      status: session.status,
+    });
+  }
+
+  const history = Object.values(groupedHistory).map((day: any) => ({
+    ...day,
+    totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
+  }));
+
+  return {
+    modes,
+    summary: {
+      totalFocusTime: formatDuration(totalMinutes),
+      firstFocusDate,
+      sinceDate,
+    },
+    sevenDaysStats,
+    history,
+  };
+};
+
 const getFocusStatsFromDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
@@ -407,6 +638,7 @@ const clearAllDataFromDB = async (userId: string) => {
 
 export const FocusSessionService = {
   getFocusHistoryFromDB,
+  getFocusHistoryV2FromDB,
   getFocusStatsFromDB,
   exportFocusHistoryToCSVFromDB,
   clearAllDataFromDB,

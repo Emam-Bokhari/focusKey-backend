@@ -21,6 +21,23 @@ const getFocusHistory = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getFocusHistoryV2 = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const { modeId } = req.query;
+
+  const result = await FocusSessionService.getFocusHistoryV2FromDB(
+    userId,
+    modeId as string,
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Focus history retrieved successfully",
+    data: result,
+  });
+});
+
 const getFocusStats = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const result = await FocusSessionService.getFocusStatsFromDB(userId);
@@ -63,6 +80,7 @@ const clearAllData = catchAsync(async (req: Request, res: Response) => {
 
 export const FocusSessionController = {
   getFocusHistory,
+  getFocusHistoryV2,
   getFocusStats,
   exportHistoryToCSV,
   clearAllData,

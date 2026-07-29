@@ -43,3 +43,15 @@ Wed Jul 29 2026 16:26:16 [SQUALLY] info: 10.10.7.10 - PATCH /api/v1/users 200 - 
 Wed Jul 29 2026 16:26:34 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 507.590 ms
 Wed Jul 29 2026 16:27:32 [SQUALLY] info: 10.10.7.10 - PATCH /api/v1/users 200 - 142.890 ms
 Wed Jul 29 2026 16:27:40 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 498.568 ms
+Wed Jul 29 2026 16:28:52 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 16:28:52 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 16:28:52 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 16:31:1 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 518.510 ms
+Wed Jul 29 2026 16:31:10 [SQUALLY] info: 10.10.7.10 - POST /api/v1/friends/take-nudge-break/6a69d3c951aecbeb7a092af6 200 - 301.341 ms
+Wed Jul 29 2026 16:31:22 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 508.618 ms
+Wed Jul 29 2026 16:31:40 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 521.712 ms
+Wed Jul 29 2026 16:31:43 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 513.126 ms
+Wed Jul 29 2026 16:31:44 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 505.875 ms
+Wed Jul 29 2026 16:31:55 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 505.136 ms
+Wed Jul 29 2026 16:32:17 [SQUALLY] info: 10.10.7.10 - GET /api/v1/friends/current-nudge-status 200 - 502.972 ms
+Wed Jul 29 2026 16:36:19 [SQUALLY] info: [32m🚀 Database connected successfully[39m

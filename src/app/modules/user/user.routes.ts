@@ -26,7 +26,10 @@ router.get("/admins", isAdmin, UserControllers.getAdmin);
 
 router
   .route("/")
-  .post(UserControllers.createUser)
+  .post(
+    validateRequest(UserValidation.createUserZodSchema),
+    UserControllers.createUser,
+  )
   .get(isAdmin, UserControllers.getAllUsers)
   .patch(
     isAuthenticated,

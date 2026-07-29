@@ -642,7 +642,7 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
       StatusCodes.BAD_REQUEST,
       `You have reached your daily break limit of ${maxBreaks} for this nudge. No breaks remaining today.`,
     );
-  }
+  } 
 
   // 5. Create a new break with calculated endTime
   const startTime = new Date();

@@ -1,0 +1,34 @@
+Wed Jul 29 2026 14:20:8 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:20:8 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:20:8 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 14:20:50 [SQUALLY] info: 🛑 Graceful shutdown started...
+Wed Jul 29 2026 14:20:57 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:20:57 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:20:57 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 14:23:5 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:23:5 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:23:5 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 14:23:13 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:23:13 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:23:13 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 14:23:25 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:23:25 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:23:25 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 14:23:32 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:23:32 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:23:32 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 14:23:57 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:23:57 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:23:57 [SQUALLY] info: 🛑 Graceful shutdown started...
+Wed Jul 29 2026 14:23:57 [SQUALLY] info: ✅ Server closed
+Wed Jul 29 2026 14:24:16 [SQUALLY] info: 🛑 Graceful shutdown started...
+Wed Jul 29 2026 14:24:22 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:24:22 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:24:22 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m
+Wed Jul 29 2026 14:24:32 [SQUALLY] info: 10.10.7.10 - GET /api/v1/modes 200 - 303.834 ms
+Wed Jul 29 2026 14:25:34 [SQUALLY] info: 10.10.7.10 - PATCH /api/v1/modes/6a69b8c00711bd5db6f212ac 200 - 180.253 ms
+Wed Jul 29 2026 14:25:43 [SQUALLY] info: 10.10.7.10 - GET /api/v1/modes 200 - 233.005 ms
+Wed Jul 29 2026 14:27:23 [SQUALLY] info: 10.10.7.10 - PATCH /api/v1/modes/6a69b8c00711bd5db6f212ac/toggle-activation 200 - 519.726 ms
+Wed Jul 29 2026 14:29:5 [SQUALLY] info: [32m🚀 Database connected successfully[39m
+Wed Jul 29 2026 14:29:5 [SQUALLY] info: ✅ Break Cron Job initialized (Running every minute)
+Wed Jul 29 2026 14:29:5 [SQUALLY] info: [33m♻️ Application listening on port:5002[39m

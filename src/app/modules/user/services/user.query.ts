@@ -5,6 +5,7 @@ import ApiError from "../../../../errors/ApiErrors";
 import { USER_ROLES } from "../../../../enums/user";
 import QueryBuilder from "../../../builder/queryBuilder";
 import { IUser } from "../user.interface";
+import { ModeService } from "../../modes/modes.service";
 
 const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {
   const { id } = user;
@@ -13,6 +14,8 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
+
+  await ModeService.ensureDefaultModesExist(result._id.toString());
 
   return result;
 };

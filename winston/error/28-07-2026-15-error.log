@@ -1,0 +1,5 @@
+Tue Jul 28 2026 15:1:57 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/verify-email 400 - 56.148 ms
+Tue Jul 28 2026 15:2:34 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/verify-email 400 - 52.889 ms
+Tue Jul 28 2026 15:3:59 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/verify-email 400 - 50.255 ms
+Tue Jul 28 2026 15:5:5 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/google-login 400 - 6.425 ms
+Tue Jul 28 2026 15:43:15 [SQUALLY] error: 10.10.26.162 - POST /api/v1/users 409 - 56.192 ms

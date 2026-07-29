@@ -6,8 +6,50 @@ import mongoose from "mongoose";
 import { Break } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
 
+const ensureDefaultModesExist = async (userId: string): Promise<void> => {
+  const count = await Mode.countDocuments({
+    userId: new mongoose.Types.ObjectId(userId),
+    isDeleted: { $in: [true, false] },
+  });
+
+  if (count === 0) {
+    const defaultModes = [
+      {
+        userId: new mongoose.Types.ObjectId(userId),
+        name: "Deep work.",
+        description: "Blocks social media, games, and video.",
+        icon: "work",
+        lockedApps: [],
+        totalLockedApps: 0,
+        isActive: false,
+      },
+      {
+        userId: new mongoose.Types.ObjectId(userId),
+        name: "Step away.",
+        description: "Blocks all social apps. Keeps utilities.",
+        icon: "study",
+        lockedApps: [],
+        totalLockedApps: 0,
+        isActive: false,
+      },
+      {
+        userId: new mongoose.Types.ObjectId(userId),
+        name: "Nothing gets through.",
+        description: "Blocks everything except calls and messages.",
+        icon: "sleep",
+        lockedApps: [],
+        totalLockedApps: 0,
+        isActive: false,
+      },
+    ];
+    await Mode.create(defaultModes);
+  }
+};
+
 const createModeToDB = async (payload: IMode, userId: string): Promise<any> => {
+  await ensureDefaultModesExist(userId);
   payload.userId = new mongoose.Types.ObjectId(userId);
+  payload.isActive = false; // ensure new mode is not active by default
   const result = await Mode.create(payload);
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create mode");
@@ -20,6 +62,7 @@ const createModeToDB = async (payload: IMode, userId: string): Promise<any> => {
 };
 
 const getModesFromDB = async (userId: string) => {
+  await ensureDefaultModesExist(userId);
   const modes = await Mode.find({ userId });
 
   if (!modes || modes.length === 0) {
@@ -80,6 +123,7 @@ const getSingleModeFromDB = async (modeId: string) => {
 };
 
 const updateModeToDB = async (modeId: string, payload: Partial<IMode>) => {
+  delete payload.isActive; // prevent updating activation status directly
   if (payload.lockedApps) {
     payload.totalLockedApps = payload.lockedApps.length;
   }
@@ -142,6 +186,7 @@ const deleteModeFromDB = async (modeId: string) => {
 };
 
 const toggleModeActivation = async (modeId: string, userId: string) => {
+  await ensureDefaultModesExist(userId);
   const mode = await Mode.findById(modeId);
 
   if (!mode) {
@@ -158,6 +203,20 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
   const newStatus = !mode.isActive;
 
   if (newStatus) {
+    // Check if there is already another active mode for this user
+    const activeMode = await Mode.findOne({
+      userId: new mongoose.Types.ObjectId(userId),
+      isActive: true,
+      _id: { $ne: modeId },
+    });
+
+    if (activeMode) {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Another mode is already active. You cannot activate multiple modes at the same time.",
+      );
+    }
+
     // 1. If we are activating this mode, deactivate all other modes for this user
     await Mode.updateMany(
       { userId: new mongoose.Types.ObjectId(userId), _id: { $ne: modeId } },
@@ -258,6 +317,7 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
 };
 
 const getModeAppCounts = async (userId: string) => {
+  await ensureDefaultModesExist(userId);
   const modes = await Mode.find({ userId, isDeleted: false });
 
   const totalFocusAppsCount = modes.reduce(
@@ -275,6 +335,7 @@ const getModeAppCounts = async (userId: string) => {
 };
 
 const getModeAppDetails = async (userId: string) => {
+  await ensureDefaultModesExist(userId);
   const modes = await Mode.find({ userId, isDeleted: false });
 
   return modes.map((mode) => ({
@@ -289,6 +350,7 @@ const getModeAppDetails = async (userId: string) => {
 */
 
 const getSingleModeAppDetails = async (modeId: string, userId: string) => {
+  await ensureDefaultModesExist(userId);
   const mode = await Mode.findOne({ _id: modeId, userId, isDeleted: false });
 
   if (!mode) {
@@ -303,6 +365,7 @@ const getSingleModeAppDetails = async (modeId: string, userId: string) => {
 };
 
 const getTotalFocusApps = async (userId: string) => {
+  await ensureDefaultModesExist(userId);
   const modes = await Mode.find({ userId, isDeleted: false });
 
   // Get unique apps across all modes
@@ -332,4 +395,5 @@ export const ModeService = {
   getModeAppDetails,
   getSingleModeAppDetails,
   getTotalFocusApps,
+  ensureDefaultModesExist,
 };

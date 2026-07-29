@@ -19,6 +19,7 @@ import { STATUS } from "../../../enums/user";
 import { firebaseAdmin } from "../../../config/firebase";
 import { FcmTokenService } from "../fcmToken/fcmService";
 import { emailQueue } from "../../../queues";
+import { ModeService } from "../modes/modes.service";
 
 const loginUserFromDB = async (payload: ILoginData) => {
   const { email, password, fcmToken, deviceId, deviceType } = payload;
@@ -65,6 +66,7 @@ const loginUserFromDB = async (payload: ILoginData) => {
 
   // update last login
   await User.findByIdAndUpdate(isExistUser._id, { lastLoginAt: new Date() });
+  await ModeService.ensureDefaultModesExist(isExistUser._id.toString());
 
   // create token
   const createToken = jwtHelper.createToken(
@@ -470,6 +472,7 @@ const googleLoginService = async (payload: {
 
   // update last login
   await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
+  await ModeService.ensureDefaultModesExist(user._id.toString());
 
   // create token
   const createToken = jwtHelper.createToken(

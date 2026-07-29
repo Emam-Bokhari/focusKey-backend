@@ -17,6 +17,7 @@ import { IDevice, IUser } from "../user.interface";
 import unlinkFile from "../../../../shared/unlinkFile";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
+import { ModeService } from "../../modes/modes.service";
 
 const generatePairingCode = (): string => {
   return crypto.randomBytes(3).toString("hex").toUpperCase(); // 6 character hex code
@@ -91,6 +92,8 @@ const createUserToDB = async (payload: any) => {
     { _id: createUser._id },
     { $set: { authentication, lastLoginAt: new Date() } },
   );
+
+  await ModeService.ensureDefaultModesExist(createUser._id.toString());
 
   const createToken = jwtHelper.createToken(
     {

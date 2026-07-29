@@ -24,14 +24,14 @@ export interface IMode {
   name: string;
   description: string;
   icon: IconType;
-  lockedApps: {
+  lockedApps?: {
     packageName: string;
     appName: string;
   }[];
-  totalLockedApps: number;
-  isActive: boolean;
-  isDeleted: boolean;
-  lockEvents: ILockEvent[];
+  totalLockedApps?: number;
+  isActive?: boolean;
+  isDeleted?: boolean;
+  lockEvents?: ILockEvent[];
 }
 
 export type TModeModel = ISoftDeleteModel<IMode>;

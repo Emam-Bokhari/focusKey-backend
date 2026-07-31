@@ -1,0 +1,8 @@
+Thu Jul 30 2026 15:41:32 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/change-password 400 - 304.482 ms
+Thu Jul 30 2026 15:46:45 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/change-password 400 - 288.781 ms
+Thu Jul 30 2026 15:50:28 [SQUALLY] error: 10.10.26.162 - DELETE /api/v1/users/profile 400 - 314.087 ms
+Thu Jul 30 2026 15:53:14 [SQUALLY] error: 10.10.26.162 - DELETE /api/v1/users/profile 400 - 288.536 ms
+Thu Jul 30 2026 15:54:1 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/login 400 - 248.732 ms
+Thu Jul 30 2026 15:54:10 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/login 400 - 247.618 ms
+Thu Jul 30 2026 15:54:22 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/change-password 404 - 50.941 ms
+Thu Jul 30 2026 15:54:32 [SQUALLY] error: 10.10.26.162 - POST /api/v1/auth/login 400 - 253.544 ms

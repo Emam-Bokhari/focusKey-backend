@@ -26,9 +26,15 @@ const createUserZodSchema = z.object({
 
 const handleUserPairingZodSchema = z.object({
   body: z.object({
-    deviceName: z.string().optional(),
+    uid: z.string({ required_error: "UID is required" }),
+    device_fingerprint: z.string().optional(),
     deviceFingerprint: z.string().optional(),
-    platform: z.enum(["android", "ios", "web"]).optional(),
+    device_id: z.string().optional(),
+    device_model: z.string({ required_error: "Device model is required" }),
+    platform: z.enum(["android", "ios", "web"], { required_error: "Platform is required" }),
+  }).refine(data => !!(data.deviceFingerprint || data.device_fingerprint || data.device_id), {
+    message: "Device identity (deviceFingerprint or device_id) is required",
+    path: ["deviceFingerprint"]
   }),
 });
 export const UserValidation = {

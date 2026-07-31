@@ -3,6 +3,8 @@ import ApiError from "../../../../errors/ApiErrors";
 import { User } from "../user.model";
 import generateOTP from "../../../../util/generateOTP";
 import { emailTemplate } from "../../../../shared/emailTemplate";
+import mongoose from "mongoose";
+import { RegisteredDevice } from "../../registeredDevice/registeredDevice.model";
 import { emailQueue } from "../../../../queues";
 import { jwtHelper } from "../../../../helpers/jwtHelper";
 import config from "../../../../config";
@@ -25,38 +27,142 @@ const generatePairingCode = (): string => {
 
 const handleUserPairing = async (
   userId: string,
-  deviceData: Partial<IDevice>,
+  payload: {
+    uid: string;
+    device_fingerprint?: string;
+    deviceFingerprint?: string;
+    device_id?: string;
+    device_model: string;
+    platform: "android" | "ios" | "web";
+  }
 ) => {
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
-  }
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  // If device data is provided, it means we are completing the pairing process
-  if (deviceData.deviceName || deviceData.deviceFingerprint) {
-    const newDevice: IDevice = {
-      deviceName: deviceData.deviceName || "Unknown Device",
-      deviceFingerprint: deviceData.deviceFingerprint || "",
-      platform: deviceData.platform || "android",
-    };
-
-    user.device = newDevice;
-    user.isPaired = true;
-    user.pairingCode = undefined; // Clear code once paired
-  } else {
-    // If no device data, and not yet paired, ensure a pairing code exists
-    if (!user.isPaired && !user.pairingCode) {
-      let code = generatePairingCode();
-      // Ensure uniqueness across all users
-      while (await User.findOne({ pairingCode: code })) {
-        code = generatePairingCode();
-      }
-      user.pairingCode = code;
+  try {
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
     }
-  }
 
-  await user.save();
-  return user;
+    if (user.isPaired) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Already paired. Please unpair first.");
+    }
+
+    // Resolve deviceFingerprint from input
+    const fingerprint = (payload.deviceFingerprint || payload.device_fingerprint || payload.device_id || "").trim();
+    
+    // Security check on deviceFingerprint: reject placeholder values
+    const lowercaseFingerprint = fingerprint.toLowerCase();
+    const invalidFingerprints = ["", "unknown", "null", "undefined", "000000", "android", "ios"];
+    if (invalidFingerprints.includes(lowercaseFingerprint)) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid device fingerprint.");
+    }
+
+    // Find RegisteredDevice
+    const device = await RegisteredDevice.findOne({ uid: payload.uid, status: "ACTIVE" }).session(session);
+    if (!device) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Device is not registered.");
+    }
+
+    // Check if paired with another user
+    if (device.userId && device.userId.toString() !== userId) {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another user.");
+    }
+
+    // If tag has never been paired before, store credentials
+    if (!device.deviceFingerprint && !device.platform) {
+      device.deviceFingerprint = fingerprint;
+      device.deviceModel = payload.device_model;
+      device.platform = payload.platform;
+      device.userId = new mongoose.Types.ObjectId(userId);
+      device.pairedAt = new Date();
+      device.firstPairedAt = new Date();
+      device.lastPairedAt = new Date();
+    } else {
+      // If tag has been paired before, verify fingerprint and platform match
+      if (device.deviceFingerprint !== fingerprint || device.platform !== payload.platform) {
+        throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another device.");
+      }
+      device.userId = new mongoose.Types.ObjectId(userId);
+      device.deviceModel = payload.device_model; // model can still be updated
+      device.pairedAt = new Date();
+      device.lastPairedAt = new Date();
+    }
+
+    await device.save({ session });
+
+    // Update User
+    user.isPaired = true;
+    user.device = {
+      deviceName: payload.device_model,
+      platform: payload.platform,
+      deviceFingerprint: fingerprint,
+      nfcChip: payload.uid,
+    };
+    await user.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // Emit Socket event
+    //@ts-ignore
+    const io = global.io;
+    if (io) {
+      io.emit(`device-pairing-updated::${userId}`, {
+        status: "PAIRED",
+        device: user.device,
+      });
+    }
+
+    return user;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
+};
+
+const handleUserUnpairing = async (userId: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const user = await User.findById(userId).session(session);
+    if (!user) {
+      throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+    }
+
+    const device = await RegisteredDevice.findOne({ userId }).session(session);
+    if (device) {
+      device.userId = null;
+      device.pairedAt = null;
+      device.lastUnpairedAt = new Date();
+      await device.save({ session });
+    }
+
+    user.isPaired = false;
+    user.device = undefined;
+    await user.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    // Emit Socket event
+    //@ts-ignore
+    const io = global.io;
+    if (io) {
+      io.emit(`device-pairing-updated::${userId}`, {
+        status: "UNPAIRED",
+      });
+    }
+
+    return user;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    throw error;
+  }
 };
 
 const createUserToDB = async (payload: any) => {
@@ -310,4 +416,5 @@ export const UserCommands = {
   createAdminToDB,
   deleteAdminFromDB,
   handleUserPairing,
+  handleUserUnpairing,
 };

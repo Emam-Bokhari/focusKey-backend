@@ -1,0 +1,21 @@
+Thu Jul 30 2026 16:12:12 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users 200 - 634.281 ms
+Thu Jul 30 2026 16:12:15 [SQUALLY] info: Mail send successfully
+Thu Jul 30 2026 16:21:24 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users 200 - 597.794 ms
+Thu Jul 30 2026 16:21:27 [SQUALLY] info: Mail send successfully
+Thu Jul 30 2026 16:27:36 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users 200 - 618.128 ms
+Thu Jul 30 2026 16:27:39 [SQUALLY] info: Mail send successfully
+Thu Jul 30 2026 16:30:35 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users 200 - 895.908 ms
+Thu Jul 30 2026 16:30:39 [SQUALLY] info: Mail send successfully
+Thu Jul 30 2026 16:33:33 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users 200 - 618.615 ms
+Thu Jul 30 2026 16:33:37 [SQUALLY] info: Mail send successfully
+Thu Jul 30 2026 16:40:36 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users 200 - 625.347 ms
+Thu Jul 30 2026 16:40:39 [SQUALLY] info: Mail send successfully
+Thu Jul 30 2026 16:40:56 [SQUALLY] info: 10.10.26.162 - POST /api/v1/auth/verify-email 200 - 91.274 ms
+Thu Jul 30 2026 16:41:7 [SQUALLY] info: 10.10.26.162 - POST /api/v1/auth/login 200 - 337.891 ms
+Thu Jul 30 2026 16:46:0 [SQUALLY] info: 10.10.26.162 - POST /api/v1/auth/login 200 - 339.503 ms
+Thu Jul 30 2026 16:47:22 [SQUALLY] info: 10.10.26.162 - DELETE /api/v1/users/profile 200 - 346.270 ms
+Thu Jul 30 2026 16:48:13 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users 200 - 631.080 ms
+Thu Jul 30 2026 16:48:17 [SQUALLY] info: Mail send successfully
+Thu Jul 30 2026 16:48:41 [SQUALLY] info: 10.10.26.162 - POST /api/v1/auth/verify-email 200 - 182.432 ms
+Thu Jul 30 2026 16:48:55 [SQUALLY] info: 10.10.26.162 - POST /api/v1/auth/login 200 - 335.471 ms
+Thu Jul 30 2026 16:56:46 [SQUALLY] info: 10.10.26.162 - GET /api/v1/rules/about 200 - 48.723 ms

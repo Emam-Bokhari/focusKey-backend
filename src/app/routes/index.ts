@@ -17,6 +17,7 @@ import { FocusSessionRoutes } from "../modules/focusSession/focusSession.route";
 import { FriendsRoutes } from "../modules/friends/friends.route";
 import { PersonalReminderRoutes } from "../modules/personalReminder/personalReminder.route";
 import { AnalyticsRoutes } from "../modules/analytics/analytics.route";
+import { RegisteredDeviceRoutes } from "../modules/registeredDevice/registeredDevice.route";
 
 const router = express.Router();
 
@@ -92,6 +93,10 @@ const apiRoutes = [
   {
     path: "/analytics",
     route: AnalyticsRoutes,
+  },
+  {
+    path: "/devices",
+    route: RegisteredDeviceRoutes,
   },
 ];
 

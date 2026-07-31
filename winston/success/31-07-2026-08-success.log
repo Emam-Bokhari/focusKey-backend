@@ -1,0 +1,3 @@
+Fri Jul 31 2026 8:37:52 [SQUALLY] info: 10.10.26.162 - GET /api/v1/rules/about 200 - 44.143 ms
+Fri Jul 31 2026 8:37:56 [SQUALLY] info: 10.10.26.162 - GET /api/v1/rules/privacy 200 - 41.991 ms
+Fri Jul 31 2026 8:37:59 [SQUALLY] info: 10.10.26.162 - GET /api/v1/rules/terms 200 - 40.878 ms

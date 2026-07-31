@@ -171,7 +171,20 @@ const handleUserPairing = catchAsync(async (req, res) => {
   sendResponse(res, {
     success: true,
     statusCode: 200,
-    message: "User pairing handled successfully",
+    message: "User paired successfully",
+    data: result,
+  });
+});
+
+const handleUserUnpairing = catchAsync(async (req, res) => {
+  const { id: userId } = req.user as JwtPayload;
+
+  const result = await UserCommands.handleUserUnpairing(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "User unpaired successfully",
     data: result,
   });
 });
@@ -189,4 +202,5 @@ export const UserControllers = {
   getAdmin,
   deleteAdmin,
   handleUserPairing,
+  handleUserUnpairing,
 };

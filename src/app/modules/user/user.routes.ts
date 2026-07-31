@@ -15,6 +15,12 @@ router.post(
   UserControllers.handleUserPairing,
 );
 
+router.post(
+  "/unpair-device",
+  isUser,
+  UserControllers.handleUserUnpairing,
+);
+
 router
   .route("/profile")
   .get(isAuthenticated, UserControllers.getUserProfile)

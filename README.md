@@ -20,7 +20,7 @@ The backend APIs in this project were developed based on the approved UI/UX desi
 
 | Resource | Link |
 |---|---|
-| Figma Design | https://www.figma.com/... |
+| Figma Design | [Click Here](https://www.figma.com/design/XBvJRsyd2gCGEaJPIXlV3r/Focus-Key?node-id=0-1&p=f&t=ITA62L1HEX5cMaMA-0) |
 
 > The UI/UX design was provided by the project team and is referenced here to help understand the API flow and business requirements.
 

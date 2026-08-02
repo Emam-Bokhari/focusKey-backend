@@ -1,0 +1,2 @@
+Sun Aug 02 2026 8:30:23 [SQUALLY] info: 10.10.7.10 - POST /api/v1/auth/login 200 - 411.373 ms
+Sun Aug 02 2026 8:34:21 [SQUALLY] info: 10.10.7.10 - GET /api/v1/devices 200 - 152.611 ms

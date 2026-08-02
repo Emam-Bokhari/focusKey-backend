@@ -7,7 +7,6 @@ export enum NOTIFICATION_TYPE {
 
 export enum NOTIFICATION_REFERENCE_MODEL {
   USER = "User",
-  SUBSCRIPTION = "Subscription",
   ENQUERY = "Enquery",
   LISTING = "Listing",
 }

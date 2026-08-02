@@ -29,13 +29,6 @@ export default {
     projectId: process.env.FIREBASE_PROJECT_ID,
   },
 
-  stripe: {
-    stripeSecretKey: process.env.STRIPE_SECRET_KEY!,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
-    paymentSuccess: process.env.STRIPE_PAYMENT_SUCCESS!,
-    BASE_URL: process.env.BASE_URL!,
-    currency: process.env.CURRENCY!,
-  },
   email: {
     from: process.env.EMAIL_FROM,
     user: process.env.EMAIL_USER,

@@ -1,30 +1,13 @@
 import { Schema, model } from "mongoose";
 
-const paymentNumberSchema = new Schema(
-  {
-    label: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    number: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-  },
-  { _id: false },
-);
-
 const settingsSchema = new Schema(
   {
-    paymentNumbers: {
-      type: [paymentNumberSchema],
-      default: [],
-    },
-    currency: {
+    appName: {
       type: String,
-      required: true,
+      trim: true,
+    },
+    supportEmail: {
+      type: String,
       trim: true,
     },
   },

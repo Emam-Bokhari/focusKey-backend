@@ -36,10 +36,7 @@ const getAllUsersFromDB = async (query: any) => {
 
   const baseQuery = User.find(filter);
 
-  const searchableFields =
-    role === USER_ROLES.AGENT
-      ? ["name", "email", "location.address"]
-      : ["name", "email"];
+  const searchableFields = ["name", "email"];
 
   const queryBuilder = new QueryBuilder<IUser>(baseQuery, remainingQuery)
     .search(searchableFields)

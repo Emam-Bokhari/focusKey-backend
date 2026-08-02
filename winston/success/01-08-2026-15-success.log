@@ -1,0 +1,11 @@
+Sat Aug 01 2026 15:24:4 [SQUALLY] info: 10.10.7.34 - POST /api/v1/users 200 - 690.638 ms
+Sat Aug 01 2026 15:24:7 [SQUALLY] info: Mail send successfully
+Sat Aug 01 2026 15:24:26 [SQUALLY] info: 10.10.7.34 - POST /api/v1/auth/verify-email 200 - 105.401 ms
+Sat Aug 01 2026 15:24:43 [SQUALLY] info: 10.10.7.34 - POST /api/v1/auth/login 200 - 348.351 ms
+Sat Aug 01 2026 15:29:29 [SQUALLY] info: 10.10.7.34 - POST /api/v1/auth/login 200 - 351.917 ms
+Sat Aug 01 2026 15:30:20 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users/unpair-device 200 - 237.240 ms
+Sat Aug 01 2026 15:30:34 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users/unpair-device 200 - 233.897 ms
+Sat Aug 01 2026 15:31:3 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users/unpair-device - - - ms
+Sat Aug 01 2026 15:31:6 [SQUALLY] info: 10.10.26.162 - POST /api/v1/users/unpair-device 200 - 229.161 ms
+Sat Aug 01 2026 15:31:34 [SQUALLY] info: 10.10.7.34 - POST /api/v1/auth/login 200 - 352.247 ms
+Sat Aug 01 2026 15:33:21 [SQUALLY] info: 10.10.7.34 - POST /api/v1/auth/login 200 - 349.847 ms

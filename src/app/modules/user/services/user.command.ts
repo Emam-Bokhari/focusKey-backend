@@ -70,17 +70,19 @@ const handleUserPairing = async (
       throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another user.");
     }
 
-    // If tag has never been paired before, store credentials
-    if (!device.deviceFingerprint && !device.platform) {
+    // If tag has never been paired before OR is currently unpaired, store/update credentials
+    if (!device.userId || (!device.deviceFingerprint && !device.platform)) {
       device.deviceFingerprint = fingerprint;
       device.deviceModel = payload.device_model;
       device.platform = payload.platform;
       device.userId = new mongoose.Types.ObjectId(userId);
       device.pairedAt = new Date();
-      device.firstPairedAt = new Date();
+      if (!device.firstPairedAt) {
+        device.firstPairedAt = new Date();
+      }
       device.lastPairedAt = new Date();
     } else {
-      // If tag has been paired before, verify fingerprint and platform match
+      // If tag has been paired before and is currently paired, verify fingerprint and platform match
       if (device.deviceFingerprint !== fingerprint || device.platform !== payload.platform) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another device.");
       }

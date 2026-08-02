@@ -316,6 +316,41 @@ GET /admin/queues
 
 ---
 
+## Entity Relationship Diagram (ERD)
+
+The project includes automatically generated Entity Relationship Diagrams (ERDs) mapping the Mongoose schemas and relationships across modules.
+
+#### System-Wide ER Diagram
+Below is the rendered project-wide database structure:
+
+![System-Wide ER Diagram](./docs/erd/modules/whole-er-diagram/er-diagram.png)
+
+You can access the generated diagrams under the `./docs/erd/modules/` directory:
+* **System-Wide (All Modules Consolidated):**
+  * 📸 [Diagram(.png)](./docs/erd/modules/whole-er-diagram/er-diagram.png)
+
+#### Module-Specific Diagrams
+For a focused view of each module, check the following directories:
+* **User:** [PNG](./docs/erd/modules/user/er-diagram.png)
+* **Banner:** [PNG](./docs/erd/modules/banner/er-diagram.png)
+* **Breaks:** [PNG](./docs/erd/modules/breaks/er-diagram.png)
+* **Chat:** [PNG](./docs/erd/modules/chat/er-diagram.png)
+* **FAQ:** [PNG](./docs/erd/modules/faq/er-diagram.png)
+* **FCM Token:** [PNG](./docs/erd/modules/fcmToken/er-diagram.png)
+* **Focus Session:** [PNG](./docs/erd/modules/focusSession/er-diagram.png)
+* **Friends:** [PNG](./docs/erd/modules/friends/er-diagram.png)
+* **Message:** [PNG](./docs/erd/modules/message/er-diagram.png)
+* **Modes:** [PNG](./docs/erd/modules/modes/er-diagram.png)
+* **Notification:** [PNG](./docs/erd/modules/notification/er-diagram.png)
+* **Personal Reminder:** [PNG](./docs/erd/modules/personalReminder/er-diagram.png)
+* **Registered Device:** [PNG](./docs/erd/modules/registeredDevice/er-diagram.png)
+* **ResetToken:** [PNG](./docs/erd/modules/resetToken/er-diagram.png)
+* **Rule:** [PNG](./docs/erd/modules/rule/er-diagram.png)
+* **Settings:** [PNG](./docs/erd/modules/settings/er-diagram.png)
+* **Support:** [PNG](./docs/erd/modules/support/er-diagram.png)
+
+---
+
 ## Authentication & Authorization
 
 ### Authentication

@@ -95,8 +95,6 @@ const userSchema = new Schema<IUser, IUserModel>(
 
     phone: {
       type: String,
-      // sparse: true,
-      // unique: true,
       trim: true,
     },
 

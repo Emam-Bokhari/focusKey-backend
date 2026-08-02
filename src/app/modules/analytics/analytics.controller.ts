@@ -47,7 +47,6 @@ const getFocusTimeTogetherOverTime = catchAsync(
 );
 
 const getUsersAnalytics = catchAsync(async (req: Request, res: Response) => {
-  // Support both "search" and "searchTerm"
   const query = { ...req.query };
   if (query.search && !query.searchTerm) {
     query.searchTerm = query.search;

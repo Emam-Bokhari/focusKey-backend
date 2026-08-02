@@ -7,7 +7,6 @@ export const sendNotifications = async (
   data: Partial<INotification>,
 ): Promise<INotification | any> => {
   if (data.type === NOTIFICATION_TYPE.USER) {
-    // For User, use the Push Notification Helper (which also saves to DB)
     if (!data.receiver) return;
 
     const payload = {
@@ -26,7 +25,6 @@ export const sendNotifications = async (
       payload,
     );
   } else {
-    // For Admin and others, keep the existing Socket.io logic
     const result = await (
       await Notification.create(data)
     ).populate("receiver sender referenceId");

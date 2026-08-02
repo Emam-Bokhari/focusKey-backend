@@ -31,7 +31,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
     query.modeId = new mongoose.Types.ObjectId(modeId);
   }
 
-  // 1. Total Focus Time (Filtered by mode if provided)
   const allSessions = await FocusSession.find(query);
   const allBreaks = await Break.find(query);
 
@@ -55,7 +54,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
   });
   totalMinutes = Math.max(0, totalMinutes);
 
-  // 2. First Focus Date
   const firstSession = await FocusSession.findOne({
     userId: userObjectId,
   }).sort({
@@ -63,7 +61,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
   });
   const firstFocusDate = firstSession ? firstSession.startTime : null;
 
-  // 3. 7 Days Stats (Day-wise: Sun, Mon, etc.)
   const sevenDaysStats = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
@@ -124,7 +121,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
     });
   }
 
-  // 4. Today Stats (Mode-wise for today)
   const startOfToday = new Date();
   startOfToday.setHours(0, 0, 0, 0);
   const endOfToday = new Date();
@@ -157,7 +153,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
     }
   });
 
-  // Subtract today's breaks from mode-wise today focus time
   for (const b of todayBreaks) {
     const mode = await Mode.findById(b.modeId);
     const modeName = mode?.name || "Unknown Mode";
@@ -175,7 +170,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
     duration: formatDuration(modeWiseToday[mode]),
   }));
 
-  // 5. Detailed History (Grouped by date)
   const historyLogs = await FocusSession.find(query)
     .populate("modeId")
     .sort({ startTime: -1 });
@@ -201,7 +195,6 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
       );
     }
 
-    // Find breaks within this session's time range to subtract
     const sessionBreaks = await Break.find({
       userId: userObjectId,
       modeId: session.modeId,
@@ -258,10 +251,8 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
 const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // Ensure default modes exist for this user first
   await ModeService.ensureDefaultModesExist(userId);
 
-  // Retrieve all modes for the user to be returned in the response
   const modes = await Mode.find({ userId: userObjectId, isDeleted: false }).select("_id name icon");
 
   const query: any = { userId: userObjectId };
@@ -269,7 +260,6 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
     query.modeId = new mongoose.Types.ObjectId(modeId);
   }
 
-  // 1. Total Focus Time (Filtered by mode if provided)
   const allSessions = await FocusSession.find(query);
   const allBreaks = await Break.find(query);
 
@@ -293,7 +283,6 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
   });
   totalMinutes = Math.max(0, totalMinutes);
 
-  // 2. First Focus Date & Since Text
   const firstSession = await FocusSession.findOne({
     userId: userObjectId,
   }).sort({
@@ -311,7 +300,6 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
   };
   const sinceDate = formatSinceDate(firstFocusDate);
 
-  // 3. 7 Days Stats (Day-wise: Sun, Mon, etc.)
   const sevenDaysStats = [];
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
@@ -375,7 +363,6 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
     });
   }
 
-  // 4. Detailed History (Grouped by date)
   const historyLogs = await FocusSession.find(query)
     .populate("modeId")
     .sort({ startTime: -1 });
@@ -429,7 +416,6 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
       );
     }
 
-    // Find breaks within this session's time range to subtract
     const sessionBreaks = await Break.find({
       userId: userObjectId,
       modeId: session.modeId,
@@ -488,12 +474,10 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
 const getFocusStatsFromDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // 1. Total Sessions
   const totalSessions = await FocusSession.countDocuments({
     userId: userObjectId,
   });
 
-  // 2. Total Focus Time (Subtracting breaks)
   const allSessions = await FocusSession.find({ userId: userObjectId });
   const allBreaks = await Break.find({ userId: userObjectId });
 
@@ -517,7 +501,6 @@ const getFocusStatsFromDB = async (userId: string) => {
   });
   totalMinutes = Math.max(0, totalMinutes);
 
-  // 3. Date Range
   const firstSession = await FocusSession.findOne({
     userId: userObjectId,
   }).sort({
@@ -549,14 +532,12 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
     .populate("modeId")
     .sort({ startTime: -1 });
 
-  // Adding BOM (\ufeff) for Excel/Mobile compatibility with UTF-8
   let csvContent = "\ufeffDate,Mode,Time Range,Duration,Status\n";
 
   for (const session of sessions) {
     const date = session.startTime.toISOString().split("T")[0];
     const modeName = (session.modeId as any)?.name || "Unknown Mode";
 
-    // Calculate net duration (subtracting breaks)
     let sessionMinutes = 0;
     if (session.status === "completed") {
       sessionMinutes = session.durationMinutes || 0;
@@ -593,7 +574,6 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
       session.endTime ? formatTime(session.endTime) : "Active"
     }`;
 
-    // Escape commas in modeName just in case
     const escapedModeName = `"${modeName.replace(/"/g, '""')}"`;
 
     csvContent += `${date},${escapedModeName},${timeRange},${durationFormatted},${session.status}\n`;
@@ -605,34 +585,26 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
 const clearAllDataFromDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // 1. Soft delete all focus sessions
   await FocusSession.updateMany(
     { userId: userObjectId, isDeleted: { $ne: true } },
     { $set: { isDeleted: true, deletedAt: new Date(), status: "completed" } },
   );
 
-  // 2. Soft delete all modes
   await Mode.updateMany(
     { userId: userObjectId, isDeleted: { $ne: true } },
     { $set: { isDeleted: true, deletedAt: new Date(), isActive: false } },
   );
 
-  // 3. Soft delete all breaks
   await Break.updateMany(
     { userId: userObjectId, isDeleted: { $ne: true } },
     { $set: { isDeleted: true, deletedAt: new Date(), status: "completed" } },
   );
 
-  // 4. Soft delete break config
   await BreakConfig.updateMany(
     { userId: userObjectId, isDeleted: { $ne: true } },
     { $set: { isDeleted: true, deletedAt: new Date() } },
   );
 
-  // 5. Clear user-specific settings (like installedApps)
-  // await User.findByIdAndUpdate(userId, {
-  //   $set: { installedApps: [], isPaired: false },
-  // });
   return { message: "All data cleared successfully" };
 };
 

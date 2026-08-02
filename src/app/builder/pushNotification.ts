@@ -7,7 +7,6 @@ import { DeviceToken } from "../modules/fcmToken/fcmToken.model";
 import { firebaseAdmin } from "../../config/firebase";
 import { NOTIFICATION_TYPE } from "../modules/notification/notification.constant";
 
-// 1. Define the Payload Interface (Type Safety)
 export interface INotificationPayload {
   title: string;
   body: string;
@@ -38,11 +37,8 @@ class NotificationHelper {
     try {
       if (!userIds.length) return;
 
-      // 1. Filter Users: Only get users who exist, are verified, and have notifications ON
       const validUsers = await User.find({
         _id: { $in: userIds },
-        // isAgentVerified: true,
-        // notificationStatus: true,
       })
         .select("_id")
         .lean();
@@ -51,7 +47,6 @@ class NotificationHelper {
 
       if (validUserIds.length === 0) return;
 
-      // 2. Fetch FCM Tokens for these users
       const tokensData = await DeviceToken.find({
         userId: { $in: validUserIds },
         fcmToken: { $exists: true, $ne: "" },
@@ -61,21 +56,17 @@ class NotificationHelper {
 
       const fcmTokens = tokensData.map((t) => t.fcmToken);
 
-      // --- PARALLEL EXECUTION START ---
       const tasks = [];
 
-      // TASK A: Send Push Notifications (only if tokens exist)
       if (fcmTokens.length > 0) {
         tasks.push(this.sendToFCM(fcmTokens, payload));
       }
 
-      // TASK B: Save to Database (Always, even if they don't have a token)
       if (validUserIds.length > 0) {
         tasks.push(this.saveToDatabase(validUserIds, payload));
       }
 
       await Promise.allSettled(tasks);
-      // --- PARALLEL EXECUTION END ---
 
       logger.info(
         colors.green(
@@ -98,14 +89,12 @@ class NotificationHelper {
         `${message.sender.firstName || ""} ${message.sender.lastName || ""}`.trim() ||
         "User";
 
-      // message format body
       let bodyText = message.text;
       if (message.isDeleted) bodyText = "This message was deleted";
       if (!bodyText && message.productId)
         bodyText = "Sent a product attachment";
       if (!bodyText) bodyText = "Sent a new message";
 
-      // Remove sender from recipients
       const recipients = chat.participants
         .filter((p: any) => {
           const pId = p._id ? p._id.toString() : p.toString();
@@ -137,7 +126,6 @@ class NotificationHelper {
    */
   private async sendToFCM(tokens: string[], payload: INotificationPayload) {
     try {
-      // ✅ Fixed: Chunk tokens into batches of 500 (Firebase multicast limit)
       const BATCH_SIZE = 500;
       const chunks: string[][] = [];
       for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
@@ -158,7 +146,6 @@ class NotificationHelper {
           .messaging()
           .sendEachForMulticast(message);
 
-        // Cleanup Invalid Tokens
         if (response.failureCount > 0) {
           const failedTokens: string[] = [];
           response.responses.forEach((resp: any, idx: number) => {

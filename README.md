@@ -14,6 +14,18 @@ To provide a smoother user experience, real-time updates—such as device pairin
 
 ---
 
+## Design Reference
+
+The backend APIs in this project were developed based on the approved UI/UX design.
+
+| Resource | Link |
+|---|---|
+| Figma Design | https://www.figma.com/... |
+
+> The UI/UX design was provided by the project team and is referenced here to help understand the API flow and business requirements.
+
+---
+
 ## Features
 
 - **Email & Google Authentication** — credential login with OTP-based email verification, Google Sign-In via Firebase ID token
@@ -178,7 +190,7 @@ focusKey-backend/
 - **Node.js** >= 18
 - **MongoDB** (Atlas cluster or local instance)
 - **Redis** >= 6 (used by BullMQ and optional direct cache)
-- **Yarn** (detected as the package manager — `yarn.lock` is present)
+- **npm** >= 9
 
 ### Steps
 
@@ -192,7 +204,7 @@ cd focusKey-backend
 **2. Install dependencies**
 
 ```bash
-yarn install
+npm install
 ```
 
 **3. Create the environment file**
@@ -213,7 +225,7 @@ docker run -d -p 6379:6379 redis:7
 **5. Start the development server**
 
 ```bash
-yarn dev
+npm run dev
 ```
 
 The server will connect to MongoDB, seed the super admin account if absent, register cron jobs, and begin listening on the configured port.
@@ -265,10 +277,10 @@ The server will connect to MongoDB, seed the super admin account if absent, regi
 
 | Script | Description |
 |---|---|
-| `yarn dev` | Start the development server with hot reload (`ts-node-dev`) |
-| `yarn build` | Compile TypeScript to JavaScript in `./dist` |
-| `yarn start` | Run the compiled production build (`node dist/server.js`) |
-| `yarn format` | Format all source files with Prettier |
+| `npm run dev` | Start the development server with hot reload (`ts-node-dev`) |
+| `npm run build` | Compile TypeScript to JavaScript in `./dist` |
+| `npm run start` | Run the compiled production build (`node dist/server.js`) |
+| `npm run format` | Format all source files with Prettier |
 ---
 
 ## API Documentation
@@ -301,7 +313,6 @@ GET /admin/queues
 | Seeding | `seedSuperAdmin()` runs on startup and creates the super admin user if absent |
 | Soft Delete | A reusable `softDeletePlugin` is applied per-model; deleted documents are transparently excluded from all `find`, `findOne`, `countDocuments`, `update`, and `aggregate` operations |
 | Transactions | MongoDB sessions are used for atomic operations (e.g. NFC device pairing/unpairing) |
-| Migrations | No migration framework detected |
 
 ---
 
@@ -388,26 +399,6 @@ yarn format
 
 ---
 
-## Deployment
-
-No `Dockerfile`, `docker-compose.yml`, or CI/CD configuration was detected in the project root.
-
-### PM2 (recommended for VPS / bare-metal)
-
-PM2 is not listed as a project dependency but is a common choice for Node.js production deployments. A typical setup after building:
-
-```bash
-npm install -g pm2
-yarn build
-pm2 start dist/server.js --name focuskey-backend
-pm2 save
-pm2 startup
-```
-
-Ensure the `.env` file is present and fully populated before starting the process.
-
----
-
 ## Logging
 
 Winston is used with two named logger instances:
@@ -463,18 +454,6 @@ Process-level events (`uncaughtException`, `unhandledRejection`) are logged to `
 
 ---
 
-## Design Reference
-
-The backend APIs in this project were developed based on the approved UI/UX design.
-
-| Resource | Link |
-|---|---|
-| Figma Design | https://www.figma.com/... |
-
-> The UI/UX design was provided by the project team and is referenced here to help understand the API flow and business requirements.
-
----
-
 
 ## License
 
@@ -484,4 +463,4 @@ ISC
 
 ## Maintainers
 
-Moshfiqur Rahman
+Moshfiqur Rahman — moshfiqurrahman37@gmail.com

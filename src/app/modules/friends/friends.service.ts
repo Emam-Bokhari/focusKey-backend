@@ -38,7 +38,6 @@ const getUsersFromDB = async (
     .limit(limit)
     .lean();
 
-  // Retrieve current user's friends to set isFriend field
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const friends = await Friend.find({
     $or: [{ userId: userObjectId }, { friendId: userObjectId }],
@@ -54,13 +53,11 @@ const getUsersFromDB = async (
   const now = new Date();
   const usersWithStatus = await Promise.all(
     users.map(async (user) => {
-      // Check active focus session
       const activeSession = await FocusSession.findOne({
         userId: user._id,
         status: "active",
       });
 
-      // Check active break
       const activeBreak = await Break.findOne({
         userId: user._id,
         status: "active",
@@ -69,7 +66,6 @@ const getUsersFromDB = async (
 
       const isLocked = activeSession ? !activeBreak : false;
 
-      // Get last completed session for history info
       const lastSession = await FocusSession.findOne({
         userId: user._id,
         status: "completed",
@@ -143,7 +139,6 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
     );
   }
 
-  // 1. Check if the creator (current user) is currently focused
   const creatorActiveSession = await FocusSession.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     status: "active",
@@ -156,7 +151,6 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
     );
   }
 
-  // 2. Check if any participant is currently focused
   const focusedParticipants = await FocusSession.find({
     userId: {
       $in: participants.map(
@@ -176,7 +170,6 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
     );
   }
 
-  // 3. Add participants as friends if not already added
   for (const friendId of participants) {
     const id = (friendId as any).userId || friendId;
     const existingFriend = await Friend.findOne({
@@ -194,7 +187,6 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
     }
   }
 
-  // 2. Create Nudge
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const nudgeData = {
     creatorId: userObjectId,
@@ -216,7 +208,6 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
 
   const result = await Nudge.create(nudgeData);
 
-  // Set the selected mode as active for the creator and deactivate others
   await Mode.updateMany(
     { userId: userObjectId, isDeleted: false },
     { $set: { isActive: false } },
@@ -233,7 +224,6 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
     },
   });
 
-  // Start Focus Session for the creator
   await FocusSession.create({
     userId: userObjectId,
     modeId: new mongoose.Types.ObjectId(modeId as any),
@@ -242,7 +232,6 @@ const createNudgeInDB = async (userId: string, payload: Partial<INudge>) => {
     status: "active",
   });
 
-  // 5. Send Emails
   const participantIds = participants.map(
     (id: any) => new mongoose.Types.ObjectId(id.userId || id),
   );
@@ -280,7 +269,6 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // Check if user is the creator or an invited participant (and not deleted)
   const isCreator = nudge.creatorId.equals(userObjectId);
   const isInvited = nudge.participants.some(
     (p) => !p.isDeleted && p.userId.equals(userObjectId),
@@ -292,7 +280,6 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     );
   }
 
-  // Check if already joined and not deleted
   const existingJoined = nudge.joinedParticipants.find(
     (p) => !p.isDeleted && p.userId.equals(userObjectId),
   );
@@ -300,21 +287,18 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     return nudge;
   }
 
-  // Check if user was previously joined but deleted - restore if so
   const previouslyJoined = nudge.joinedParticipants.find(
     (p) => p.isDeleted && p.userId.equals(userObjectId),
   );
 
   const updateData: any = {};
   if (previouslyJoined) {
-    // Restore the participant
     updateData.$set = {
       "joinedParticipants.$[elem].isDeleted": false,
       "joinedParticipants.$[elem].deletedAt": null,
     };
     updateData.arrayFilters = [{ "elem.userId": userObjectId }];
   } else {
-    // Add new participant
     updateData.$addToSet = {
       joinedParticipants: { userId: userObjectId, isDeleted: false },
     };
@@ -328,7 +312,6 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     new: true,
   });
 
-  // Set the selected mode as active for the joining user and deactivate others
   await Mode.updateMany(
     { userId: userObjectId, isDeleted: false },
     { $set: { isActive: false } },
@@ -345,7 +328,6 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     },
   });
 
-  // Start Focus Session for the user
   await FocusSession.create({
     userId: userObjectId,
     modeId: nudge.modeId,
@@ -422,7 +404,6 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
 
-  // 1. Find the active focus session to get startTime
   const session = await FocusSession.findOne({
     userId: userObjectId,
     nudgeId: nudgeObjectId,
@@ -441,7 +422,6 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
     (endTime.getTime() - session.startTime.getTime()) / 60000,
   );
 
-  // 2. Update the session to completed
   await FocusSession.findByIdAndUpdate(
     session._id,
     {
@@ -452,7 +432,6 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
     { new: true },
   );
 
-  // 3. Soft delete user from joinedParticipants in the Nudge
   const result = await Nudge.findByIdAndUpdate(
     nudgeId,
     {
@@ -467,7 +446,6 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
     },
   );
 
-  // 4. Deactivate the mode associated with this nudge for the user
   if (session.modeId) {
     await Mode.findByIdAndUpdate(session.modeId, {
       $set: { isActive: false },
@@ -481,7 +459,6 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
     });
   }
 
-  // 5. Optional: If no active users left in the nudge, mark it as completed
   if (result) {
     const activeJoinedCount = result.joinedParticipants.filter(
       (p) => !p.isDeleted,
@@ -498,13 +475,11 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
 
-  // 1. Check if nudge exists and is active
   const nudge = await Nudge.findById(nudgeId);
   if (!nudge) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Nudge not found");
   }
 
-  // 2. Check if user has an active focus session for this nudge
   const activeSession = await FocusSession.findOne({
     userId: userObjectId,
     nudgeId: nudgeObjectId,
@@ -518,7 +493,6 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
     );
   }
 
-  // 3. Check if user already has any active break (global or nudge) in progress
   const activeBreak = await Break.findOne({
     userId: userObjectId,
     status: "active",
@@ -550,7 +524,6 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
     );
   }
 
-  // 4. Check breaksPerDay limit
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date();
@@ -572,7 +545,6 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
     );
   }
 
-  // 5. Create a new break with calculated endTime
   const startTime = new Date();
   const breakDurationMinutes = nudge.breakConfig?.breakDurationMinutes || 0;
   const endTime = new Date(startTime.getTime() + breakDurationMinutes * 60000);
@@ -599,7 +571,6 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
 const getCurrentNudgeStatusInDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // 1. Find the active or scheduled nudge where the user is the creator or a participant
   const nudge = await Nudge.findOne({
     status: { $in: ["active", "scheduled"] },
     $or: [
@@ -623,13 +594,11 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     };
   }
 
-  // Check if the current user is the creator of the nudge
   const isCreator = nudge.creatorId.toString() === userId;
   const creatorJoinedEntry = nudge.joinedParticipants.find(
     (p) => (p.userId._id || p.userId).toString() === userId
   );
 
-  // Self-healing: if creator of active nudge is not in joinedParticipants, add them
   if (isCreator && !creatorJoinedEntry && nudge.status === "active") {
     await Nudge.findByIdAndUpdate(nudge._id, {
       $addToSet: {
@@ -642,19 +611,16 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     } as any);
   }
 
-  // Determine if the user is in joinedParticipants and not deleted
   const isJoined = nudge.joinedParticipants.some(
     (p) => !p.isDeleted && (p.userId._id || p.userId).toString() === userId,
   );
 
-  // 2. Check if the current user has an active focus session for this nudge
   let activeSession = await FocusSession.findOne({
     userId: userObjectId,
     status: "active",
     nudgeId: nudge._id,
   });
 
-  // Self-healing: if user has joined but has no active FocusSession document, create one on the fly
   if (!activeSession && isJoined) {
     const now = new Date();
     activeSession = await FocusSession.create({
@@ -666,7 +632,6 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     });
   }
 
-  // Get current user's installed apps to filter locked apps
   const currentUser = await User.findById(userId).select("installedApps");
   const installedAppPackages = new Set(
     (currentUser?.installedApps || []).map((app) => app.packageName)
@@ -677,7 +642,6 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     installedAppPackages.has(app.packageName)
   );
 
-  // 3. Check for active break if the user has an active focus session
   const activeBreak = activeSession
     ? await Break.findOne({
         userId: userObjectId,
@@ -687,10 +651,8 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
       })
     : null;
 
-  // 4. Calculate lock status
   const isLocked = isJoined ? !activeBreak : false;
 
-  // 5. Break statistics
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date();
@@ -705,7 +667,6 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   const totalAllowedBreaks = nudge.breakConfig?.breaksPerDay || 0;
   const remainingBreaks = Math.max(0, totalAllowedBreaks - breaksTakenToday);
 
-  // 6. Focus Time Stats (Today & This Week) - Nudge Sessions Only
   const startOfWeek = new Date();
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
@@ -756,19 +717,16 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
   weekFocusMinutes = Math.max(0, weekFocusMinutes);
 
-  // 7. Participants focus and break status
   const activeParticipants = nudge.participants.filter((p) => !p.isDeleted);
   const participantsWithStatus = await Promise.all(
     activeParticipants.map(async (participant: any) => {
       const participantId = participant.userId._id || participant.userId;
 
-      // Check if participant is currently in this nudge's focus session
       const isJoined = nudge.joinedParticipants.some(
         (p: any) =>
           !p.isDeleted && (p.userId._id || p.userId).equals(participantId),
       );
 
-      // Check if they have an active break
       const participantActiveBreak = await Break.findOne({
         userId: participantId,
         nudgeId: nudge._id,
@@ -788,7 +746,6 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     }),
   );
 
-  // Also handle joinedParticipants (which includes the creator)
   const activeJoinedParticipants = nudge.joinedParticipants.filter(
     (p) => !p.isDeleted,
   );
@@ -796,7 +753,6 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     activeJoinedParticipants.map(async (participant: any) => {
       const participantId = participant.userId._id || participant.userId;
 
-      // Check if they have an active break
       const participantActiveBreak = await Break.findOne({
         userId: participantId,
         nudgeId: nudge._id,
@@ -866,13 +822,11 @@ const addFriendToDB = async (userId: string, friendId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const friendObjectId = new mongoose.Types.ObjectId(friendId);
 
-  // Check if user exists
   const userExists = await User.findById(friendId);
   if (!userExists) {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
   }
 
-  // Check if they are already friends
   const existingFriend = await Friend.findOne({
     $or: [
       { userId: userObjectId, friendId: friendObjectId },
@@ -885,13 +839,11 @@ const addFriendToDB = async (userId: string, friendId: string) => {
     if (existingFriend.status === "accepted") {
       throw new ApiError(StatusCodes.BAD_REQUEST, "You are already friends");
     }
-    // If pending/rejected, update status to accepted
     existingFriend.status = "accepted";
     await existingFriend.save();
     return existingFriend;
   }
 
-  // Create friend relationship
   const result = await Friend.create({
     userId: userObjectId,
     friendId: friendObjectId,
@@ -910,7 +862,6 @@ const getFriendsFromDB = async (userId: string) => {
   }).populate("userId friendId", "name userName profileImage email");
 
   const friendsData = friends.map((f) => {
-    // Return the other user in the relationship
     const otherUser = f.userId._id.toString() === userId ? f.friendId : f.userId;
     return otherUser;
   });
@@ -918,13 +869,11 @@ const getFriendsFromDB = async (userId: string) => {
   const now = new Date();
   const friendsWithStatus = await Promise.all(
     friendsData.map(async (friend: any) => {
-      // 1. Check active focus session
       const activeSession = await FocusSession.findOne({
         userId: friend._id,
         status: "active",
       });
 
-      // 2. Check active break
       const activeBreak = await Break.findOne({
         userId: friend._id,
         status: "active",
@@ -933,7 +882,6 @@ const getFriendsFromDB = async (userId: string) => {
 
       const isLocked = activeSession ? !activeBreak : false;
 
-      // 3. Get last completed session for history info
       const lastSession = await FocusSession.findOne({
         userId: friend._id,
         status: "completed",
@@ -997,12 +945,10 @@ const removeNudgeParticipantFromDB = async (userId: string, nudgeId: string, par
     throw new ApiError(StatusCodes.NOT_FOUND, "Nudge not found");
   }
 
-  // Only the creator of the nudge can remove a participant
   if (nudge.creatorId.toString() !== userId) {
     throw new ApiError(StatusCodes.FORBIDDEN, "Only the nudge creator can remove a participant");
   }
 
-  // 1. Find the active focus session for this participant
   const session = await FocusSession.findOne({
     userId: participantObjectId,
     nudgeId: nudgeObjectId,
@@ -1015,7 +961,6 @@ const removeNudgeParticipantFromDB = async (userId: string, nudgeId: string, par
       (endTime.getTime() - session.startTime.getTime()) / 60000,
     );
 
-    // 2. Update the session to completed
     await FocusSession.findByIdAndUpdate(
       session._id,
       {
@@ -1026,7 +971,6 @@ const removeNudgeParticipantFromDB = async (userId: string, nudgeId: string, par
       { new: true },
     );
 
-    // 3. Deactivate the mode associated with this nudge for the participant
     if (session.modeId) {
       await Mode.findByIdAndUpdate(session.modeId, {
         $set: { isActive: false },
@@ -1041,7 +985,6 @@ const removeNudgeParticipantFromDB = async (userId: string, nudgeId: string, par
     }
   }
 
-  // 4. Soft delete user from joinedParticipants and participants in the Nudge
   const result = await Nudge.findByIdAndUpdate(
     nudgeId,
     {
@@ -1061,7 +1004,6 @@ const removeNudgeParticipantFromDB = async (userId: string, nudgeId: string, par
     },
   );
 
-  // 5. If no active users left in the nudge, mark it as completed
   if (result) {
     const activeJoinedCount = result.joinedParticipants.filter(
       (p) => !p.isDeleted,

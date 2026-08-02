@@ -14,7 +14,6 @@ const saveDeviceToken = async (
       userId: { $ne: userId },
     });
 
-    // Step 2: Upsert - userId + deviceId combination
     const result = await DeviceToken.findOneAndUpdate(
       {
         userId: userId,

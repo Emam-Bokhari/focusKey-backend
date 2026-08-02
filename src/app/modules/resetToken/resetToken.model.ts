@@ -19,14 +19,12 @@ const resetTokenSchema = new Schema<IResetToken, ResetTokenModel>(
   { timestamps: true },
 );
 
-//token check
 resetTokenSchema.statics.isExistToken = async (
   token: string,
 ): Promise<IResetToken | null> => {
   return await ResetToken.findOne({ token });
 };
 
-//token validity check
 resetTokenSchema.statics.isExpireToken = async (token: string) => {
   const currentDate = new Date();
   const resetToken = await ResetToken.findOne({

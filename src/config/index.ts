@@ -22,7 +22,6 @@ export default {
   client_url: process.env.CLIENT_URL,
   base_url: process.env.BASE_URL,
   dashboard_url: process.env.DASHBOARD_URL,
-  // google login
   firebase: {
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
     privateKey: process.env.FIREBASE_PRIVATE_KEY,

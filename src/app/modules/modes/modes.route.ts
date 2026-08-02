@@ -25,7 +25,6 @@ router
   .patch(isUser, ModeController.updateMode)
   .delete(isUser, ModeController.deleteMode);
 
-// lock/unlock
 router.patch(
   "/:modeId/toggle-activation",
   isUser,

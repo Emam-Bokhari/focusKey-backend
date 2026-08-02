@@ -19,7 +19,6 @@ export type ITokenData = {
   deviceId: string;
   deviceType: "ios" | "android" | "web";
 };
-// 1. Extend Document to include timestamps automatically in TS
 export interface IDeviceTokenModel extends IDeviceToken, Document {
   createdAt: Date;
   updatedAt: Date;

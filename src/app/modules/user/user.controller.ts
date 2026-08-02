@@ -32,16 +32,11 @@ const getUserProfile = catchAsync(async (req, res) => {
   });
 });
 
-//update profile
 const updateProfile = catchAsync(async (req, res) => {
   const user: any = req.user;
   if ("role" in req.body) {
     delete req.body.role;
   }
-  // if ("phone" in req.body) {
-  //   delete req.body.phone;
-  // }
-  // If password is provided
   if (req.body.password) {
     req.body.password = await bcrypt.hash(
       req.body.password,
@@ -113,7 +108,6 @@ const deleteUserById = catchAsync(async (req, res) => {
 
 const deleteProfile = catchAsync(async (req, res) => {
   const { id }: any = req.user;
-  // console.log(id, "ID");
   const { password } = req.body;
 
   const result = await UserCommands.deleteProfileFromDB(id, password);
@@ -128,7 +122,6 @@ const deleteProfile = catchAsync(async (req, res) => {
 
 const createAdmin = catchAsync(async (req, res) => {
   const userData = req.body;
-  // console.log(userData, "payload");
   const result = await UserCommands.createAdminToDB(userData);
 
   sendResponse(res, {

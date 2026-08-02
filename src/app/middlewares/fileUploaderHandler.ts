@@ -5,7 +5,6 @@ import multer, { FileFilterCallback } from "multer";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../errors/ApiErrors";
 
-// types
 type FileConfig = {
   dir: string;
   maxCount: number;
@@ -14,7 +13,6 @@ type FileConfig = {
 
 const BASE_UPLOAD_DIR = path.join(process.cwd(), "uploads");
 
-// config
 export const FILE_CONFIG = {
   image: {
     dir: "image",
@@ -126,7 +124,6 @@ export const FILE_CONFIG = {
 
 export type IFolderName = keyof typeof FILE_CONFIG;
 
-// utils
 const ensureDir = (dir: string) => {
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 };
@@ -140,7 +137,6 @@ const generateFileName = (originalName: string) => {
   return `${base}-${Date.now()}${ext}`;
 };
 
-// storage
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     const config = FILE_CONFIG[file.fieldname as IFolderName];
@@ -158,7 +154,6 @@ const storage = multer.diskStorage({
   },
 });
 
-// file filter
 const fileFilter = (
   req: Request,
   file: Express.Multer.File,
@@ -182,7 +177,6 @@ const fileFilter = (
   cb(null, true);
 };
 
-// main upload
 const upload = multer({
   storage,
   fileFilter,
@@ -191,7 +185,6 @@ const upload = multer({
   },
 });
 
-// optional field filtering (production improvement)
 export const fileUploadHandler = (allowedFields?: IFolderName[]) => {
   const fields = Object.entries(FILE_CONFIG)
     .filter(

@@ -18,18 +18,14 @@ import { CronJobs } from "./app/cronJobs/breakCron";
 
 let server: any;
 
-// GRACEFUL SHUTDOWN
 const shutdown = async () => {
   logger.info("🛑 Graceful shutdown started...");
 
   try {
-    // close workers
     await Promise.all([emailWorker.close(), notificationWorker.close()]);
 
-    // close queues
     await Promise.all([emailQueue.close(), notificationQueue.close()]);
 
-    // close HTTP server
     if (server) {
       server.close(() => {
         logger.info("✅ Server closed");
@@ -44,20 +40,16 @@ const shutdown = async () => {
   }
 };
 
-// uncaughtException
 process.on("uncaughtException", (error) => {
   errorLogger.error("uncaughtException Detected", error);
   shutdown();
 });
 
-// MAIN APP START
 async function main() {
   try {
     await mongoose.connect(config.database_url as string);
-    // seed admin
     seedSuperAdmin();
 
-    // DB connect
     logger.info(colors.green("🚀 Database connected successfully"));
 
     const port =
@@ -69,7 +61,6 @@ async function main() {
       );
     });
 
-    // socket setup
     const io = new Server(server, {
       pingTimeout: 60000,
       pingInterval: 25000,
@@ -81,14 +72,12 @@ async function main() {
     //@ts-ignore
     global.io = io;
 
-    // Initialize Cron Jobs
     CronJobs.initBreakCron();
   } catch (error) {
     errorLogger.error(colors.red("🤢 Failed to connect Database"));
     process.exit(1);
   }
 
-  // unhandledRejection
   process.on("unhandledRejection", (error) => {
     errorLogger.error("UnhandledRejection Detected", error);
     shutdown();
@@ -97,6 +86,5 @@ async function main() {
 
 main();
 
-// SIGNAL HANDLING
 process.on("SIGINT", shutdown);
 process.on("SIGTERM", shutdown);

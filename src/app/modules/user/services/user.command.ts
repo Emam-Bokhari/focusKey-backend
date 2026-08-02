@@ -49,28 +49,23 @@ const handleUserPairing = async (
       throw new ApiError(StatusCodes.BAD_REQUEST, "Already paired. Please unpair first.");
     }
 
-    // Resolve deviceFingerprint from input
     const fingerprint = (payload.deviceFingerprint || payload.device_fingerprint || payload.device_id || "").trim();
     
-    // Security check on deviceFingerprint: reject placeholder values
     const lowercaseFingerprint = fingerprint.toLowerCase();
     const invalidFingerprints = ["", "unknown", "null", "undefined", "000000", "android", "ios"];
     if (invalidFingerprints.includes(lowercaseFingerprint)) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid device fingerprint.");
     }
 
-    // Find RegisteredDevice
     const device = await RegisteredDevice.findOne({ uid: payload.uid, status: "ACTIVE" }).session(session);
     if (!device) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Device is not registered.");
     }
 
-    // Check if paired with another user
     if (device.userId && device.userId.toString() !== userId) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another user.");
     }
 
-    // If tag has never been paired before OR is currently unpaired, store/update credentials
     if (!device.userId || (!device.deviceFingerprint && !device.platform)) {
       device.deviceFingerprint = fingerprint;
       device.deviceModel = payload.device_model;
@@ -82,7 +77,6 @@ const handleUserPairing = async (
       }
       device.lastPairedAt = new Date();
     } else {
-      // If tag has been paired before and is currently paired, verify fingerprint and platform match
       if (device.deviceFingerprint !== fingerprint || device.platform !== payload.platform) {
         throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another device.");
       }
@@ -94,7 +88,6 @@ const handleUserPairing = async (
 
     await device.save({ session });
 
-    // Update User
     user.isPaired = true;
     user.device = {
       deviceName: payload.device_model,
@@ -107,7 +100,6 @@ const handleUserPairing = async (
     await session.commitTransaction();
     session.endSession();
 
-    // Emit Socket event
     //@ts-ignore
     const io = global.io;
     if (io) {
@@ -150,7 +142,6 @@ const handleUserUnpairing = async (userId: string) => {
     await session.commitTransaction();
     session.endSession();
 
-    // Emit Socket event
     //@ts-ignore
     const io = global.io;
     if (io) {
@@ -189,7 +180,6 @@ const createUserToDB = async (payload: any) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create user");
   }
 
-  //send email
   const otp = generateOTP();
   const values = {
     name: createUser.name,
@@ -198,10 +188,8 @@ const createUserToDB = async (payload: any) => {
   };
 
   const createAccountTemplate = emailTemplate.createAccount(values);
-  // emailHelper.sendEmail(createAccountTemplate);
   emailQueue.add("create-account-otp", createAccountTemplate);
 
-  //save to DB
   const authentication = {
     oneTimeCode: otp,
     expireAt: new Date(Date.now() + 3 * 60000),
@@ -225,11 +213,9 @@ const createUserToDB = async (payload: any) => {
   );
 
   const result = {
-    // token: createToken,
     user: createUser,
   };
 
-  // notify admin
   const admin = await User.findOne({ role: USER_ROLES.SUPER_ADMIN }).select(
     "_id name",
   );
@@ -258,7 +244,6 @@ const updateProfileToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  //unlink file here
   if (payload.profileImage && isExistUser.profileImage) {
     unlinkFile(isExistUser.profileImage);
   }
@@ -324,7 +309,6 @@ const deleteUserByIdFromDB = async (id: string) => {
 };
 
 const deleteProfileFromDB = async (id: string, password: string) => {
-  // user exists?
   const user = await User.findById(id).select("+password");
   if (!user) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
@@ -337,13 +321,11 @@ const deleteProfileFromDB = async (id: string, password: string) => {
     );
   }
 
-  // check password
   const isPasswordMatch = await bcrypt.compare(password, user.password!);
   if (!isPasswordMatch) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Password is incorrect!");
   }
 
-  // delete user
   const result = await User.findByIdAndDelete(id);
   if (!result) {
     throw new ApiError(400, "Failed to delete this user");
@@ -361,7 +343,6 @@ const createAdminToDB = async (payload: any): Promise<IUser> => {
     throw new ApiError(StatusCodes.CONFLICT, "This Email already taken");
   }
 
-  // ⚠️ IMPORTANT: password must come from payload (or generate if needed)
   const rawPassword = payload.password;
 
   const adminPayload = {
@@ -373,7 +354,6 @@ const createAdminToDB = async (payload: any): Promise<IUser> => {
 
   const createAdmin = await User.create(adminPayload);
 
-  // ---------------- EMAIL TEMPLATE ----------------
   const template = emailTemplate.adminCredentials({
     name: payload.name,
     email: payload.email,

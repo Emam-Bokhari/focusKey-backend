@@ -6,7 +6,6 @@ import mongoose from "mongoose";
 import { IBreakConfig } from "./breaks.interface";
 
 const startBreak = async (userId: string) => {
-  // 1. Find the active mode for the user
   const activeMode = await Mode.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     isActive: true,
@@ -20,7 +19,6 @@ const startBreak = async (userId: string) => {
     );
   }
 
-  // Check if there is an active break (global or nudge break) that makes the state already unlocked
   const activeBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     status: "active",
@@ -34,13 +32,11 @@ const startBreak = async (userId: string) => {
     );
   }
 
-  // Get global break config or use defaults
   let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
   });
 
   if (!breakConfig) {
-    // Create default config if not exists
     breakConfig = await BreakConfig.create({
       userId: new mongoose.Types.ObjectId(userId),
       breaksPerDay: 4,
@@ -54,7 +50,6 @@ const startBreak = async (userId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Breaks are not allowed");
   }
 
-  // 2. Count breaks taken today
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
 
@@ -71,7 +66,6 @@ const startBreak = async (userId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached");
   }
 
-  // 4. Create new break
   const startTime = new Date();
   const endTime = new Date(startTime.getTime() + breakDurationMinutes * 60000);
 
@@ -83,7 +77,6 @@ const startBreak = async (userId: string) => {
     status: "active",
   });
 
-  // Notify user via socket that break started (apps unlocked)
   //@ts-ignore
   const io = global.io;
   if (io) {
@@ -106,7 +99,6 @@ const getActiveBreakStatus = async (userId: string) => {
     endTime: { $gt: now },
   }).populate("modeId");
 
-  // Get global break config
   let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
   });
@@ -128,7 +120,6 @@ const getActiveBreakStatus = async (userId: string) => {
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
   startOfWeek.setHours(0, 0, 0, 0);
 
-  // Fetch breaks for today to calculate todayMinutes
   const todayBreaks = await Break.find({
     userId: new mongoose.Types.ObjectId(userId),
     $or: [
@@ -137,7 +128,6 @@ const getActiveBreakStatus = async (userId: string) => {
     ],
   });
 
-  // Fetch breaks for this week to calculate weekMinutes
   const weekBreaks = await Break.find({
     userId: new mongoose.Types.ObjectId(userId),
     $or: [{ createdAt: { $gte: startOfWeek } }, { status: "active" }],
@@ -199,7 +189,6 @@ const getActiveBreakStatus = async (userId: string) => {
 };
 
 const getRemainingBreaks = async (userId: string) => {
-  // Get global break config (explicitly bypass soft-delete filter to find existing record)
   let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     isDeleted: { $in: [true, false] },
@@ -212,7 +201,6 @@ const getRemainingBreaks = async (userId: string) => {
       breakDurationMinutes: 15,
     });
   } else if (breakConfig.isDeleted) {
-    // If it was soft-deleted, restore it instead of creating a new one to avoid duplicate key error
     breakConfig.isDeleted = false;
     //@ts-ignore
     breakConfig.deletedAt = null;
@@ -259,7 +247,6 @@ const getRemainingBreaks = async (userId: string) => {
 const stopBreak = async (userId: string) => {
   const now = new Date();
 
-  // Find the active break first to calculate duration
   const activeBreakToStop = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     status: "active",
@@ -288,7 +275,6 @@ const stopBreak = async (userId: string) => {
     { new: true },
   );
 
-  // Notify user via socket that break stopped (apps locked)
   //@ts-ignore
   const io = global.io;
   if (io) {
@@ -304,7 +290,6 @@ const stopBreak = async (userId: string) => {
 const updateExpiredBreaks = async () => {
   const now = new Date();
 
-  // Find expired breaks first to get userIds for notification and calculate duration
   const expiredBreaks = await Break.find({
     status: "active",
     endTime: { $lte: now },
@@ -316,7 +301,6 @@ const updateExpiredBreaks = async () => {
 
   const userIds = expiredBreaks.map((b) => b.userId.toString());
 
-  // Update each break individually to set correct durationMinutes
   for (const breakItem of expiredBreaks) {
     const durationMs =
       breakItem.endTime.getTime() - breakItem.startTime.getTime();

@@ -4,8 +4,6 @@ import sendResponse from "../../../shared/sendResponse";
 import { StatusCodes } from "http-status-codes";
 import { NotificationService } from "./notification.service";
 
-// --- USER & AGENT CONTROLLERS ---
-
 const getNotifications = catchAsync(async (req: Request, res: Response) => {
   const result = await NotificationService.getNotificationsFromDB(
     req.user,
@@ -63,8 +61,6 @@ const readSingleNotification = catchAsync(
     });
   },
 );
-
-// --- ADMIN & SUPER_ADMIN CONTROLLERS ---
 
 const getAdminNotifications = catchAsync(
   async (req: Request, res: Response) => {

@@ -197,7 +197,6 @@ const reviewSupportByAdminToDB = async (
   supportId: string,
   status: SUPPORT_STATUS,
 ) => {
-  // validation: only allow specific statuses
   if (![SUPPORT_STATUS.RESOLVED].includes(status)) {
     throw new ApiError(400, "Invalid support status update request");
   }

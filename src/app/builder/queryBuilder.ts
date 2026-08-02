@@ -9,7 +9,6 @@ class QueryBuilder<T> {
     this.query = query;
   }
 
-  // SEARCH (generic + safe)
   search(searchableFields: string[]) {
     const searchTerm = this.query.searchTerm as string;
 
@@ -26,14 +25,12 @@ class QueryBuilder<T> {
       });
     });
 
-    // ObjectId support
     if (Types.ObjectId.isValid(searchTerm)) {
       orConditions.push({
         _id: new Types.ObjectId(searchTerm),
       });
     }
 
-    // 🔥 IMPORTANT: guard empty OR
     if (orConditions.length === 0) return this;
 
     this.modelQuery = this.modelQuery.find({
@@ -50,7 +47,6 @@ class QueryBuilder<T> {
 
     excludeFields.forEach((el) => delete queryObj[el]);
 
-    // remove empty values
     Object.keys(queryObj).forEach((key) => {
       if (
         queryObj[key] === undefined ||
@@ -65,12 +61,10 @@ class QueryBuilder<T> {
 
     /* ================= ENUM FILTERS ================= */
 
-    // STATUS
     if (queryObj.status) {
       finalFilter.status = queryObj.status;
     }
 
-    // isFeatured (COMMENTED FOR FUTURE USE)
     /*
     if (queryObj.isFeatured !== undefined) {
       finalFilter.isFeatured =
@@ -94,7 +88,6 @@ class QueryBuilder<T> {
     return this;
   }
 
-  //  SORT
   sort() {
     const sort =
       (this.query.sort as string)?.split(",").join(" ") || "-createdAt";
@@ -104,7 +97,6 @@ class QueryBuilder<T> {
     return this;
   }
 
-  //  PAGINATION
   paginate() {
     const page = Number(this.query.page) || 1;
     const limit = Number(this.query.limit) || 10;
@@ -116,7 +108,6 @@ class QueryBuilder<T> {
     return this;
   }
 
-  //  FIELD SELECTION
   fields(customFields?: string) {
     const fields =
       customFields ||
@@ -128,12 +119,9 @@ class QueryBuilder<T> {
     return this;
   }
 
-  // COUNT META
   async countTotal() {
     const filter = this.modelQuery.getFilter();
 
-    // Fix: countDocuments does not support $near/$nearSphere
-    // We convert these to $geoWithin for counting purposes to keep the radius filter
     const recursiveFixGeo = (obj: any) => {
       if (!obj || typeof obj !== "object") return;
 
@@ -146,14 +134,12 @@ class QueryBuilder<T> {
               const coordinates = near.$geometry.coordinates;
               const radiusInRadians = near.$maxDistance / 6378100;
 
-              // Replace $near with $geoWithin
               delete val.$near;
               delete val.$nearSphere;
               val.$geoWithin = {
                 $centerSphere: [coordinates, radiusInRadians],
               };
             } else {
-              // If we can't convert it accurately, just remove it to avoid crash
               delete val.$near;
               delete val.$nearSphere;
             }

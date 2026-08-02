@@ -28,7 +28,6 @@ const auth =
       if (tokenWithBearer && tokenWithBearer.startsWith("Bearer")) {
         const token = tokenWithBearer.split(" ")[1];
 
-        //verify token
         let verifyUser: any;
         try {
           verifyUser = verifyToken(token, config.jwt.jwt_secret as Secret);
@@ -39,7 +38,6 @@ const auth =
           );
         }
 
-        //  user check isUserExist or not
         const user = await User.isExistUserById(verifyUser.id);
         if (!user) {
           throw new ApiError(
@@ -52,7 +50,6 @@ const auth =
           throw new ApiError(StatusCodes.FORBIDDEN, "This user is blocked !!");
         }
 
-        //guard user
         if (roles.length && !roles.includes(verifyUser?.role)) {
           throw new ApiError(
             StatusCodes.FORBIDDEN,
@@ -60,7 +57,6 @@ const auth =
           );
         }
 
-        //set user to header
         req.user = verifyUser;
         next();
       }

@@ -69,12 +69,10 @@ const registeredDeviceSchema = new Schema<IRegisteredDevice, ISoftDeleteModel<IR
   }
 );
 
-// Indexes
 registeredDeviceSchema.index({ uid: 1 });
 registeredDeviceSchema.index({ serialNo: 1 });
 registeredDeviceSchema.index({ userId: 1 });
 
-// Soft Delete Plugin
 registeredDeviceSchema.plugin(softDeletePlugin);
 
 export const RegisteredDevice = model<IRegisteredDevice, ISoftDeleteModel<IRegisteredDevice>>(

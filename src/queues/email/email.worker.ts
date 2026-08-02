@@ -7,8 +7,6 @@ export const emailWorker = new Worker(
   async (job) => {
     const { to, subject, html, userId, event } = job.data;
 
-    // console.log(to, subject, html);
-
     await emailHelper.sendEmail({
       to,
       subject,
@@ -20,7 +18,6 @@ export const emailWorker = new Worker(
   { connection },
 );
 
-// events
 emailWorker.on("completed", (job) => {
   console.log(`Email Sent: ${job.id}`);
 });

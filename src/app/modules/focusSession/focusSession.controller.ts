@@ -57,7 +57,6 @@ const exportHistoryToCSV = catchAsync(async (req: Request, res: Response) => {
 
   const fileName = `focus_history_${new Date().toISOString().split("T")[0]}.csv`;
 
-  // Headers optimized for both Web and Mobile App downloads
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
   res.setHeader("Access-Control-Expose-Headers", "Content-Disposition");

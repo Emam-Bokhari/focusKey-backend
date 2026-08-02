@@ -110,7 +110,6 @@ const modeSchema = new Schema<IMode, TModeModel>(
 );
 modeSchema.plugin(softDeletePlugin);
 
-// Auto update totalLockedApps count before saving
 modeSchema.pre("save", function (next) {
   if (this.lockedApps) {
     this.totalLockedApps = this.lockedApps.length;

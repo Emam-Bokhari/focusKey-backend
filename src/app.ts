@@ -13,11 +13,9 @@ const app: Application = express();
 app.set("views", path.join(__dirname, "..", "views"));
 app.set("view engine", "ejs");
 
-// morgan
 app.use(Morgan.successHandler);
 app.use(Morgan.errorHandler);
 
-//body parser
 app.use(
   cors({
     origin: true,
@@ -29,10 +27,8 @@ app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-//file retrieve
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-//router
 app.use("/api/v1", router);
 router.use("/api/v2", v2Router);
 app.use("/admin/queues", serverAdapter.getRouter());
@@ -41,7 +37,6 @@ app.get("/", (req: Request, res: Response) => {
   res.send("Server is running...");
 });
 
-// handle not found route
 app.use((req: Request, res: Response) => {
   res.status(StatusCodes.NOT_FOUND).json({
     success: false,
@@ -55,7 +50,6 @@ app.use((req: Request, res: Response) => {
   });
 });
 
-//global error handle
 app.use(globalErrorHandler);
 
 export default app;

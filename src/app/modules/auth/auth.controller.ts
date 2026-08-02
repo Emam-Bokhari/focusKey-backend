@@ -92,7 +92,6 @@ const resendVerificationEmail = catchAsync(
   },
 );
 
-// delete user
 const deleteUser = catchAsync(async (req: Request, res: Response) => {
   const result = await AuthService.deleteUserFromDB(
     req.user as JwtPayload,
@@ -107,7 +106,6 @@ const deleteUser = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-// google login
 const googleLogin = catchAsync(async (req: Request, res: Response) => {
   const { token, deviceToken } = req.body;
 

@@ -7,12 +7,10 @@ import { FocusSession } from "../focusSession/focusSession.model";
 const getDashboardData = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // 1. Get User Info
   const user = await User.findById(userId).select(
     "name email phone countryCode profileImage installedApps",
   );
 
-  // 2. Get Active Focus Session (prioritize active session for mode configuration)
   const activeSession = await FocusSession.findOne({
     userId: userObjectId,
     status: "active",
@@ -26,7 +24,6 @@ const getDashboardData = async (userId: string) => {
         isDeleted: false,
       });
 
-  // 3. Check for Active Global Break
   const activeBreak = await Break.findOne({
     userId: userObjectId,
     nudgeId: { $exists: false },
@@ -34,7 +31,6 @@ const getDashboardData = async (userId: string) => {
     endTime: { $gt: new Date() },
   });
 
-  // 3a. Check for Active Nudge Break (Priority for unlocking)
   const activeNudgeBreak = await Break.findOne({
     userId: userObjectId,
     nudgeId: { $exists: true },
@@ -42,10 +38,8 @@ const getDashboardData = async (userId: string) => {
     endTime: { $gt: new Date() },
   });
 
-  // 4. Calculate Lock Status (Unlock if EITHER global OR nudge break is active)
   const isLocked = activeMode ? !(activeBreak || activeNudgeBreak) : false;
 
-  // 5. Focus Time Stats (Today)
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date();
@@ -59,7 +53,6 @@ const getDashboardData = async (userId: string) => {
     ],
   });
 
-  // Today's Global Breaks
   const todayGlobalBreaks = await Break.find({
     userId: userObjectId,
     nudgeId: { $exists: false },
@@ -69,7 +62,6 @@ const getDashboardData = async (userId: string) => {
     ],
   });
 
-  // Today's Nudge Breaks
   const todayNudgeBreaks = await Break.find({
     userId: userObjectId,
     nudgeId: { $exists: true },
@@ -84,13 +76,11 @@ const getDashboardData = async (userId: string) => {
     if (session.status === "completed") {
       todayFocusMinutes += session.durationMinutes || 0;
     } else {
-      // For active session, calculate duration up to now
       const durationMs = new Date().getTime() - session.startTime.getTime();
       todayFocusMinutes += Math.round(durationMs / 60000);
     }
   });
 
-  // Subtract today's break time (Both global and nudge)
   const allTodayBreaks = [...todayGlobalBreaks, ...todayNudgeBreaks];
   allTodayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
@@ -102,7 +92,6 @@ const getDashboardData = async (userId: string) => {
   });
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
 
-  // 6. Focus Time Stats (This Week)
   const startOfWeek = new Date();
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
   startOfWeek.setHours(0, 0, 0, 0);
@@ -127,7 +116,6 @@ const getDashboardData = async (userId: string) => {
     }
   });
 
-  // Subtract this week's break time
   weekBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       weekFocusMinutes -= breakItem.durationMinutes || 0;
@@ -138,12 +126,10 @@ const getDashboardData = async (userId: string) => {
   });
   weekFocusMinutes = Math.max(0, weekFocusMinutes);
 
-  // 7. Break Stats (Only Global Breaks for Dashboard)
   let breaksTakenToday = 0;
   let remainingBreaksToday = 0;
   let activeBreakRemainingMinutes = 0;
 
-  // Get global break config (explicitly bypass soft-delete filter to find existing record)
   let breakConfig = await BreakConfig.findOne({
     userId: userObjectId,
     isDeleted: { $in: [true, false] },
@@ -156,7 +142,6 @@ const getDashboardData = async (userId: string) => {
       breakDurationMinutes: 15,
     });
   } else if (breakConfig.isDeleted) {
-    // Restore if soft-deleted to avoid duplicate key error
     breakConfig.isDeleted = false;
     //@ts-ignore
     breakConfig.deletedAt = null;
@@ -182,7 +167,6 @@ const getDashboardData = async (userId: string) => {
     );
   }
 
-  // 8. Total Blocked Apps (Across all modes for this user)
   const allModes = await Mode.find({ userId: userObjectId, isDeleted: false });
   const totalBlockedAppsAcrossModes = allModes.reduce(
     (acc, mode) => acc + (mode.lockedApps?.length || 0),
@@ -194,7 +178,6 @@ const getDashboardData = async (userId: string) => {
     lockStatus: {
       isLocked,
       activeModeName: activeMode?.name || null,
-      // activeModeId: activeMode?._id || null,
     },
     activeMode: (() => {
       if (!activeMode) return null;
@@ -265,7 +248,6 @@ const formatTime = (date: Date) => {
 const getHistoryData = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // 1. Total Focus Time (All Time)
   const allSessions = await FocusSession.find({ userId: userObjectId });
   const allBreaks = await Break.find({ userId: userObjectId });
 
@@ -297,7 +279,6 @@ const getHistoryData = async (userId: string) => {
   });
   totalMinutes = Math.max(0, totalMinutes);
 
-  // 2. Mode-wise Today Focus Time
   const startOfDay = new Date();
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date();
@@ -334,8 +315,6 @@ const getHistoryData = async (userId: string) => {
     }
   });
 
-  // Subtract today's breaks from mode-wise today focus time
-  // Note: This is simplified; assumes breaks belong to the mode they were taken in
   for (const b of todayBreaks) {
     const mode = await Mode.findById(b.modeId);
     const modeName = mode?.name || "Unknown Mode";
@@ -353,7 +332,6 @@ const getHistoryData = async (userId: string) => {
     }
   }
 
-  // 3. Date-wise Detailed History
   const historyLogs = await FocusSession.find({ userId: userObjectId })
     .populate("modeId")
     .sort({ startTime: -1 });
@@ -385,7 +363,6 @@ const getHistoryData = async (userId: string) => {
       );
     }
 
-    // Find breaks within this session's time range to subtract
     const sessionBreaks = await Break.find({
       userId: userObjectId,
       modeId: session.modeId,
@@ -424,7 +401,6 @@ const getHistoryData = async (userId: string) => {
     });
   }
 
-  // Format grouped history for response
   const history = Object.values(groupedHistory).map((day: any) => ({
     ...day,
     totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
@@ -434,10 +410,6 @@ const getHistoryData = async (userId: string) => {
     summary: {
       totalFocusTime: formatDuration(totalMinutes),
     },
-    // todayStats: Object.keys(modeWiseToday).map((mode) => ({
-    //   mode,
-    //   duration: formatDuration(modeWiseToday[mode]),
-    // })),
     history,
   };
 };
@@ -492,7 +464,6 @@ const formatTimeV2 = (date: Date) => {
 const getHistoryV2 = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  // 1. Total Focus Time (All Time)
   const allSessions = await FocusSession.find({ userId: userObjectId });
   const allBreaks = await Break.find({ userId: userObjectId });
 
@@ -524,7 +495,6 @@ const getHistoryV2 = async (userId: string) => {
   });
   totalMinutes = Math.max(0, totalMinutes);
 
-  // 2. Since Date
   const user = await User.findById(userId).select("createdAt");
   let sinceDate = "";
   if (user && user.createdAt) {
@@ -541,7 +511,6 @@ const getHistoryV2 = async (userId: string) => {
     })}`;
   }
 
-  // 3. Date-wise Detailed History
   const historyLogs = await FocusSession.find({ userId: userObjectId })
     .populate("modeId")
     .sort({ startTime: -1 });
@@ -573,7 +542,6 @@ const getHistoryV2 = async (userId: string) => {
       );
     }
 
-    // Find breaks within this session's time range to subtract
     const sessionBreaks = await Break.find({
       userId: userObjectId,
       modeId: session.modeId,
@@ -611,14 +579,11 @@ const getHistoryV2 = async (userId: string) => {
     });
   }
 
-  // Sort groups and sessions
   const sortedDates = Object.keys(groupedHistory).sort((a, b) => b.localeCompare(a));
 
   const history = sortedDates.map((dateKey) => {
     const group = groupedHistory[dateKey];
-    // Sort sessions in ascending order of startTime within the day
     group.sessions.sort((a: any, b: any) => a.startTime.getTime() - b.startTime.getTime());
-    // Remove startTime from output since it's just metadata
     const cleanSessions = group.sessions.map(({ startTime, ...rest }: any) => rest);
 
     return {

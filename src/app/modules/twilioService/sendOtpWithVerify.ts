@@ -16,10 +16,8 @@ class TwilioService {
     const accountSid = config.twilio.accountSid;
     const authToken = config.twilio.authToken;
 
-    // Initialize Twilio client
     this.client = twilio(accountSid, authToken);
 
-    // Configure country codes
     this.phoneConfig = {
       defaultCountryCode: "+880", // Bangladesh default
       countryCodes: [
@@ -39,11 +37,9 @@ class TwilioService {
     };
   }
 
-  // ✅ Format phone number to E.164 format
   private formatPhoneNumber(phoneNumber: string, countryCode?: string): string {
     let phone = phoneNumber.trim().replace(/\s+/g, ""); // Remove spaces
 
-    // If already in E.164 format (starts with +), validate and return
     if (phone.startsWith("+")) {
       const isValid = this.phoneConfig.countryCodes.some((code) =>
         phone.startsWith(code),
@@ -59,10 +55,8 @@ class TwilioService {
       }
     }
 
-    // Use provided country code or default
     const code = countryCode || this.phoneConfig.defaultCountryCode;
 
-    // Validate provided country code
     if (!this.phoneConfig.countryCodes.includes(code)) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
@@ -70,22 +64,18 @@ class TwilioService {
       );
     }
 
-    // Remove leading 0 if exists (common in local formats)
     if (phone.startsWith("0")) {
       phone = phone.substring(1);
     }
 
-    // Combine country code with phone number
     return `${code}${phone}`;
   }
 
-  // Using Twilio Verify API
   async sendOTPWithVerify(
     phoneNumber: string,
     countryCode: string,
   ): Promise<void> {
     try {
-      // Format phone number to E.164
       const formattedPhone = this.formatPhoneNumber(phoneNumber, countryCode);
 
       console.log("Original phone:", phoneNumber);
@@ -117,14 +107,12 @@ class TwilioService {
     }
   }
 
-  // Verify the OTP
   async verifyOTP(
     phoneNumber: string,
     code: string,
     countryCode: string,
   ): Promise<boolean> {
     try {
-      // Format phone number to E.164
       const formattedPhone = this.formatPhoneNumber(phoneNumber, countryCode);
 
       console.log("Verifying OTP for:", formattedPhone);

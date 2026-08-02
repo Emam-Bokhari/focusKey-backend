@@ -39,7 +39,6 @@ const createNudge = catchAsync(async (req: Request, res: Response) => {
 });
 
 const joinNudge = catchAsync(async (req: Request, res: Response) => {
-  // Try to get userId from req.user (auth), or from query (for testing without auth)
   const userId = (req.user as any)?.id || req.query.userId;
   const { nudgeId } = req.params;
 

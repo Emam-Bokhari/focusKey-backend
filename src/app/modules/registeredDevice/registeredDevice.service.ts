@@ -7,19 +7,16 @@ import { RegisteredDevice } from "./registeredDevice.model";
 import { User } from "../user/user.model";
 
 const createDeviceToDB = async (payload: Partial<IRegisteredDevice>): Promise<IRegisteredDevice> => {
-  // check if uid is already registered
   const existingDevice = await RegisteredDevice.findOne({ uid: payload.uid });
   if (existingDevice) {
     throw new ApiError(StatusCodes.CONFLICT, "A device with this UID is already registered.");
   }
 
-  // generate serialNo if not provided
   if (!payload.serialNo) {
     const timestamp = Date.now().toString().slice(-6);
     const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
     payload.serialNo = `SN-${timestamp}${randomHex}`;
   } else {
-    // check if serialNo is unique
     const existingSerial = await RegisteredDevice.findOne({ serialNo: payload.serialNo });
     if (existingSerial) {
       throw new ApiError(StatusCodes.CONFLICT, "A device with this Serial Number is already registered.");
@@ -70,7 +67,6 @@ const updateDeviceToDB = async (id: string, payload: Partial<IRegisteredDevice>)
     throw new ApiError(StatusCodes.NOT_FOUND, "Device not found.");
   }
 
-  // Check unique constraints if uid or serialNo is changed
   if (payload.uid && payload.uid !== device.uid) {
     const existing = await RegisteredDevice.findOne({ uid: payload.uid });
     if (existing) {
@@ -105,7 +101,6 @@ const deleteDeviceFromDB = async (id: string): Promise<IRegisteredDevice | null>
   return result;
 };
 
-// Admin reset device
 const resetDeviceToDB = async (id: string) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid device ID.");
@@ -122,7 +117,6 @@ const resetDeviceToDB = async (id: string) => {
 
     const pairedUserId = device.userId;
 
-    // Reset device fields
     device.deviceFingerprint = null;
     device.deviceModel = null;
     device.platform = null;
@@ -131,7 +125,6 @@ const resetDeviceToDB = async (id: string) => {
     device.lastUnpairedAt = new Date();
     await device.save({ session });
 
-    // Reset user fields if paired
     if (pairedUserId) {
       const user = await User.findById(pairedUserId).session(session);
       if (user) {
@@ -144,7 +137,6 @@ const resetDeviceToDB = async (id: string) => {
     await session.commitTransaction();
     session.endSession();
 
-    // Emit socket event to notify offline/online user
     if (pairedUserId) {
       //@ts-ignore
       const io = global.io;

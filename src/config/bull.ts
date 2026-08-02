@@ -13,7 +13,6 @@ export const defaultJobOptions = {
     type: "exponential",
     delay: 2000,
   },
-  // removeOnComplete: true,
   removeOnComplete: {
     age: 3600,
   },

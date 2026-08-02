@@ -11,7 +11,6 @@ const handleExpiredBreaks = async () => {
         `Cron Job: ${result.modifiedCount} expired breaks marked as completed.`,
       );
 
-      // Notify users via socket that their break has ended and apps are locked
       //@ts-ignore
       const io = global.io;
       if (io) {
@@ -28,7 +27,6 @@ const handleExpiredBreaks = async () => {
   }
 };
 
-// Run every minute
 const initBreakCron = () => {
   cron.schedule("* * * * *", () => {
     handleExpiredBreaks();

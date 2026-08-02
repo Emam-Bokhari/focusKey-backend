@@ -3,7 +3,6 @@ import { mapFilesToUrls, mapFileToUrl } from "./fileMapper";
 import { IFolderName } from "./fileUploaderHandler";
 import ApiError from "../../errors/ApiErrors";
 
-// types
 interface FileFieldConfig {
   fieldName: IFolderName;
   mode?: "single" | "multiple" | "auto";
@@ -15,7 +14,6 @@ type MulterFiles = {
   [key in IFolderName]?: Express.Multer.File[];
 };
 
-// normalizer
 const normalizeField = (field: FieldInput) => {
   if (typeof field === "string") {
     return { fieldName: field, mode: "auto" as const };
@@ -27,7 +25,6 @@ const normalizeField = (field: FieldInput) => {
   };
 };
 
-// safe json parse (FIXED)
 const safeJsonParse = (value: any) => {
   if (typeof value !== "string") return value;
   try {
@@ -37,7 +34,6 @@ const safeJsonParse = (value: any) => {
   }
 };
 
-// auto mode resolver
 const resolveMode = (
   mode: "single" | "multiple" | "auto",
   files?: Express.Multer.File[],
@@ -46,7 +42,6 @@ const resolveMode = (
   return files && files.length <= 1 ? "single" : "multiple";
 };
 
-// main middleware
 export const parseFileData = (...fields: FieldInput[]) => {
   const normalized = fields.map(normalizeField);
 

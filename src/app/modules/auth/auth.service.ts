@@ -29,7 +29,6 @@ const loginUserFromDB = async (payload: ILoginData) => {
     throw new ApiError(400, "User doesn't exist!");
   }
 
-  // check verified and status
   if (!isExistUser.verified) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -38,7 +37,6 @@ const loginUserFromDB = async (payload: ILoginData) => {
     );
   }
 
-  // check user status
   if (isExistUser.status === STATUS.INACTIVE) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -47,7 +45,6 @@ const loginUserFromDB = async (payload: ILoginData) => {
     );
   }
 
-  // check match password
   if (
     password &&
     !(await User.isMatchPassword(password, isExistUser.password!))
@@ -55,7 +52,6 @@ const loginUserFromDB = async (payload: ILoginData) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Password is incorrect!");
   }
 
-  // Save device token if provided
   if (fcmToken && deviceId && deviceType) {
     await FcmTokenService.saveDeviceToken(isExistUser._id, {
       fcmToken,
@@ -64,11 +60,9 @@ const loginUserFromDB = async (payload: ILoginData) => {
     });
   }
 
-  // update last login
   await User.findByIdAndUpdate(isExistUser._id, { lastLoginAt: new Date() });
   await ModeService.ensureDefaultModesExist(isExistUser._id.toString());
 
-  // create token
   const createToken = jwtHelper.createToken(
     { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
     config.jwt.jwt_secret as Secret,
@@ -83,14 +77,12 @@ const loginUserFromDB = async (payload: ILoginData) => {
   return result;
 };
 
-// ========================== forget password ===========================
 const forgetPasswordToDB = async (email: string) => {
   const isExistUser = await User.isExistUserByEmail(email);
   if (!isExistUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  //send mail
   const otp = generateOTP();
   const value = {
     otp,
@@ -98,10 +90,8 @@ const forgetPasswordToDB = async (email: string) => {
   };
 
   const forgetPassword = emailTemplate.resetPassword(value);
-  // emailHelper.sendEmail(forgetPassword);
   emailQueue.add("forget-password-otp", forgetPassword);
 
-  //save to DB
   const authentication = {
     oneTimeCode: otp,
     expireAt: new Date(Date.now() + 3 * 60000),
@@ -109,7 +99,6 @@ const forgetPasswordToDB = async (email: string) => {
   await User.findOneAndUpdate({ email }, { $set: { authentication } });
 };
 
-// ======================================= afriksms verify phone otp============================
 const verifyEmailToDB = async (payload: IVerifyEmail) => {
   const { email, oneTimeCode } = payload;
   const isExistUser = await User.findOne({ email }).select("+authentication");
@@ -162,7 +151,6 @@ const verifyEmailToDB = async (payload: IVerifyEmail) => {
       },
     );
 
-    // create token ;
     const createToken = cryptoToken();
     await ResetToken.create({
       user: isExistUser._id,
@@ -181,13 +169,11 @@ const resetPasswordToDB = async (
   payload: IAuthResetPassword,
 ) => {
   const { newPassword, confirmPassword } = payload;
-  // isExist token
   const isExistToken = await ResetToken.isExistToken(token);
   if (!isExistToken) {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "You are not authorized");
   }
 
-  // user permission check
   const isExistUser = await User.findById(isExistToken.user).select(
     "+authentication",
   );
@@ -198,7 +184,6 @@ const resetPasswordToDB = async (
     );
   }
 
-  // validity check
   const isValid = await ResetToken.isExpireToken(token);
   if (!isValid) {
     throw new ApiError(
@@ -208,7 +193,6 @@ const resetPasswordToDB = async (
     );
   }
 
-  // check password
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -241,7 +225,6 @@ const changePasswordToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  // current password match
   if (
     currentPassword &&
     !(await User.isMatchPassword(currentPassword, isExistUser.password!))
@@ -249,7 +232,6 @@ const changePasswordToDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "Password is incorrect");
   }
 
-  // newPassword and current password
   if (currentPassword === newPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -258,7 +240,6 @@ const changePasswordToDB = async (
     );
   }
 
-  // new password and confirm password check
   if (newPassword !== confirmPassword) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -266,7 +247,6 @@ const changePasswordToDB = async (
     );
   }
 
-  // hash password
   const hashPassword = await bcrypt.hash(
     newPassword,
     Number(config.bcrypt_salt_rounds),
@@ -280,7 +260,6 @@ const changePasswordToDB = async (
 };
 
 const newAccessTokenToUser = async (token: string) => {
-  // Check if the token is provided
   if (!token) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Token is required!");
   }
@@ -295,7 +274,6 @@ const newAccessTokenToUser = async (token: string) => {
     throw new ApiError(StatusCodes.UNAUTHORIZED, "Unauthorized access");
   }
 
-  // create token
   const accessToken = jwtHelper.createToken(
     { id: isExistUser._id, role: isExistUser.role, email: isExistUser.email },
     config.jwt.jwt_secret as Secret,
@@ -305,9 +283,7 @@ const newAccessTokenToUser = async (token: string) => {
   return { accessToken };
 };
 
-// ==================resend otp phone afriksms=======================
 const resendVerificationEmailToDB = async (email: string) => {
-  // Find the user by ID
   const existingUser: any = await User.findOne({ email: email }).lean();
 
   if (!existingUser) {
@@ -322,7 +298,6 @@ const resendVerificationEmailToDB = async (email: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User is already verified!");
   }
 
-  // Generate OTP and prepare email
   const otp = generateOTP();
   const emailValues = {
     name: existingUser.name,
@@ -331,10 +306,8 @@ const resendVerificationEmailToDB = async (email: string) => {
   };
 
   const accountEmailTemplate = emailTemplate.createAccount(emailValues);
-  // emailHelper.sendEmail(accountEmailTemplate);
   emailQueue.add("resend-email-otp", accountEmailTemplate);
 
-  // Update user with authentication details
   const authentication = {
     oneTimeCode: otp,
     expireAt: new Date(Date.now() + 3 * 60000),
@@ -354,7 +327,6 @@ const deleteUserFromDB = async (user: JwtPayload, password: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
 
-  // check match password
   if (
     password &&
     !(await User.isMatchPassword(password, isExistUser.password!))
@@ -396,7 +368,6 @@ const googleLoginService = async (payload: {
 
   const { uid: firebaseUid, email, name, picture, email_verified } = decoded;
 
-  // Email must exist for Google login
   if (!email) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -404,7 +375,6 @@ const googleLoginService = async (payload: {
     );
   }
 
-  // Optionally enforce email verification
   if (!email_verified) {
     throw new ApiError(
       StatusCodes.FORBIDDEN,
@@ -412,13 +382,11 @@ const googleLoginService = async (payload: {
     );
   }
 
-  // Check if user exists
   let user = await User.findOne({
     firebaseUid,
   });
 
   if (user) {
-    // Check user status
     if (user.status === STATUS.INACTIVE) {
       throw new ApiError(
         StatusCodes.FORBIDDEN,
@@ -426,7 +394,6 @@ const googleLoginService = async (payload: {
       );
     }
 
-    // Update user info if changed
     if (user.email !== email || user.profileImage !== picture) {
       user.email = email;
       user.profileImage = picture || user.profileImage;
@@ -437,10 +404,8 @@ const googleLoginService = async (payload: {
     const [firstName, ...rest] = (name || "").trim().split(" ");
     const lastName = rest.join(" ");
 
-    // create full name
     const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
-    // Generate unique username
     const baseUsername = email.split("@")[0];
     let userName = baseUsername;
     let counter = 1;
@@ -461,7 +426,6 @@ const googleLoginService = async (payload: {
     });
   }
 
-  // Save device token if provided
   if (fcmToken && deviceId && deviceType) {
     await FcmTokenService.saveDeviceToken(user._id, {
       fcmToken,
@@ -470,11 +434,9 @@ const googleLoginService = async (payload: {
     });
   }
 
-  // update last login
   await User.findByIdAndUpdate(user._id, { lastLoginAt: new Date() });
   await ModeService.ensureDefaultModesExist(user._id.toString());
 
-  // create token
   const createToken = jwtHelper.createToken(
     { id: user._id, role: user.role, email: user.email },
     config.jwt.jwt_secret as Secret,

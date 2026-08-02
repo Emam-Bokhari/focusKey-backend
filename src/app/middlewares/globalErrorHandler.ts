@@ -77,7 +77,6 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
       : [];
   }
 
-  // main switch here
   if (responseMode === RESPONSE_MODE.SOFT) {
     return res.status(200).json({
       success: false,
@@ -90,7 +89,6 @@ const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
 
   console.log("responseMode =", responseMode);
 
-  // STRICT MODE (default fallback)
   return res.status(statusCode).json({
     success: false,
     message,

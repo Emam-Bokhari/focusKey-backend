@@ -23,13 +23,11 @@ const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {
 const getAllUsersFromDB = async (query: any) => {
   const { role = USER_ROLES.USER, status, ...remainingQuery } = query;
 
-  // Base user filter
   const filter: Record<string, any> = {
     role,
     verified: true,
   };
 
-  // Add status filter if provided
   if (status) {
     filter.status = status;
   }
@@ -45,7 +43,6 @@ const getAllUsersFromDB = async (query: any) => {
     .filter()
     .paginate();
 
-  // Fetch paginated users
   let users: any[] = await queryBuilder.modelQuery.lean();
   const meta = await queryBuilder.countTotal();
 
@@ -74,7 +71,6 @@ const getUserByIdFromDB = async (id: string) => {
 const getAdminFromDB = async (query: any) => {
   const baseQuery = User.find({
     role: { $in: [USER_ROLES.ADMIN, USER_ROLES.SUPER_ADMIN] },
-    // status: STATUS.ACTIVE,
     verified: true,
   }).select(
     "name email role profileImage createdAt updatedAt status lastLoginAt",

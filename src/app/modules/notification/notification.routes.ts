@@ -4,7 +4,6 @@ import { isAdmin } from "../../../helpers/authHelper";
 
 const router = express.Router();
 
-// --- ADMIN & SUPER_ADMIN ROUTES ---
 router
   .route("/admin")
   .get(isAdmin, NotificationController.getAdminNotifications)

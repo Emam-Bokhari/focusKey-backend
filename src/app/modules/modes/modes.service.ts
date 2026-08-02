@@ -75,20 +75,17 @@ const getModesFromDB = async (userId: string) => {
     };
   }
 
-  // Calculate total locked apps across all modes
   const totalLockedAppsAcrossModes = modes.reduce(
     (acc, mode) => acc + (mode.lockedApps?.length || 0),
     0,
   );
 
-  // Check if there is an active break for this user
   const activeBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     status: "active",
     endTime: { $gt: new Date() },
   });
 
-  // Map modes and add isLocked status
   const modesWithStatus = modes.map((mode) => {
     const modeObj = mode.toObject();
     return {
@@ -154,7 +151,6 @@ const deleteModeFromDB = async (modeId: string) => {
     throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
   }
 
-  // if deleting an active mode, stop the focus session
   if (mode.isActive) {
     const activeSessions = await FocusSession.find({
       userId: mode.userId,
@@ -204,7 +200,6 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
   const newStatus = !mode.isActive;
 
   if (newStatus) {
-    // Check if there is already another active mode for this user
     const activeMode = await Mode.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       isActive: true,
@@ -218,13 +213,11 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
       );
     }
 
-    // 1. If we are activating this mode, deactivate all other modes for this user
     await Mode.updateMany(
       { userId: new mongoose.Types.ObjectId(userId), _id: { $ne: modeId } },
       { isActive: false },
     );
 
-    // 2. Stop any existing active focus sessions for this user
     const activeSessions = await FocusSession.find({
       userId: new mongoose.Types.ObjectId(userId),
       status: "active",
@@ -242,7 +235,6 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
       });
     }
 
-    // 3. Start a new focus session
     await FocusSession.create({
       userId: new mongoose.Types.ObjectId(userId),
       modeId: modeId,
@@ -250,7 +242,6 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
       status: "active",
     });
   } else {
-    // 1. Check if this mode is active because of a Nudge session
     const activeNudgeSession = await FocusSession.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       modeId: modeId,
@@ -265,7 +256,6 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
       );
     }
 
-    // 2. If we are deactivating, stop the current focus session
     const activeSessions = await FocusSession.find({
       userId: new mongoose.Types.ObjectId(userId),
       modeId: modeId,
@@ -369,7 +359,6 @@ const getTotalFocusApps = async (userId: string) => {
   await ensureDefaultModesExist(userId);
   const modes = await Mode.find({ userId, isDeleted: false });
 
-  // Get unique apps across all modes
   const allLockedApps: any[] = [];
   const seenPackages = new Set();
 
@@ -389,7 +378,6 @@ const getLockStatusFromDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const dashboardData = await DashboardService.getDashboardData(userId);
 
-  // Find Active Focus Session
   const activeSession = await FocusSession.findOne({
     userId: userObjectId,
     status: "active",

@@ -6,7 +6,6 @@ import { Mode } from "../modes/modes.model";
 import QueryBuilder from "../../builder/queryBuilder";
 
 const getStatsFromDB = async () => {
-  // calculate date ranges
   const startOfWeek = new Date();
   startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
   startOfWeek.setHours(0, 0, 0, 0);
@@ -15,54 +14,41 @@ const getStatsFromDB = async () => {
   sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
   sevenDaysAgo.setHours(0, 0, 0, 0);
 
-  // total Users
   const totalUsers = await User.countDocuments({ isDeleted: false });
 
-  // activated Users (verified)
   const activatedUsers = await User.countDocuments({
     verified: true,
     isDeleted: false,
   });
 
-  // 7-Day Active Users (users who logged in in last 7 days)
   const sevenDayActiveUsers = await User.countDocuments({
     lastLoginAt: { $gte: sevenDaysAgo },
     isDeleted: false,
   });
 
-  // total Focus Sessions This Week
   const totalFocusSessionsThisWeek = await FocusSession.countDocuments({
     startTime: { $gte: startOfWeek },
     isDeleted: false,
   });
 
-  // Total Breaks Taken
   const totalBreaksTaken = await Break.countDocuments({ isDeleted: false });
 
-  // Cooldown Completed (completed breaks)
   const cooldownCompleted = await Break.countDocuments({
     status: "completed",
     isDeleted: false,
   });
 
-  // Users With Partners (users with at least one accepted friend)
   const usersWithPartnersAggregation = await Friend.aggregate([
     { $match: { status: "accepted", isDeleted: false } },
-    // Collect both userId and friendId
     { $project: { users: ["$userId", "$friendId"] } },
-    // Unwind the array to get individual user IDs
     { $unwind: "$users" },
-    // Group to get unique user IDs
     { $group: { _id: "$users" } },
-    // Count them
     { $count: "total" },
   ]);
   const uniqueUsersWithPartners = usersWithPartnersAggregation[0]?.total || 0;
 
-  // Joint Sessions (nudges with at least 2 joined participants)
   const jointSessionsAggregation = await Nudge.aggregate([
     { $match: { isDeleted: false } },
-    // Only count non-deleted joined participants
     {
       $addFields: {
         activeJoinedCount: {
@@ -80,32 +66,23 @@ const getStatsFromDB = async () => {
     { $count: "total" },
   ]);
 
-  // Unlock Attempts: count all soft-deleted joined participants across all nudges
   const unlockAttemptsAggregation = await Nudge.aggregate([
     { $match: { isDeleted: false } },
-    // Unwind joinedParticipants
     { $unwind: "$joinedParticipants" },
-    // Only count soft-deleted participants
     { $match: { "joinedParticipants.isDeleted": true } },
     { $count: "total" },
   ]);
 
-  // Total Locks (from mode.lockEvents)
   const totalLocksAggregation = await Mode.aggregate([
     { $match: { isDeleted: false } },
-    // Unwind lockEvents
     { $unwind: "$lockEvents" },
-    // Only count locks
     { $match: { "lockEvents.type": "lock" } },
     { $count: "total" },
   ]);
 
-  // Total Unlocks (from mode.lockEvents)
   const totalUnlocksAggregation = await Mode.aggregate([
     { $match: { isDeleted: false } },
-    // Unwind lockEvents
     { $unwind: "$lockEvents" },
-    // Only count unlocks
     { $match: { "lockEvents.type": "unlock" } },
     { $count: "total" },
   ]);
@@ -129,7 +106,6 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   const targetYear = year || currentYear;
   const targetDays = days || 7;
 
-  // validate days
   const validDays = [7, 14, 30];
   const actualDays = validDays.includes(targetDays) ? targetDays : 7;
 
@@ -140,11 +116,9 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   startDate.setDate(startDate.getDate() - (actualDays - 1));
   startDate.setHours(0, 0, 0, 0);
 
-  // flter for the target year
   const startOfYear = new Date(targetYear, 0, 1);
   const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999);
 
-  // get only sessions WITHOUT nudgeId (single sessions)
   const sessions = await FocusSession.find({
     nudgeId: { $exists: false },
     startTime: {
@@ -154,10 +128,8 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
     isDeleted: false,
   });
 
-  // group by date
   const dateWiseData: Record<string, number> = {};
 
-  // initialize all dates in the range with 0
   for (let i = 0; i < actualDays; i++) {
     const date = new Date(startDate);
     date.setDate(date.getDate() + i);
@@ -165,7 +137,6 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
     dateWiseData[dateKey] = 0;
   }
 
-  // calculate focus minutes for each day
   sessions.forEach((session) => {
     const dateKey = session.startTime.toLocaleDateString("en-CA");
     let minutes = 0;
@@ -180,7 +151,6 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
     }
   });
 
-  // convert to array format
   const focusTimeOverTime = Object.entries(dateWiseData).map(
     ([date, minutes]) => ({
       date,
@@ -213,7 +183,6 @@ const getFocusTimeTogetherOverTime = async (year?: number, days?: number) => {
   const startOfYear = new Date(targetYear, 0, 1);
   const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999);
 
-  // get only sessions WITH nudgeId (joint sessions)
   const sessions = await FocusSession.find({
     nudgeId: { $exists: true, $ne: null },
     startTime: {
@@ -261,10 +230,8 @@ const getFocusTimeTogetherOverTime = async (year?: number, days?: number) => {
 };
 
 const getUsersAnalyticsFromDB = async (query: Record<string, unknown>) => {
-  // Create base query with isDeleted: false
   const baseQuery = User.find({ isDeleted: false });
 
-  // Use QueryBuilder to handle search, filter, sort, and pagination
   const userQueryBuilder = new QueryBuilder(baseQuery, query)
     .search(["name", "email"])
     .filter()
@@ -274,35 +241,28 @@ const getUsersAnalyticsFromDB = async (query: Record<string, unknown>) => {
       "name email role profileImage isPaired status createdAt lastLoginAt",
     );
 
-  // Get total count and pagination meta
   const meta = await userQueryBuilder.countTotal();
 
-  // Get users
   const users = await userQueryBuilder.modelQuery.lean();
 
-  // For each user, calculate additional metrics
   const usersWithAnalytics = await Promise.all(
     users.map(async (user: any) => {
-      // Total sessions
       const totalSessions = await FocusSession.countDocuments({
         userId: user._id,
         isDeleted: false,
       });
 
-      // Total focus time
       const totalFocusTimeResult = await FocusSession.aggregate([
         { $match: { userId: user._id, status: "completed", isDeleted: false } },
         { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } },
       ]);
       const totalFocusTime = totalFocusTimeResult[0]?.totalMinutes || 0;
 
-      // Break count
       const breakCount = await Break.countDocuments({
         userId: user._id,
         isDeleted: false,
       });
 
-      // Total locks and unlocks from Mode.lockEvents
       const lockEventsResult = await Mode.aggregate([
         { $match: { userId: user._id, isDeleted: false } },
         { $unwind: "$lockEvents" },
@@ -413,7 +373,6 @@ const getSingleUserAnalyticsFromDB = async (userId: string) => {
 };
 
 const getEngagementStatsFromDB = async () => {
-  // Users With Partners
   const usersWithPartnersAggregation = await Friend.aggregate([
     { $match: { status: "accepted", isDeleted: false } },
     { $project: { users: ["$userId", "$friendId"] } },
@@ -423,16 +382,13 @@ const getEngagementStatsFromDB = async () => {
   ]);
   const usersWithPartners = usersWithPartnersAggregation[0]?.total || 0;
 
-  // Partner Requests Accepted
   const partnerRequestsAccepted = await Friend.countDocuments({
     status: "accepted",
     isDeleted: false,
   });
 
-  // Nudges Sent
   const nudgesSent = await Nudge.countDocuments({ isDeleted: false });
 
-  // Joint Sessions
   const jointSessionsAggregation = await Nudge.aggregate([
     { $match: { isDeleted: false } },
     {

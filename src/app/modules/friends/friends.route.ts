@@ -8,7 +8,11 @@ const router = express.Router();
 
 router.get("/users", isUser, FriendsController.getUsers);
 
-router.post("/create-nudge", isUser, FriendsController.createNudge);
+// Nudge preview flow
+router.post("/nudge/initiate", isUser, FriendsController.initiateNudge);
+router.get("/nudge/pending-preview", isUser, FriendsController.getPendingNudgePreview);
+router.get("/nudge/preview/:previewId", isUser, FriendsController.getNudgePreviewDetails);
+router.post("/nudge/confirm/:previewId", isUser, FriendsController.confirmNudge);
 
 router.get(
   "/join-nudge/:nudgeId",
@@ -22,7 +26,6 @@ router.post(
   FriendsController.joinNudge,
 );
 
-
 router.get("/nudge-history", isUser, FriendsController.getNudgeHistory);
 
 router.delete(
@@ -32,6 +35,7 @@ router.delete(
 );
 
 router.post("/unlock-nudge/:nudgeId", isUser, FriendsController.unlockNudge);
+router.post("/leave-nudge/:nudgeId", isUser, FriendsController.leaveNudge);
 
 router.post(
   "/take-nudge-break/:nudgeId",

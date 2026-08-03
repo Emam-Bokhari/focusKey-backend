@@ -1,5 +1,5 @@
 import { Schema, model } from "mongoose";
-import { IFriend, INudge, INudgeParticipant } from "./friends.interface";
+import { IFriend, INudge, INudgeParticipant, INudgePreview } from "./friends.interface";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
 const friendSchema = new Schema<IFriend>(
@@ -17,7 +17,7 @@ const friendSchema = new Schema<IFriend>(
     status: {
       type: String,
       enum: ["pending", "accepted", "rejected"],
-      default: "accepted", // For now, let's assume direct addition
+      default: "accepted",
     },
   },
   {
@@ -87,5 +87,45 @@ const nudgeSchema = new Schema<INudge>(
 
 nudgeSchema.plugin(softDeletePlugin);
 
+const nudgePreviewSchema = new Schema<INudgePreview>(
+  {
+    creatorId: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    participants: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+    modeId: {
+      type: Schema.Types.ObjectId,
+      ref: "Mode",
+      required: true,
+    },
+    breakConfig: {
+      breaksPerDay: { type: Number, required: true },
+      breakDurationMinutes: { type: Number, required: true },
+    },
+    status: {
+      type: String,
+      enum: ["pending", "expired", "confirmed"],
+      default: "pending",
+    },
+    expiresAt: {
+      type: Date,
+      required: true,
+      index: { expireAfterSeconds: 0 },
+    },
+  },
+  {
+    timestamps: true,
+    versionKey: false,
+  },
+);
+
 export const Friend = model<IFriend>("Friend", friendSchema);
 export const Nudge = model<INudge>("Nudge", nudgeSchema);
+export const NudgePreview = model<INudgePreview>("NudgePreview", nudgePreviewSchema);

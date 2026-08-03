@@ -24,16 +24,59 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const createNudge = catchAsync(async (req: Request, res: Response) => {
+const initiateNudge = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
   const payload = req.body;
 
-  const result = await FriendsService.createNudgeInDB(userId, payload);
+  const result = await FriendsService.initiateNudgePreviewInDB(userId, payload);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: "Nudge preview created. Fetch preview details before confirming.",
+    data: result,
+  });
+});
+
+const getNudgePreviewDetails = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const { previewId } = req.params;
+
+  const result = await FriendsService.getNudgePreviewDetailsFromDB(userId, previewId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
     success: true,
-    message: "Nudge created and invitations sent successfully",
+    message: "Nudge preview details fetched successfully",
+    data: result,
+  });
+});
+
+const confirmNudge = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const { previewId } = req.params;
+
+  const result = await FriendsService.confirmNudgeFromPreviewInDB(userId, previewId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Nudge confirmed and invitations sent successfully",
+    data: result,
+  });
+});
+
+const getPendingNudgePreview = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+
+  const result = await FriendsService.getPendingNudgePreviewInDB(userId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.hasPendingPreview
+      ? "Pending nudge preview found"
+      : "No pending nudge preview",
     data: result,
   });
 });
@@ -123,20 +166,18 @@ const takeNudgeBreak = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const getCurrentNudgeStatus = catchAsync(
-  async (req: Request, res: Response) => {
-    const userId = (req.user as any).id;
+const getCurrentNudgeStatus = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
 
-    const result = await FriendsService.getCurrentNudgeStatusInDB(userId);
+  const result = await FriendsService.getCurrentNudgeStatusInDB(userId);
 
-    sendResponse(res, {
-      statusCode: StatusCodes.OK,
-      success: true,
-      message: "Current nudge status fetched successfully",
-      data: result,
-    });
-  },
-);
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Current nudge status fetched successfully",
+    data: result,
+  });
+});
 
 const addFriend = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
@@ -174,20 +215,38 @@ const getFriends = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const leaveNudge = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const { nudgeId } = req.params;
+
+  const result = await FriendsService.leaveNudgeInDB(userId, nudgeId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: null,
+  });
+});
+
 const removeNudgeParticipant = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
-  const { nudgeId, participantId } = req.body;
+  const { previewId, participantId } = req.body;
 
-  if (!nudgeId || !participantId) {
+  if (!previewId || !participantId) {
     sendResponse(res, {
       statusCode: StatusCodes.BAD_REQUEST,
       success: false,
-      message: "nudgeId and participantId are required",
+      message: "previewId and participantId are required",
     });
     return;
   }
 
-  const result = await FriendsService.removeNudgeParticipantFromDB(userId, nudgeId, participantId);
+  const result = await FriendsService.removeNudgeParticipantFromDB(
+    userId,
+    previewId,
+    participantId,
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -199,7 +258,10 @@ const removeNudgeParticipant = catchAsync(async (req: Request, res: Response) =>
 
 export const FriendsController = {
   getUsers,
-  createNudge,
+  initiateNudge,
+  getNudgePreviewDetails,
+  confirmNudge,
+  getPendingNudgePreview,
   joinNudge,
   getNudgeHistory,
   removeFriend,
@@ -208,5 +270,6 @@ export const FriendsController = {
   getCurrentNudgeStatus,
   addFriend,
   getFriends,
+  leaveNudge,
   removeNudgeParticipant,
 };

@@ -32,6 +32,16 @@ export interface INudge {
   deletedAt?: Date;
 }
 
+export interface INudgePreview {
+  creatorId: Types.ObjectId;
+  participants: Types.ObjectId[];
+  modeId: Types.ObjectId;
+  breakConfig: INudgeBreakConfig;
+  status: "pending" | "expired" | "confirmed";
+  expiresAt: Date;
+  isDeleted?: boolean;
+}
+
 export interface IFriendStats {
   name: string;
   userId: Types.ObjectId;
@@ -39,10 +49,10 @@ export interface IFriendStats {
   profileImage: string;
   email: string;
   isFocused: boolean;
-  recentPastFocus: string; // e.g., "focused 2 h yesterday"
+  recentPastFocus: string;
   togetherThisWeek: {
-    totalFocusTime: string; // e.g., "5h 20m"
-    streak: number; // e.g., 3
-    highlightedDays: string[]; // e.g., ["Mon", "Tue", "Wed"]
+    totalFocusTime: string;
+    streak: number;
+    highlightedDays: string[];
   };
 }

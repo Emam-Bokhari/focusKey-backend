@@ -4,8 +4,6 @@ node_modules
 scripts/
 /winston
 /uploads
-
-# ERD diagrams (exclude draw.io, pdf, and svg files)
 *.drawio
 docs/erd/**/*.pdf
 docs/erd/**/*.svg

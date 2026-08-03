@@ -6,24 +6,14 @@
     "auditLog": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\.d91f4d79c0f62bc160cff999a3339d31e5d9bee9-audit.json",
     "files": [
         {
-            "date": 1785576134275,
-            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\01-08-2026-15-error.log",
-            "hash": "157ac28da96ac49c5eb508b5ed5e8e74e6034a6ceb4ccd0910d01a00408c11c6"
-        },
-        {
-            "date": 1785579583249,
-            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\01-08-2026-16-error.log",
-            "hash": "84e65012b765c3d73efed96f0a2cb80bd86ac7d13fc069458d2c01a1edab0148"
-        },
-        {
-            "date": 1785637806129,
-            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\02-08-2026-08-error.log",
-            "hash": "1a36a915faf5d4717a44633bfe565125f39ef19a3229dc8fbbbec01d79f4a8be"
-        },
-        {
             "date": 1785640552987,
             "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\02-08-2026-09-error.log",
             "hash": "3e291f43bf7cd75dca38fd4520d426368bfadbd806463994d11371392b47a68c"
+        },
+        {
+            "date": 1785724454854,
+            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\error\\03-08-2026-08-error.log",
+            "hash": "bbc30e71f517e5ede8d74d15cfef30b2135f1dabe6479cfa18d1e73063b0b533"
         }
     ],
     "hashType": "sha256"

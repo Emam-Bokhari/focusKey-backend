@@ -1,7 +1,0 @@
-Sun Aug 02 2026 8:30:6 [SQUALLY] error: 10.10.7.10 - POST /api/v1/users/pair-device 404 - 78.968 ms
-Sun Aug 02 2026 8:30:16 [SQUALLY] error: 10.10.7.10 - POST /api/v1/auth/login 400 - 49.501 ms
-Sun Aug 02 2026 8:30:30 [SQUALLY] error: 10.10.7.10 - POST /api/v1/users/pair-device 400 - 85.536 ms
-Sun Aug 02 2026 8:30:46 [SQUALLY] error: 10.10.7.10 - POST /api/v1/users/pair-device 400 - 288.261 ms
-Sun Aug 02 2026 8:31:20 [SQUALLY] error: 10.10.7.10 - POST /api/v1/users/pair-device 400 - 58.400 ms
-Sun Aug 02 2026 8:31:31 [SQUALLY] error: 10.10.7.10 - POST /api/v1/users/pair-device 400 - 49.760 ms
-Sun Aug 02 2026 8:31:40 [SQUALLY] error: 10.10.7.10 - POST /api/v1/users/pair-device 400 - 195.552 ms

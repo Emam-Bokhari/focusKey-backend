@@ -38,7 +38,6 @@ The backend APIs in this project were developed based on the approved UI/UX desi
 - **Friends & Social** — friend requests, friend lists, and user discovery
 - **Push Notifications** — Firebase FCM delivery to individual or batched users, with in-app notification records
 - **Transactional Email** — Nodemailer with Gmail SMTP; OTP, account creation, and password reset templates rendered via EJS
-- **SMS OTP** — Twilio Verify API for phone number verification
 - **Analytics & Dashboard** — aggregated focus statistics for users and administrators
 - **Admin Dashboard API** — user management, device management, support tickets, banners, FAQs
 - **File Upload** — Multer-based local disk storage with MIME-type validation for images, videos, audio, and documents
@@ -63,7 +62,6 @@ The backend APIs in this project were developed based on the approved UI/UX desi
 | Real-time | Socket.io 4 |
 | Push Notifications | Firebase Cloud Messaging (firebase-admin) |
 | Email | Nodemailer (Gmail SMTP) |
-| SMS / OTP | Twilio Verify |
 | File Uploads | Multer (local disk) |
 | Template Engine | EJS |
 | Logging | Winston + `winston-daily-rotate-file` + Morgan |
@@ -100,8 +98,7 @@ focusKey-backend/
 │   │   │   ├── faq/            # FAQ content management
 │   │   │   ├── support/        # User support ticket submission
 │   │   │   ├── rule/           # Platform rules/guidelines
-│   │   │   ├── resetToken/     # Password reset token storage
-│   │   │   └── twilioService/  # Twilio Verify SMS OTP wrapper
+│   │   │   └── resetToken/     # Password reset token storage
 │   │   ├── middlewares/
 │   │   │   ├── auth.ts                 # JWT auth + role guard
 │   │   │   ├── optionalAuth.ts         # Auth that does not reject unauthenticated requests
@@ -265,9 +262,6 @@ The server will connect to MongoDB, seed the super admin account if absent, regi
 | `SUPPORT_RECEIVER_EMAIL` | No | Email address that receives support ticket notifications |
 | `ADMIN_EMAIL` | Yes | Super admin seed account email |
 | `ADMIN_PASSWORD` | Yes | Super admin seed account password |
-| `TWILIO_ACCOUNT_SID` | Yes | Twilio Account SID |
-| `TWILIO_AUTH_TOKEN` | Yes | Twilio Auth Token |
-| `TWILIO_SERVICE_SID` | Yes | Twilio Verify Service SID |
 | `GOOGLE_CLIENT_ID` | No | Google OAuth 2.0 client ID |
 | `GOOGLE_CLIENT_SECRET` | No | Google OAuth 2.0 client secret |
 

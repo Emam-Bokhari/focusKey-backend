@@ -185,7 +185,7 @@ const adminCredentials = (values: IAdminCredentials) => {
                 </div>
 
                 <p style="margin-top:25px;font-size:13px;color:#666;">
-                  ⚠️ Please change your password after first login for security.
+                  Please change your password after first login for security.
                 </p>
 
               </td>

@@ -31,7 +31,7 @@ const initBreakCron = () => {
   cron.schedule("* * * * *", () => {
     handleExpiredBreaks();
   });
-  logger.info("✅ Break Cron Job initialized (Running every minute)");
+  logger.info("Break Cron Job initialized (Running every minute)");
 };
 
 export const CronJobs = {

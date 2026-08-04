@@ -58,7 +58,6 @@ router.patch("/status/:id", isAdmin, UserControllers.updateUserStatusById);
 
 router.delete("/admins/:id", isAdmin, UserControllers.deleteAdmin);
 
-/* ---------------------------- ADMINS LIST ------------------------------- */
 
 router
   .route("/:id")

@@ -15,8 +15,6 @@ const NUDGE_PREVIEW_TTL_MINUTES = 10;
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-// ─── Helper: build last focus info string ──────────────────────────────────────
-
 const buildLastFocusInfo = async (userId: mongoose.Types.ObjectId): Promise<string> => {
   const now = new Date();
   const lastSession = await FocusSession.findOne({
@@ -55,8 +53,6 @@ const buildLastFocusInfo = async (userId: mongoose.Types.ObjectId): Promise<stri
   return `Last focused ${diffMins}m ago`;
 };
 
-// ─── Helper: compute shared focus stats between two users (last 7 days) ────────
-
 const computeSharedFocusStats = async (
   creatorId: mongoose.Types.ObjectId,
   participantId: mongoose.Types.ObjectId,
@@ -91,7 +87,6 @@ const computeSharedFocusStats = async (
 
     if (creatorSessions.length === 0 || participantSessions.length === 0) continue;
 
-    // Calculate total minutes both focused on this day
     let sharedMinutes = 0;
     for (const cs of creatorSessions) {
       for (const ps of participantSessions) {
@@ -111,8 +106,6 @@ const computeSharedFocusStats = async (
       }
     }
 
-    // Even if no exact overlap, if both focused same day → highlight day
-    // Use sum of min(creator, participant) duration for that day as a proxy
     if (sharedMinutes === 0) {
       const creatorMin = creatorSessions.reduce(
         (acc, s) => acc + (s.durationMinutes || 0),
@@ -129,7 +122,6 @@ const computeSharedFocusStats = async (
     totalTogetherMinutes += sharedMinutes;
   }
 
-  // Compute streak: consecutive highlighted days ending today/yesterday
   let streak = 0;
   for (let i = 6; i >= 0; i--) {
     const date = new Date();
@@ -156,8 +148,6 @@ const computeSharedFocusStats = async (
     totalTogetherMinutes,
   };
 };
-
-// ─── getUsersFromDB ─────────────────────────────────────────────────────────────
 
 const getUsersFromDB = async (
   userId: string,
@@ -234,8 +224,6 @@ const getUsersFromDB = async (
   };
 };
 
-// ─── initiateNudgePreviewInDB ───────────────────────────────────────────────────
-
 const initiateNudgePreviewInDB = async (
   userId: string,
   payload: { participants: string[]; modeId: string; breakConfig: { breaksPerDay: number; breakDurationMinutes: number } },
@@ -246,7 +234,6 @@ const initiateNudgePreviewInDB = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "At least one friend must be selected");
   }
 
-  // Block if a pending preview already exists
   const existingPreview = await NudgePreview.findOne({
     creatorId: new mongoose.Types.ObjectId(userId),
     status: "pending",
@@ -304,8 +291,6 @@ const initiateNudgePreviewInDB = async (
     expiresInMinutes: NUDGE_PREVIEW_TTL_MINUTES,
   };
 };
-
-// ─── getNudgePreviewDetailsFromDB ───────────────────────────────────────────────
 
 const getNudgePreviewDetailsFromDB = async (userId: string, previewId: string) => {
   const preview = await NudgePreview.findById(previewId)
@@ -389,8 +374,6 @@ const getNudgePreviewDetailsFromDB = async (userId: string, previewId: string) =
   };
 };
 
-// ─── confirmNudgeFromPreviewInDB ────────────────────────────────────────────────
-
 const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) => {
   const preview = await NudgePreview.findById(previewId);
 
@@ -423,7 +406,6 @@ const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) =>
     );
   }
 
-  // Block if creator is already actively joined in another nudge
   const creatorActiveNudge = await Nudge.findOne({
     status: { $in: ["active", "scheduled"] },
     "joinedParticipants": {
@@ -535,8 +517,6 @@ const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) =>
   return nudge;
 };
 
-// ─── joinNudgeInDB ──────────────────────────────────────────────────────────────
-
 const joinNudgeInDB = async (userId: string, nudgeId: string) => {
   const nudge = await Nudge.findById(nudgeId);
 
@@ -565,7 +545,6 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     return nudge;
   }
 
-  // Block if user is already actively joined in another nudge
   const activeNudge = await Nudge.findOne({
     _id: { $ne: new mongoose.Types.ObjectId(nudgeId) },
     status: { $in: ["active", "scheduled"] },
@@ -632,8 +611,6 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
   return result;
 };
 
-// ─── getNudgeHistoryFromDB ──────────────────────────────────────────────────────
-
 const getNudgeHistoryFromDB = async (userId: string, page: number, limit: number) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const skip = (page - 1) * limit;
@@ -667,8 +644,6 @@ const getNudgeHistoryFromDB = async (userId: string, page: number, limit: number
   };
 };
 
-// ─── removeFriendFromDB ─────────────────────────────────────────────────────────
-
 const removeFriendFromDB = async (userId: string, friendId: string) => {
   const result = await Friend.deleteMany({
     $or: [
@@ -689,8 +664,6 @@ const removeFriendFromDB = async (userId: string, friendId: string) => {
 
   return result;
 };
-
-// ─── unlockNudgeInDB ────────────────────────────────────────────────────────────
 
 const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -756,8 +729,6 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
 
   return result;
 };
-
-// ─── takeNudgeBreakInDB ─────────────────────────────────────────────────────────
 
 const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -845,8 +816,6 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
     message: `Break started. You have ${breakDurationMinutes} minutes. After this, apps will lock again.`,
   };
 };
-
-// ─── getCurrentNudgeStatusInDB ──────────────────────────────────────────────────
 
 const getCurrentNudgeStatusInDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -1081,8 +1050,6 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   };
 };
 
-// ─── addFriendToDB ──────────────────────────────────────────────────────────────
-
 const addFriendToDB = async (userId: string, friendId: string) => {
   if (userId === friendId) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot add yourself as a friend");
@@ -1121,8 +1088,6 @@ const addFriendToDB = async (userId: string, friendId: string) => {
 
   return result;
 };
-
-// ─── getFriendsFromDB ───────────────────────────────────────────────────────────
 
 const getFriendsFromDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -1171,8 +1136,6 @@ const getFriendsFromDB = async (userId: string) => {
   return friendsWithStatus;
 };
 
-// ─── removeNudgeParticipantFromDB ───────────────────────────────────────────────
-
 const removeNudgeParticipantFromDB = async (
   userId: string,
   previewId: string,
@@ -1180,7 +1143,6 @@ const removeNudgeParticipantFromDB = async (
 ) => {
   const participantObjectId = new mongoose.Types.ObjectId(participantId);
 
-  // Find the preview to verify ownership and get linked nudgeId (if confirmed)
   const preview = await NudgePreview.findById(previewId);
   if (!preview) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Nudge preview not found");
@@ -1190,7 +1152,6 @@ const removeNudgeParticipantFromDB = async (
     throw new ApiError(StatusCodes.FORBIDDEN, "Only the nudge creator can remove a participant");
   }
 
-  // Check that the participant actually belongs to this preview
   const isParticipantInPreview = preview.participants.some(
     (p) => p.toString() === participantId,
   );
@@ -1198,14 +1159,12 @@ const removeNudgeParticipantFromDB = async (
     throw new ApiError(StatusCodes.NOT_FOUND, "Participant not found in this nudge preview");
   }
 
-  // Remove participant from the preview
   await NudgePreview.findByIdAndUpdate(
     previewId,
     { $pull: { participants: participantObjectId } },
     { new: true },
   );
 
-  // If the preview was already confirmed, also remove from the linked Nudge
   if (preview.status === "confirmed") {
     const nudge = await Nudge.findOne({ creatorId: preview.creatorId })
       .sort({ createdAt: -1 })
@@ -1278,8 +1237,6 @@ const removeNudgeParticipantFromDB = async (
   return { message: "Participant removed successfully" };
 };
 
-// ─── leaveNudgeInDB ─────────────────────────────────────────────────────────────
-
 const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
@@ -1302,7 +1259,6 @@ const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
     throw new ApiError(StatusCodes.FORBIDDEN, "You are not part of this nudge");
   }
 
-  // End active focus session
   const activeSession = await FocusSession.findOne({
     userId: userObjectId,
     nudgeId: nudgeObjectId,
@@ -1335,7 +1291,6 @@ const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
     }
   }
 
-  // Remove user from both participants and joinedParticipants
   const result = await Nudge.findByIdAndUpdate(
     nudgeId,
     {
@@ -1355,7 +1310,6 @@ const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
     },
   );
 
-  // If no active joined participants remain, complete the nudge
   if (result) {
     const activeJoinedCount = result.joinedParticipants.filter((p) => !p.isDeleted).length;
     if (activeJoinedCount === 0) {
@@ -1365,8 +1319,6 @@ const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
 
   return { message: "You have left the nudge successfully" };
 };
-
-// ─── getPendingNudgePreviewInDB ─────────────────────────────────────────────────
 
 const getPendingNudgePreviewInDB = async (userId: string) => {
   const preview = await NudgePreview.findOne({
@@ -1409,8 +1361,6 @@ const getPendingNudgePreviewInDB = async (userId: string) => {
     },
   };
 };
-
-// ─── Export ─────────────────────────────────────────────────────────────────────
 
 export const FriendsService = {
   getUsersFromDB,

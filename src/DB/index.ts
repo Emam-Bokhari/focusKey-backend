@@ -5,7 +5,7 @@ import { USER_ROLES } from "../enums/user";
 import { logger } from "../shared/logger";
 
 const superUser = {
-  name: "Super Admin", // put client first name
+  name: "Super Admin",
   role: USER_ROLES.SUPER_ADMIN,
   email: config.admin.email,
   password: config.admin.password,
@@ -20,7 +20,7 @@ const seedSuperAdmin = async () => {
   if (!isExistSuperAdmin) {
     await User.create(superUser);
 
-    logger.info(colors.green("✔ Super admin created successfully!"));
+    logger.info(colors.green("Super admin created successfully!"));
   }
 };
 

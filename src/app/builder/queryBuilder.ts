@@ -59,20 +59,11 @@ class QueryBuilder<T> {
 
     const finalFilter: any = {};
 
-    /* ================= ENUM FILTERS ================= */
 
     if (queryObj.status) {
       finalFilter.status = queryObj.status;
     }
 
-    /*
-    if (queryObj.isFeatured !== undefined) {
-      finalFilter.isFeatured =
-        queryObj.isFeatured === "true" || queryObj.isFeatured === true;
-    }
-    */
-
-    /* ================= TEXT FILTER ================= */
 
     if (queryObj.city) {
       finalFilter.city = {

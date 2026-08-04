@@ -62,7 +62,6 @@ const deviceSchema = new Schema(
   },
 );
 
-/* ================= USER SCHEMA ================= */
 const userSchema = new Schema<IUser, IUserModel>(
   {
     name: {
@@ -83,7 +82,6 @@ const userSchema = new Schema<IUser, IUserModel>(
       default: USER_ROLES.USER,
     },
 
-    /* ================= HYBRID IDENTITY ================= */
     email: {
       type: String,
       lowercase: true,
@@ -119,7 +117,6 @@ const userSchema = new Schema<IUser, IUserModel>(
 
     device: deviceSchema,
 
-    /* ================= SECURITY ================= */
     password: {
       type: String,
       required: true,
@@ -148,7 +145,6 @@ const userSchema = new Schema<IUser, IUserModel>(
       default: STATUS.ACTIVE,
     },
 
-    /* ================= PROFILE ================= */
     profileImage: {
       type: String,
       default: "",
@@ -175,7 +171,6 @@ const userSchema = new Schema<IUser, IUserModel>(
       type: String,
     },
 
-    /* ================= LOCATION ================= */
     location: {
       type: {
         type: String,
@@ -201,7 +196,6 @@ const userSchema = new Schema<IUser, IUserModel>(
       default: null,
     },
 
-    /* ================= AUTH ================= */
     authentication: {
       type: {
         isResetPassword: { type: Boolean, default: false },
@@ -217,14 +211,11 @@ const userSchema = new Schema<IUser, IUserModel>(
   },
 );
 
-/* ================= INDEX ================= */
 userSchema.index({ email: 1 });
 userSchema.index({ location: "2dsphere" });
 
-/* ================= PLUGIN ================= */
 userSchema.plugin(softDeletePlugin);
 
-/* ================= STATIC METHODS ================= */
 userSchema.statics.isExistUserById = async function (id: string) {
   return await this.findById(id);
 };
@@ -244,7 +235,6 @@ userSchema.statics.isMatchPassword = async function (
   return await bcrypt.compare(password, hashPassword);
 };
 
-/* ================= PASSWORD HASH ================= */
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
 

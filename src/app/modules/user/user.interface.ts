@@ -11,13 +11,12 @@ export interface IDevice {
   platform: "android" | "ios" | "web";
   deviceFingerprint: string;
   nfcChip?: string;
-} /* ================= USER ================= */
+}
 export type IUser = {
   name: string;
 
   role?: USER_ROLES;
 
-  /* ================= HYBRID IDENTITY ================= */
   email: string;
   phone?: string;
   countryCode?: string;
@@ -27,7 +26,6 @@ export type IUser = {
 
   password: string;
 
-  /* ================= VERIFICATION ================= */
   verified: boolean;
   isPaired: boolean;
   pairingCode?: string;
@@ -38,7 +36,6 @@ export type IUser = {
   installedApps?: IInstalledApp[];
   device?: IDevice;
 
-  /* ================= PROFILE ================= */
   profileImage?: string;
 
   city?: string;
@@ -47,14 +44,12 @@ export type IUser = {
   firebaseUid?: string;
   deviceToken?: string;
 
-  /* ================= LOCATION ================= */
   location?: {
     type: "Point";
     coordinates: [number, number]; // [longitude, latitude]
     address: string;
   };
 
-  /* ================= AUTH ================= */
   authentication?: {
     isResetPassword?: boolean;
     oneTimeCode?: number;
@@ -67,7 +62,6 @@ export type IUser = {
   updatedAt?: Date;
 };
 
-/* ================= STATIC METHODS ================= */
 export interface IUserStatics {
   isExistUserById(id: string): Promise<IUser | null>;
   isExistUserByEmail(email: string): Promise<IUser | null>;

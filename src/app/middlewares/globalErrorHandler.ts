@@ -12,8 +12,8 @@ import { responseMode } from "../../config/responseMode";
 const globalErrorHandler: ErrorRequestHandler = (error, req, res, next) => {
   try {
     config.node_env === "development"
-      ? console.log("🚨 globalErrorHandler", error)
-      : errorLogger.error("🚨 globalErrorHandler", error);
+      ? console.log("globalErrorHandler", error)
+      : errorLogger.error("globalErrorHandler", error);
   } catch (error) {
     console.log(error);
   }

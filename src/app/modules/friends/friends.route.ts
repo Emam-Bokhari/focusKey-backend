@@ -8,7 +8,6 @@ const router = express.Router();
 
 router.get("/users", isUser, FriendsController.getUsers);
 
-// Nudge preview flow
 router.post("/nudge/initiate", isUser, FriendsController.initiateNudge);
 router.get("/nudge/pending-preview", isUser, FriendsController.getPendingNudgePreview);
 router.get("/nudge/preview/:previewId", isUser, FriendsController.getNudgePreviewDetails);

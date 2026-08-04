@@ -19,7 +19,7 @@ import { CronJobs } from "./app/cronJobs/breakCron";
 let server: any;
 
 const shutdown = async () => {
-  logger.info("🛑 Graceful shutdown started...");
+  logger.info("Graceful shutdown started...");
 
   try {
     await Promise.all([emailWorker.close(), notificationWorker.close()]);
@@ -28,14 +28,14 @@ const shutdown = async () => {
 
     if (server) {
       server.close(() => {
-        logger.info("✅ Server closed");
+        logger.info("Server closed");
         process.exit(0);
       });
     } else {
       process.exit(0);
     }
   } catch (error) {
-    errorLogger.error("❌ Shutdown error", error);
+    errorLogger.error("Shutdown error", error);
     process.exit(1);
   }
 };
@@ -50,14 +50,14 @@ async function main() {
     await mongoose.connect(config.database_url as string);
     seedSuperAdmin();
 
-    logger.info(colors.green("🚀 Database connected successfully"));
+    logger.info(colors.green("Database connected successfully"));
 
     const port =
       typeof config.port === "number" ? config.port : Number(config.port);
 
     server = app.listen(port, config.ip_address as string, () => {
       logger.info(
-        colors.yellow(`♻️ Application listening on port:${config.port}`),
+        colors.yellow(`Application listening on port:${config.port}`),
       );
     });
 
@@ -74,7 +74,7 @@ async function main() {
 
     CronJobs.initBreakCron();
   } catch (error) {
-    errorLogger.error(colors.red("🤢 Failed to connect Database"));
+    errorLogger.error(colors.red("Failed to connect Database"));
     process.exit(1);
   }
 

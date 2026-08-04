@@ -334,7 +334,9 @@ const getNudgePreviewDetailsFromDB = async (userId: string, previewId: string) =
   const creatorId = new mongoose.Types.ObjectId(userId);
 
   const participantsWithDetails = await Promise.all(
-    (preview.participants as any[]).map(async (participant) => {
+    (preview.participants as any[])
+      .filter((participant) => participant != null)
+      .map(async (participant) => {
       const participantId = new mongoose.Types.ObjectId(participant._id.toString());
 
       const activeSession = await FocusSession.findOne({
@@ -1130,10 +1132,12 @@ const getFriendsFromDB = async (userId: string) => {
     isDeleted: { $ne: true },
   }).populate("userId friendId", "name userName profileImage email");
 
-  const friendsData = friends.map((f) => {
-    const otherUser = f.userId._id.toString() === userId ? f.friendId : f.userId;
-    return otherUser;
-  });
+  const friendsData = friends
+    .filter((f) => f.userId && f.friendId)
+    .map((f) => {
+      const otherUser = (f.userId as any)._id.toString() === userId ? f.friendId : f.userId;
+      return otherUser;
+    });
 
   const now = new Date();
   const friendsWithStatus = await Promise.all(
@@ -1393,7 +1397,9 @@ const getPendingNudgePreviewInDB = async (userId: string) => {
       remainingMinutes,
       mode: preview.modeId,
       breakConfig: preview.breakConfig,
-      participants: (preview.participants as any[]).map((p) => ({
+      participants: (preview.participants as any[])
+        .filter((p) => p != null)
+        .map((p) => ({
         _id: p._id,
         name: p.name,
         userName: p.userName || p.email?.split("@")[0] || "user",

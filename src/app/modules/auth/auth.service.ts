@@ -15,7 +15,12 @@ import cryptoToken from "../../../util/cryptoToken";
 import { ResetToken } from "../resetToken/resetToken.model";
 import generateOTP from "../../../util/generateOTP";
 import { emailTemplate } from "../../../shared/emailTemplate";
-import { STATUS } from "../../../enums/user";
+import { STATUS, USER_ROLES } from "../../../enums/user";
+import { sendNotifications } from "../../../helpers/notificationsHelper";
+import {
+  NOTIFICATION_REFERENCE_MODEL,
+  NOTIFICATION_TYPE,
+} from "../notification/notification.constant";
 import { firebaseAdmin } from "../../../config/firebase";
 import { FcmTokenService } from "../fcmToken/fcmService";
 import { emailQueue } from "../../../queues";
@@ -338,6 +343,20 @@ const deleteUserFromDB = async (user: JwtPayload, password: string) => {
   if (!updateUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
+
+  const admin = await User.findOne({ role: USER_ROLES.SUPER_ADMIN }).select(
+    "_id name",
+  );
+
+  if (admin) {
+    await sendNotifications({
+      title: "User Account Deleted",
+      text: `User account deleted: ${updateUser.name} (${updateUser.email})`,
+      receiver: admin._id.toString(),
+      type: NOTIFICATION_TYPE.ADMIN,
+    });
+  }
+
   return;
 };
 

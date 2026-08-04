@@ -305,6 +305,19 @@ const deleteUserByIdFromDB = async (id: string) => {
     throw new ApiError(400, "Failed to delete user by this ID");
   }
 
+  const admin = await User.findOne({ role: USER_ROLES.SUPER_ADMIN }).select(
+    "_id name",
+  );
+
+  if (admin) {
+    await sendNotifications({
+      title: "User Account Deleted",
+      text: `User account deleted: ${user.name} (${user.email})`,
+      receiver: admin._id.toString(),
+      type: NOTIFICATION_TYPE.ADMIN,
+    });
+  }
+
   return result;
 };
 

@@ -9,4 +9,6 @@ export enum NOTIFICATION_REFERENCE_MODEL {
   USER = "User",
   ENQUERY = "Enquery",
   LISTING = "Listing",
+  NUDGE = "Nudge",
+  MODE = "Mode",
 }

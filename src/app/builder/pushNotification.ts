@@ -172,7 +172,16 @@ class NotificationHelper {
         referenceModel: payload.data?.referenceModel || undefined,
       }));
 
-      await Notification.insertMany(notifications);
+      const savedNotifications = await Notification.insertMany(notifications);
+
+      //@ts-ignore
+      const socketIo = global.io;
+      if (socketIo) {
+        for (const notif of savedNotifications) {
+          const populated = await notif.populate("receiver sender referenceId");
+          socketIo.emit(`send-notification::${notif.receiver}`, populated);
+        }
+      }
     } catch (error) {
       logger.error(colors.red("DB Save Error:"), error);
     }

@@ -10,6 +10,11 @@ import ApiError from "../../../errors/ApiErrors";
 import { USER_ROLES } from "../../../enums/user";
 import config from "../../../config";
 import { Mode } from "../modes/modes.model";
+import { sendNotifications } from "../../../helpers/notificationsHelper";
+import {
+  NOTIFICATION_REFERENCE_MODEL,
+  NOTIFICATION_TYPE,
+} from "../notification/notification.constant";
 
 const NUDGE_PREVIEW_TTL_MINUTES = 10;
 
@@ -512,6 +517,17 @@ const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) =>
         `,
       });
     }
+
+    const joinLink = `${config.base_url}/api/v1/friends/join-nudge/${nudge._id}?userId=${user._id}`;
+    await sendNotifications({
+      title: "New Nudge Invitation",
+      text: `${creator?.name || "Someone"} has invited you to join a focus session (Nudge). Click here to join: ${joinLink}`,
+      receiver: user._id.toString(),
+      sender: creator?._id.toString(),
+      type: NOTIFICATION_TYPE.USER,
+      referenceId: nudge._id.toString(),
+      referenceModel: NOTIFICATION_REFERENCE_MODEL.NUDGE,
+    });
   }
 
   return nudge;
@@ -607,6 +623,19 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     startTime: now,
     status: "active",
   });
+
+  if (!nudge.creatorId.equals(userObjectId)) {
+    const joiningUser = await User.findById(userId).select("name");
+    await sendNotifications({
+      title: "Nudge Invitation Accepted",
+      text: `${joiningUser?.name || "A friend"} joined your focus session (Nudge).`,
+      receiver: nudge.creatorId.toString(),
+      sender: userId,
+      type: NOTIFICATION_TYPE.USER,
+      referenceId: nudge._id.toString(),
+      referenceModel: NOTIFICATION_REFERENCE_MODEL.NUDGE,
+    });
+  }
 
   return result;
 };
@@ -1077,6 +1106,18 @@ const addFriendToDB = async (userId: string, friendId: string) => {
     }
     existingFriend.status = "accepted";
     await existingFriend.save();
+
+    const sender = await User.findById(userId).select("name");
+    await sendNotifications({
+      title: "New Friend Connected",
+      text: `${sender?.name || "Someone"} connected with you as a friend.`,
+      receiver: friendId,
+      sender: userId,
+      type: NOTIFICATION_TYPE.USER,
+      referenceId: existingFriend._id.toString(),
+      referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
+    });
+
     return existingFriend;
   }
 
@@ -1084,6 +1125,17 @@ const addFriendToDB = async (userId: string, friendId: string) => {
     userId: userObjectId,
     friendId: friendObjectId,
     status: "accepted",
+  });
+
+  const sender = await User.findById(userId).select("name");
+  await sendNotifications({
+    title: "New Friend Connected",
+    text: `${sender?.name || "Someone"} connected with you as a friend.`,
+    receiver: friendId,
+    sender: userId,
+    type: NOTIFICATION_TYPE.USER,
+    referenceId: result._id.toString(),
+    referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
   });
 
   return result;

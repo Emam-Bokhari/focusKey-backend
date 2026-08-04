@@ -121,6 +121,35 @@ const readAdminSingleNotification = catchAsync(
   },
 );
 
+const deleteNotification = catchAsync(async (req: Request, res: Response) => {
+  const result = await NotificationService.deleteNotificationFromDB(
+    req.user,
+    req.params.id,
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Notification deleted successfully",
+    data: result,
+  });
+});
+
+const deleteAdminNotification = catchAsync(
+  async (req: Request, res: Response) => {
+    const result = await NotificationService.deleteAdminNotificationFromDB(
+      req.params.id,
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Admin notification deleted successfully",
+      data: result,
+    });
+  },
+);
+
 export const NotificationController = {
   getNotifications,
   readNotifications,
@@ -130,4 +159,6 @@ export const NotificationController = {
   readAdminNotifications,
   getAdminSingleNotification,
   readAdminSingleNotification,
+  deleteNotification,
+  deleteAdminNotification,
 };

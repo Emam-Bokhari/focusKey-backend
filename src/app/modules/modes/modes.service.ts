@@ -6,6 +6,11 @@ import mongoose from "mongoose";
 import { Break } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
 import { DashboardService } from "../dashboard/dashboard.service";
+import { sendNotifications } from "../../../helpers/notificationsHelper";
+import {
+  NOTIFICATION_REFERENCE_MODEL,
+  NOTIFICATION_TYPE,
+} from "../notification/notification.constant";
 
 const ensureDefaultModesExist = async (userId: string): Promise<void> => {
   const count = await Mode.countDocuments({
@@ -55,6 +60,15 @@ const createModeToDB = async (payload: IMode, userId: string): Promise<any> => {
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create mode");
   }
+
+  await sendNotifications({
+    title: "New Mode Created",
+    text: `You have successfully created a new focus mode: "${result.name}".`,
+    receiver: userId,
+    type: NOTIFICATION_TYPE.USER,
+    referenceId: result._id.toString(),
+    referenceModel: NOTIFICATION_REFERENCE_MODEL.MODE,
+  });
 
   return {
     ...result.toObject(),
@@ -179,6 +193,16 @@ const deleteModeFromDB = async (modeId: string) => {
       runValidators: true,
     },
   );
+
+  if (result) {
+    await sendNotifications({
+      title: "Mode Deleted",
+      text: `You have successfully deleted the focus mode: "${mode.name}".`,
+      receiver: mode.userId.toString(),
+      type: NOTIFICATION_TYPE.USER,
+    });
+  }
+
   return result;
 };
 

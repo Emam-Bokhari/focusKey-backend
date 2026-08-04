@@ -131,6 +131,29 @@ const readAdminSingleNotificationToDB = async (
   return result;
 };
 
+const deleteNotificationFromDB = async (
+  user: JwtPayload,
+  id: string,
+): Promise<INotification | null> => {
+  const result = await Notification.findOneAndDelete({
+    _id: id,
+    receiver: user.id,
+  });
+
+  return result;
+};
+
+const deleteAdminNotificationFromDB = async (
+  id: string,
+): Promise<INotification | null> => {
+  const result = await Notification.findOneAndDelete({
+    _id: id,
+    type: NOTIFICATION_TYPE.ADMIN,
+  });
+
+  return result;
+};
+
 export const NotificationService = {
   getNotificationsFromDB,
   readNotificationsToDB,
@@ -140,4 +163,6 @@ export const NotificationService = {
   readAdminNotificationsToDB,
   getAdminSingleNotificationFromDB,
   readAdminSingleNotificationToDB,
+  deleteNotificationFromDB,
+  deleteAdminNotificationFromDB,
 };

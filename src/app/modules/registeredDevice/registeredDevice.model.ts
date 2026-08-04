@@ -3,7 +3,10 @@ import { IRegisteredDevice } from "./registeredDevice.interface";
 import { ISoftDeleteModel } from "../../../types/softDelete";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
-const registeredDeviceSchema = new Schema<IRegisteredDevice, ISoftDeleteModel<IRegisteredDevice>>(
+const registeredDeviceSchema = new Schema<
+  IRegisteredDevice,
+  ISoftDeleteModel<IRegisteredDevice>
+>(
   {
     serialNo: {
       type: String,
@@ -66,7 +69,7 @@ const registeredDeviceSchema = new Schema<IRegisteredDevice, ISoftDeleteModel<IR
   {
     timestamps: true,
     versionKey: false,
-  }
+  },
 );
 
 registeredDeviceSchema.index({ uid: 1 });
@@ -75,7 +78,7 @@ registeredDeviceSchema.index({ userId: 1 });
 
 registeredDeviceSchema.plugin(softDeletePlugin);
 
-export const RegisteredDevice = model<IRegisteredDevice, ISoftDeleteModel<IRegisteredDevice>>(
-  "RegisteredDevice",
-  registeredDeviceSchema
-);
+export const RegisteredDevice = model<
+  IRegisteredDevice,
+  ISoftDeleteModel<IRegisteredDevice>
+>("RegisteredDevice", registeredDeviceSchema);

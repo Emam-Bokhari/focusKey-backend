@@ -15,11 +15,7 @@ router.post(
   UserControllers.handleUserPairing,
 );
 
-router.post(
-  "/unpair-device",
-  isUser,
-  UserControllers.handleUserUnpairing,
-);
+router.post("/unpair-device", isUser, UserControllers.handleUserUnpairing);
 
 router
   .route("/profile")
@@ -57,7 +53,6 @@ router
 router.patch("/status/:id", isAdmin, UserControllers.updateUserStatusById);
 
 router.delete("/admins/:id", isAdmin, UserControllers.deleteAdmin);
-
 
 router
   .route("/:id")

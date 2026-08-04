@@ -18,8 +18,8 @@ To provide a smoother user experience, real-time updates—such as device pairin
 
 The backend APIs in this project were developed based on the approved UI/UX design.
 
-| Resource | Link |
-|---|---|
+| Resource     | Link                                                                                                             |
+| ------------ | ---------------------------------------------------------------------------------------------------------------- |
 | Figma Design | [Click Here](https://www.figma.com/design/XBvJRsyd2gCGEaJPIXlV3r/Focus-Key?node-id=0-1&p=f&t=ITA62L1HEX5cMaMA-0) |
 
 > The UI/UX design was provided by the project team and is referenced here to help understand the API flow and business requirements.
@@ -46,28 +46,28 @@ The backend APIs in this project were developed based on the approved UI/UX desi
 
 ## Tech Stack
 
-| Category | Technology |
-|---|---|
-| Runtime | Node.js |
-| Language | TypeScript 5.5 |
-| Framework | Express 4 |
-| Database | MongoDB (Atlas / self-hosted) |
-| ODM | Mongoose 8 |
-| Authentication | JWT (`jsonwebtoken`) + Firebase Admin SDK |
-| Password Hashing | bcrypt |
-| Validation | Zod |
-| Cache / Queue Broker | Redis (ioredis) |
-| Job Queue | BullMQ 5 |
-| Queue Dashboard | Bull Board (`@bull-board/express`) |
-| Real-time | Socket.io 4 |
-| Push Notifications | Firebase Cloud Messaging (firebase-admin) |
-| Email | Nodemailer (Gmail SMTP) |
-| File Uploads | Multer (local disk) |
-| Template Engine | EJS |
-| Logging | Winston + `winston-daily-rotate-file` + Morgan |
-| HTTP Utilities | `http-status-codes`, `cors`, `express-rate-limit` |
-| Cryptography | Node.js `crypto`, `crypto-js` |
-| Formatter | Prettier |
+| Category             | Technology                                        |
+| -------------------- | ------------------------------------------------- |
+| Runtime              | Node.js                                           |
+| Language             | TypeScript 5.5                                    |
+| Framework            | Express 4                                         |
+| Database             | MongoDB (Atlas / self-hosted)                     |
+| ODM                  | Mongoose 8                                        |
+| Authentication       | JWT (`jsonwebtoken`) + Firebase Admin SDK         |
+| Password Hashing     | bcrypt                                            |
+| Validation           | Zod                                               |
+| Cache / Queue Broker | Redis (ioredis)                                   |
+| Job Queue            | BullMQ 5                                          |
+| Queue Dashboard      | Bull Board (`@bull-board/express`)                |
+| Real-time            | Socket.io 4                                       |
+| Push Notifications   | Firebase Cloud Messaging (firebase-admin)         |
+| Email                | Nodemailer (Gmail SMTP)                           |
+| File Uploads         | Multer (local disk)                               |
+| Template Engine      | EJS                                               |
+| Logging              | Winston + `winston-daily-rotate-file` + Morgan    |
+| HTTP Utilities       | `http-status-codes`, `cors`, `express-rate-limit` |
+| Cryptography         | Node.js `crypto`, `crypto-js`                     |
+| Formatter            | Prettier                                          |
 
 ---
 
@@ -231,50 +231,51 @@ The server will connect to MongoDB, seed the super admin account if absent, regi
 
 ## Environment Variables
 
-| Variable | Required | Description |
-|---|---|---|
-| `IP` | Yes | IP address the server binds to (e.g. `0.0.0.0`) |
-| `PORT` | Yes | Port the HTTP server listens on |
-| `DATABASE_URL` | Yes | MongoDB connection string |
-| `NODE_ENV` | Yes | Runtime environment (`development` or `production`) |
-| `BCRYPT_SALT_ROUNDS` | Yes | bcrypt hash rounds for password hashing |
-| `RESPONSE_MODE` | No | Error response mode — `STRICT` (default) or `SOFT` |
-| `JWT_SECRET` | Yes | Secret key for signing access tokens |
-| `JWT_EXPIRE_IN` | Yes | Access token expiry (e.g. `30d`) |
-| `JWT_REFRESH_SECRET` | Yes | Secret key for signing refresh tokens |
-| `JWT_REFRESH_EXPIRES_IN` | Yes | Refresh token expiry |
-| `REDIS_HOST` | Yes | Redis server hostname |
-| `REDIS_PORT` | Yes | Redis server port |
-| `REDIS_PASSWORD` | No | Redis authentication password |
-| `REDIS_DB` | No | Redis logical database index |
-| `START_CRON` | No | Set to `true` to activate scheduled cron jobs |
-| `CLIENT_URL` | Yes | Frontend application URL (CORS / redirect use) |
-| `BASE_URL` | Yes | Public base URL of this API server |
-| `DASHBOARD_URL` | No | Admin dashboard URL |
-| `FIREBASE_PROJECT_ID` | Yes | Firebase project identifier |
-| `FIREBASE_CLIENT_EMAIL` | Yes | Firebase service account client email |
-| `FIREBASE_PRIVATE_KEY` | Yes | Firebase service account private key (PEM) |
-| `EMAIL_FROM` | Yes | Sender address for transactional emails |
-| `EMAIL_USER` | Yes | SMTP auth username |
-| `EMAIL_HOST` | Yes | SMTP server hostname |
-| `EMAIL_PASS` | Yes | SMTP auth password |
-| `EMAIL_PORT` | Yes | SMTP server port |
-| `SUPPORT_RECEIVER_EMAIL` | No | Email address that receives support ticket notifications |
-| `ADMIN_EMAIL` | Yes | Super admin seed account email |
-| `ADMIN_PASSWORD` | Yes | Super admin seed account password |
-| `GOOGLE_CLIENT_ID` | No | Google OAuth 2.0 client ID |
-| `GOOGLE_CLIENT_SECRET` | No | Google OAuth 2.0 client secret |
+| Variable                 | Required | Description                                              |
+| ------------------------ | -------- | -------------------------------------------------------- |
+| `IP`                     | Yes      | IP address the server binds to (e.g. `0.0.0.0`)          |
+| `PORT`                   | Yes      | Port the HTTP server listens on                          |
+| `DATABASE_URL`           | Yes      | MongoDB connection string                                |
+| `NODE_ENV`               | Yes      | Runtime environment (`development` or `production`)      |
+| `BCRYPT_SALT_ROUNDS`     | Yes      | bcrypt hash rounds for password hashing                  |
+| `RESPONSE_MODE`          | No       | Error response mode — `STRICT` (default) or `SOFT`       |
+| `JWT_SECRET`             | Yes      | Secret key for signing access tokens                     |
+| `JWT_EXPIRE_IN`          | Yes      | Access token expiry (e.g. `30d`)                         |
+| `JWT_REFRESH_SECRET`     | Yes      | Secret key for signing refresh tokens                    |
+| `JWT_REFRESH_EXPIRES_IN` | Yes      | Refresh token expiry                                     |
+| `REDIS_HOST`             | Yes      | Redis server hostname                                    |
+| `REDIS_PORT`             | Yes      | Redis server port                                        |
+| `REDIS_PASSWORD`         | No       | Redis authentication password                            |
+| `REDIS_DB`               | No       | Redis logical database index                             |
+| `START_CRON`             | No       | Set to `true` to activate scheduled cron jobs            |
+| `CLIENT_URL`             | Yes      | Frontend application URL (CORS / redirect use)           |
+| `BASE_URL`               | Yes      | Public base URL of this API server                       |
+| `DASHBOARD_URL`          | No       | Admin dashboard URL                                      |
+| `FIREBASE_PROJECT_ID`    | Yes      | Firebase project identifier                              |
+| `FIREBASE_CLIENT_EMAIL`  | Yes      | Firebase service account client email                    |
+| `FIREBASE_PRIVATE_KEY`   | Yes      | Firebase service account private key (PEM)               |
+| `EMAIL_FROM`             | Yes      | Sender address for transactional emails                  |
+| `EMAIL_USER`             | Yes      | SMTP auth username                                       |
+| `EMAIL_HOST`             | Yes      | SMTP server hostname                                     |
+| `EMAIL_PASS`             | Yes      | SMTP auth password                                       |
+| `EMAIL_PORT`             | Yes      | SMTP server port                                         |
+| `SUPPORT_RECEIVER_EMAIL` | No       | Email address that receives support ticket notifications |
+| `ADMIN_EMAIL`            | Yes      | Super admin seed account email                           |
+| `ADMIN_PASSWORD`         | Yes      | Super admin seed account password                        |
+| `GOOGLE_CLIENT_ID`       | No       | Google OAuth 2.0 client ID                               |
+| `GOOGLE_CLIENT_SECRET`   | No       | Google OAuth 2.0 client secret                           |
 
 ---
 
 ## Available Scripts
 
-| Script | Description |
-|---|---|
-| `npm run dev` | Start the development server with hot reload (`ts-node-dev`) |
-| `npm run build` | Compile TypeScript to JavaScript in `./dist` |
-| `npm run start` | Run the compiled production build (`node dist/server.js`) |
-| `npm run format` | Format all source files with Prettier |
+| Script           | Description                                                  |
+| ---------------- | ------------------------------------------------------------ |
+| `npm run dev`    | Start the development server with hot reload (`ts-node-dev`) |
+| `npm run build`  | Compile TypeScript to JavaScript in `./dist`                 |
+| `npm run start`  | Run the compiled production build (`node dist/server.js`)    |
+| `npm run format` | Format all source files with Prettier                        |
+
 ---
 
 ## API Documentation
@@ -284,9 +285,9 @@ No Swagger/OpenAPI documentation was detected in the source.
 The API is organised under the following base paths:
 
 | Version | Base Path |
-|---|---|
-| v1 | `/api/v1` |
-| v2 | `/api/v2` |
+| ------- | --------- |
+| v1      | `/api/v1` |
+| v2      | `/api/v2` |
 
 A Bull Board queue monitoring UI is available at:
 
@@ -298,15 +299,15 @@ GET /admin/queues
 
 ## Database
 
-| Property | Detail |
-|---|---|
-| Database | MongoDB |
-| ODM | Mongoose 8 |
-| Connection | `mongoose.connect()` on server startup; process exits immediately if unreachable |
-| Atlas | Supported via `DATABASE_URL` connection string |
-| Seeding | `seedSuperAdmin()` runs on startup and creates the super admin user if absent |
-| Soft Delete | A reusable `softDeletePlugin` is applied per-model; deleted documents are transparently excluded from all `find`, `findOne`, `countDocuments`, `update`, and `aggregate` operations |
-| Transactions | MongoDB sessions are used for atomic operations (e.g. NFC device pairing/unpairing) |
+| Property     | Detail                                                                                                                                                                              |
+| ------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Database     | MongoDB                                                                                                                                                                             |
+| ODM          | Mongoose 8                                                                                                                                                                          |
+| Connection   | `mongoose.connect()` on server startup; process exits immediately if unreachable                                                                                                    |
+| Atlas        | Supported via `DATABASE_URL` connection string                                                                                                                                      |
+| Seeding      | `seedSuperAdmin()` runs on startup and creates the super admin user if absent                                                                                                       |
+| Soft Delete  | A reusable `softDeletePlugin` is applied per-model; deleted documents are transparently excluded from all `find`, `findOne`, `countDocuments`, `update`, and `aggregate` operations |
+| Transactions | MongoDB sessions are used for atomic operations (e.g. NFC device pairing/unpairing)                                                                                                 |
 
 ---
 
@@ -315,33 +316,37 @@ GET /admin/queues
 The project includes automatically generated Entity Relationship Diagrams (ERDs) mapping the Mongoose schemas and relationships across modules.
 
 #### System-Wide ER Diagram
+
 Below is the rendered project-wide database structure:
 
 ![System-Wide ER Diagram](./docs/erd/modules/whole-er-diagram/er-diagram.png)
 
 You can access the generated diagrams under the `./docs/erd/modules/` directory:
-* **System-Wide (All Modules Consolidated):**
-  * 📸 [Diagram(.png)](./docs/erd/modules/whole-er-diagram/er-diagram.png)
+
+- **System-Wide (All Modules Consolidated):**
+  - 📸 [Diagram(.png)](./docs/erd/modules/whole-er-diagram/er-diagram.png)
 
 #### Module-Specific Diagrams
+
 For a focused view of each module, check the following directories:
-* **User:** [PNG](./docs/erd/modules/user/er-diagram.png)
-* **Banner:** [PNG](./docs/erd/modules/banner/er-diagram.png)
-* **Breaks:** [PNG](./docs/erd/modules/breaks/er-diagram.png)
-* **Chat:** [PNG](./docs/erd/modules/chat/er-diagram.png)
-* **FAQ:** [PNG](./docs/erd/modules/faq/er-diagram.png)
-* **FCM Token:** [PNG](./docs/erd/modules/fcmToken/er-diagram.png)
-* **Focus Session:** [PNG](./docs/erd/modules/focusSession/er-diagram.png)
-* **Friends:** [PNG](./docs/erd/modules/friends/er-diagram.png)
-* **Message:** [PNG](./docs/erd/modules/message/er-diagram.png)
-* **Modes:** [PNG](./docs/erd/modules/modes/er-diagram.png)
-* **Notification:** [PNG](./docs/erd/modules/notification/er-diagram.png)
-* **Personal Reminder:** [PNG](./docs/erd/modules/personalReminder/er-diagram.png)
-* **Registered Device:** [PNG](./docs/erd/modules/registeredDevice/er-diagram.png)
-* **ResetToken:** [PNG](./docs/erd/modules/resetToken/er-diagram.png)
-* **Rule:** [PNG](./docs/erd/modules/rule/er-diagram.png)
-* **Settings:** [PNG](./docs/erd/modules/settings/er-diagram.png)
-* **Support:** [PNG](./docs/erd/modules/support/er-diagram.png)
+
+- **User:** [PNG](./docs/erd/modules/user/er-diagram.png)
+- **Banner:** [PNG](./docs/erd/modules/banner/er-diagram.png)
+- **Breaks:** [PNG](./docs/erd/modules/breaks/er-diagram.png)
+- **Chat:** [PNG](./docs/erd/modules/chat/er-diagram.png)
+- **FAQ:** [PNG](./docs/erd/modules/faq/er-diagram.png)
+- **FCM Token:** [PNG](./docs/erd/modules/fcmToken/er-diagram.png)
+- **Focus Session:** [PNG](./docs/erd/modules/focusSession/er-diagram.png)
+- **Friends:** [PNG](./docs/erd/modules/friends/er-diagram.png)
+- **Message:** [PNG](./docs/erd/modules/message/er-diagram.png)
+- **Modes:** [PNG](./docs/erd/modules/modes/er-diagram.png)
+- **Notification:** [PNG](./docs/erd/modules/notification/er-diagram.png)
+- **Personal Reminder:** [PNG](./docs/erd/modules/personalReminder/er-diagram.png)
+- **Registered Device:** [PNG](./docs/erd/modules/registeredDevice/er-diagram.png)
+- **ResetToken:** [PNG](./docs/erd/modules/resetToken/er-diagram.png)
+- **Rule:** [PNG](./docs/erd/modules/rule/er-diagram.png)
+- **Settings:** [PNG](./docs/erd/modules/settings/er-diagram.png)
+- **Support:** [PNG](./docs/erd/modules/support/er-diagram.png)
 
 ---
 
@@ -356,11 +361,11 @@ For a focused view of each module, check the following directories:
 
 ### Tokens
 
-| Token | Details |
-|---|---|
-| Access Token | Signed JWT (`HS256`) containing `id`, `role`, `email`; expiry configured via `JWT_EXPIRE_IN` |
-| Refresh Token | Separate JWT signed with `JWT_REFRESH_SECRET`; issues a new access token without re-login |
-| Reset Token | Cryptographic random hex token stored in a `ResetToken` collection with 5-minute expiry |
+| Token         | Details                                                                                      |
+| ------------- | -------------------------------------------------------------------------------------------- |
+| Access Token  | Signed JWT (`HS256`) containing `id`, `role`, `email`; expiry configured via `JWT_EXPIRE_IN` |
+| Refresh Token | Separate JWT signed with `JWT_REFRESH_SECRET`; issues a new access token without re-login    |
+| Reset Token   | Cryptographic random hex token stored in a `ResetToken` collection with 5-minute expiry      |
 
 ### Authorization
 
@@ -372,25 +377,25 @@ For a focused view of each module, check the following directories:
 
 ## Modules
 
-| Module | API Path | Description |
-|---|---|---|
-| Auth | `/api/v1/auth` | Login, registration, OTP verify, password reset, Google login, refresh token |
-| User | `/api/v1/users` | Profile management, NFC pairing, device sync, installed app list |
-| Registered Device | `/api/v1/devices` | Admin-managed NFC hardware device registry |
-| Focus Session | `/api/v1/focus-sessions` | Start, pause, complete focus sessions; session history |
-| Modes | `/api/v1/modes` | Create and manage app-blocking focus modes |
-| Breaks | `/api/v1/breaks` | Start and manage break periods |
-| Friends | `/api/v1/friends` | Friend requests, friend list, user search |
-| Notification | `/api/v1/notifications` | In-app notification records |
-| FCM Token | `/api/v1/fcmTokens` | Register and manage Firebase device tokens |
-| Personal Reminder | `/api/v1/personal-reminders` | User-defined reminder records |
-| Analytics | `/api/v1/analytics` | Focus time statistics and productivity metrics |
-| Dashboard | `/api/v1/dashboard` | Admin-facing aggregations and overviews |
-| Settings | `/api/v1/settings` | Application settings |
-| Banner | `/api/v1/banners` | Promotional banner management (admin) |
-| FAQ | `/api/v1/faqs` | Frequently asked questions management |
-| Support | `/api/v1/supports` | User support ticket submission |
-| Rule | `/api/v1/rules` | Platform rules and guidelines |
+| Module            | API Path                     | Description                                                                  |
+| ----------------- | ---------------------------- | ---------------------------------------------------------------------------- |
+| Auth              | `/api/v1/auth`               | Login, registration, OTP verify, password reset, Google login, refresh token |
+| User              | `/api/v1/users`              | Profile management, NFC pairing, device sync, installed app list             |
+| Registered Device | `/api/v1/devices`            | Admin-managed NFC hardware device registry                                   |
+| Focus Session     | `/api/v1/focus-sessions`     | Start, pause, complete focus sessions; session history                       |
+| Modes             | `/api/v1/modes`              | Create and manage app-blocking focus modes                                   |
+| Breaks            | `/api/v1/breaks`             | Start and manage break periods                                               |
+| Friends           | `/api/v1/friends`            | Friend requests, friend list, user search                                    |
+| Notification      | `/api/v1/notifications`      | In-app notification records                                                  |
+| FCM Token         | `/api/v1/fcmTokens`          | Register and manage Firebase device tokens                                   |
+| Personal Reminder | `/api/v1/personal-reminders` | User-defined reminder records                                                |
+| Analytics         | `/api/v1/analytics`          | Focus time statistics and productivity metrics                               |
+| Dashboard         | `/api/v1/dashboard`          | Admin-facing aggregations and overviews                                      |
+| Settings          | `/api/v1/settings`           | Application settings                                                         |
+| Banner            | `/api/v1/banners`            | Promotional banner management (admin)                                        |
+| FAQ               | `/api/v1/faqs`               | Frequently asked questions management                                        |
+| Support           | `/api/v1/supports`           | User support ticket submission                                               |
+| Rule              | `/api/v1/rules`              | Platform rules and guidelines                                                |
 
 ---
 
@@ -432,10 +437,10 @@ yarn format
 
 Winston is used with two named logger instances:
 
-| Logger | Level | Destination |
-|---|---|---|
-| `logger` | `info` | Console + `winston/success/%DATE%-success.log` |
-| `errorLogger` | `error` | Console + `winston/error/%DATE%-error.log` |
+| Logger        | Level   | Destination                                    |
+| ------------- | ------- | ---------------------------------------------- |
+| `logger`      | `info`  | Console + `winston/success/%DATE%-success.log` |
+| `errorLogger` | `error` | Console + `winston/error/%DATE%-error.log`     |
 
 Log files rotate daily (`DD-MM-YYYY-HH` date pattern), with a maximum file size of 20 MB and a 1-day retention period. HTTP request logging is handled by Morgan, which pipes output through the Winston streams.
 
@@ -447,14 +452,14 @@ All unhandled errors in route handlers are caught by `catchAsync` and forwarded 
 
 The global handler normalises the following error types:
 
-| Error Type | Handling |
-|---|---|
-| `ZodError` | Parsed into field-level validation messages |
-| Mongoose `ValidationError` | Parsed into field-level validation messages |
-| `TokenExpiredError` | 401 with session-expired message |
-| `JsonWebTokenError` | 401 with invalid-token message |
-| `ApiError` | Uses the status code and message from the thrown error |
-| Generic `Error` | 500 with the error message |
+| Error Type                 | Handling                                               |
+| -------------------------- | ------------------------------------------------------ |
+| `ZodError`                 | Parsed into field-level validation messages            |
+| Mongoose `ValidationError` | Parsed into field-level validation messages            |
+| `TokenExpiredError`        | 401 with session-expired message                       |
+| `JsonWebTokenError`        | 401 with invalid-token message                         |
+| `ApiError`                 | Uses the status code and message from the thrown error |
+| Generic `Error`            | 500 with the error message                             |
 
 **Response modes** (controlled by the `RESPONSE_MODE` environment variable):
 
@@ -469,20 +474,19 @@ Process-level events (`uncaughtException`, `unhandledRejection`) are logged to `
 
 ## Security
 
-| Mechanism | Implementation |
-|---|---|
-| CORS | `cors` middleware; `credentials: true` |
-| Rate Limiting | 200 requests per 15 minutes per IP (`express-rate-limit`) |
-| JWT Authentication | `Authorization: Bearer` header validation on all protected routes |
-| Role Guards | Role membership enforced in `auth` middleware |
-| Password Hashing | bcrypt with configurable salt rounds (`BCRYPT_SALT_ROUNDS`) |
-| OTP Expiry | 3-minute expiry for email OTPs; 5-minute expiry for reset tokens |
-| Input Validation | Zod schema validation via the `validateRequest` middleware |
+| Mechanism                     | Implementation                                                           |
+| ----------------------------- | ------------------------------------------------------------------------ |
+| CORS                          | `cors` middleware; `credentials: true`                                   |
+| Rate Limiting                 | 200 requests per 15 minutes per IP (`express-rate-limit`)                |
+| JWT Authentication            | `Authorization: Bearer` header validation on all protected routes        |
+| Role Guards                   | Role membership enforced in `auth` middleware                            |
+| Password Hashing              | bcrypt with configurable salt rounds (`BCRYPT_SALT_ROUNDS`)              |
+| OTP Expiry                    | 3-minute expiry for email OTPs; 5-minute expiry for reset tokens         |
+| Input Validation              | Zod schema validation via the `validateRequest` middleware               |
 | Device Fingerprint Validation | Known invalid/placeholder fingerprint values rejected during NFC pairing |
-| Soft Deletes | Deleted records are excluded from all standard queries transparently |
+| Soft Deletes                  | Deleted records are excluded from all standard queries transparently     |
 
 ---
-
 
 ## License
 

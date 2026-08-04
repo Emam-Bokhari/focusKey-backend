@@ -182,10 +182,10 @@ const getDashboardData = async (userId: string) => {
     activeMode: (() => {
       if (!activeMode) return null;
       const installedAppPackages = new Set(
-        (user?.installedApps || []).map((app) => app.packageName)
+        (user?.installedApps || []).map((app) => app.packageName),
       );
-      const filteredLockedApps = (activeMode.lockedApps || []).filter((app: any) =>
-        installedAppPackages.has(app.packageName)
+      const filteredLockedApps = (activeMode.lockedApps || []).filter(
+        (app: any) => installedAppPackages.has(app.packageName),
       );
       return {
         ...activeMode.toObject(),
@@ -579,12 +579,18 @@ const getHistoryV2 = async (userId: string) => {
     });
   }
 
-  const sortedDates = Object.keys(groupedHistory).sort((a, b) => b.localeCompare(a));
+  const sortedDates = Object.keys(groupedHistory).sort((a, b) =>
+    b.localeCompare(a),
+  );
 
   const history = sortedDates.map((dateKey) => {
     const group = groupedHistory[dateKey];
-    group.sessions.sort((a: any, b: any) => a.startTime.getTime() - b.startTime.getTime());
-    const cleanSessions = group.sessions.map(({ startTime, ...rest }: any) => rest);
+    group.sessions.sort(
+      (a: any, b: any) => a.startTime.getTime() - b.startTime.getTime(),
+    );
+    const cleanSessions = group.sessions.map(
+      ({ startTime, ...rest }: any) => rest,
+    );
 
     return {
       dateGroup: group.dateGroup,

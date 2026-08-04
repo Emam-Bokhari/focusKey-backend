@@ -11,33 +11,20 @@ router
   .post(
     isAdmin,
     validateRequest(RegisteredDeviceValidation.createDeviceSchema),
-    RegisteredDeviceController.createDevice
+    RegisteredDeviceController.createDevice,
   )
-  .get(
-    isAdmin,
-    RegisteredDeviceController.getAllDevices
-  );
+  .get(isAdmin, RegisteredDeviceController.getAllDevices);
 
-router.post(
-  "/:id/reset",
-  isAdmin,
-  RegisteredDeviceController.resetDevice
-);
+router.post("/:id/reset", isAdmin, RegisteredDeviceController.resetDevice);
 
 router
   .route("/:id")
-  .get(
-    isAdmin,
-    RegisteredDeviceController.getDeviceById
-  )
+  .get(isAdmin, RegisteredDeviceController.getDeviceById)
   .patch(
     isAdmin,
     validateRequest(RegisteredDeviceValidation.updateDeviceSchema),
-    RegisteredDeviceController.updateDevice
+    RegisteredDeviceController.updateDevice,
   )
-  .delete(
-    isAdmin,
-    RegisteredDeviceController.deleteDevice
-  );
+  .delete(isAdmin, RegisteredDeviceController.deleteDevice);
 
 export const RegisteredDeviceRoutes = router;

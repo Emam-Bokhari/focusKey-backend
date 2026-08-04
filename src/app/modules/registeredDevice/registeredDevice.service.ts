@@ -6,10 +6,15 @@ import { IRegisteredDevice } from "./registeredDevice.interface";
 import { RegisteredDevice } from "./registeredDevice.model";
 import { User } from "../user/user.model";
 
-const createDeviceToDB = async (payload: Partial<IRegisteredDevice>): Promise<IRegisteredDevice> => {
+const createDeviceToDB = async (
+  payload: Partial<IRegisteredDevice>,
+): Promise<IRegisteredDevice> => {
   const existingDevice = await RegisteredDevice.findOne({ uid: payload.uid });
   if (existingDevice) {
-    throw new ApiError(StatusCodes.CONFLICT, "A device with this UID is already registered.");
+    throw new ApiError(
+      StatusCodes.CONFLICT,
+      "A device with this UID is already registered.",
+    );
   }
 
   if (!payload.serialNo) {
@@ -17,9 +22,14 @@ const createDeviceToDB = async (payload: Partial<IRegisteredDevice>): Promise<IR
     const randomHex = Math.random().toString(16).substring(2, 6).toUpperCase();
     payload.serialNo = `SN-${timestamp}${randomHex}`;
   } else {
-    const existingSerial = await RegisteredDevice.findOne({ serialNo: payload.serialNo });
+    const existingSerial = await RegisteredDevice.findOne({
+      serialNo: payload.serialNo,
+    });
     if (existingSerial) {
-      throw new ApiError(StatusCodes.CONFLICT, "A device with this Serial Number is already registered.");
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        "A device with this Serial Number is already registered.",
+      );
     }
   }
 
@@ -31,9 +41,18 @@ const createDeviceToDB = async (payload: Partial<IRegisteredDevice>): Promise<IR
 };
 
 const getAllDevicesFromDB = async (query: Record<string, unknown>) => {
-  const baseQuery = RegisteredDevice.find().populate("userId", "name email profileImage role");
-  
-  const searchableFields = ["serialNo", "uid", "notes", "deviceFingerprint", "deviceModel"];
+  const baseQuery = RegisteredDevice.find().populate(
+    "userId",
+    "name email profileImage role",
+  );
+
+  const searchableFields = [
+    "serialNo",
+    "uid",
+    "notes",
+    "deviceFingerprint",
+    "deviceModel",
+  ];
   const queryBuilder = new QueryBuilder(baseQuery, query)
     .search(searchableFields)
     .filter()
@@ -50,18 +69,26 @@ const getAllDevicesFromDB = async (query: Record<string, unknown>) => {
   };
 };
 
-const getDeviceByIdFromDB = async (id: string): Promise<IRegisteredDevice | null> => {
+const getDeviceByIdFromDB = async (
+  id: string,
+): Promise<IRegisteredDevice | null> => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid device ID.");
   }
-  return await RegisteredDevice.findById(id).populate("userId", "name email profileImage role");
+  return await RegisteredDevice.findById(id).populate(
+    "userId",
+    "name email profileImage role",
+  );
 };
 
-const updateDeviceToDB = async (id: string, payload: Partial<IRegisteredDevice>): Promise<IRegisteredDevice | null> => {
+const updateDeviceToDB = async (
+  id: string,
+  payload: Partial<IRegisteredDevice>,
+): Promise<IRegisteredDevice | null> => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid device ID.");
   }
-  
+
   const device = await RegisteredDevice.findById(id);
   if (!device) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Device not found.");
@@ -70,13 +97,21 @@ const updateDeviceToDB = async (id: string, payload: Partial<IRegisteredDevice>)
   if (payload.uid && payload.uid !== device.uid) {
     const existing = await RegisteredDevice.findOne({ uid: payload.uid });
     if (existing) {
-      throw new ApiError(StatusCodes.CONFLICT, "A device with this UID is already registered.");
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        "A device with this UID is already registered.",
+      );
     }
   }
   if (payload.serialNo && payload.serialNo !== device.serialNo) {
-    const existing = await RegisteredDevice.findOne({ serialNo: payload.serialNo });
+    const existing = await RegisteredDevice.findOne({
+      serialNo: payload.serialNo,
+    });
     if (existing) {
-      throw new ApiError(StatusCodes.CONFLICT, "A device with this Serial Number is already registered.");
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        "A device with this Serial Number is already registered.",
+      );
     }
   }
 
@@ -87,11 +122,13 @@ const updateDeviceToDB = async (id: string, payload: Partial<IRegisteredDevice>)
   return result;
 };
 
-const deleteDeviceFromDB = async (id: string): Promise<IRegisteredDevice | null> => {
+const deleteDeviceFromDB = async (
+  id: string,
+): Promise<IRegisteredDevice | null> => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid device ID.");
   }
-  
+
   const device = await RegisteredDevice.findById(id);
   if (!device) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Device not found.");

@@ -1,5 +1,10 @@
 import { Schema, model } from "mongoose";
-import { IFriend, INudge, INudgeParticipant, INudgePreview } from "./friends.interface";
+import {
+  IFriend,
+  INudge,
+  INudgeParticipant,
+  INudgePreview,
+} from "./friends.interface";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
 
 const friendSchema = new Schema<IFriend>(
@@ -128,4 +133,7 @@ const nudgePreviewSchema = new Schema<INudgePreview>(
 
 export const Friend = model<IFriend>("Friend", friendSchema);
 export const Nudge = model<INudge>("Nudge", nudgeSchema);
-export const NudgePreview = model<INudgePreview>("NudgePreview", nudgePreviewSchema);
+export const NudgePreview = model<INudgePreview>(
+  "NudgePreview",
+  nudgePreviewSchema,
+);

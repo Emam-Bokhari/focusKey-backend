@@ -59,11 +59,9 @@ class QueryBuilder<T> {
 
     const finalFilter: any = {};
 
-
     if (queryObj.status) {
       finalFilter.status = queryObj.status;
     }
-
 
     if (queryObj.city) {
       finalFilter.city = {

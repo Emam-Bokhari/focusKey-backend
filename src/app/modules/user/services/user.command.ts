@@ -34,7 +34,7 @@ const handleUserPairing = async (
     device_id?: string;
     device_model: string;
     platform: "android" | "ios" | "web";
-  }
+  },
 ) => {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -46,24 +46,49 @@ const handleUserPairing = async (
     }
 
     if (user.isPaired) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Already paired. Please unpair first.");
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Already paired. Please unpair first.",
+      );
     }
 
-    const fingerprint = (payload.deviceFingerprint || payload.device_fingerprint || payload.device_id || "").trim();
-    
+    const fingerprint = (
+      payload.deviceFingerprint ||
+      payload.device_fingerprint ||
+      payload.device_id ||
+      ""
+    ).trim();
+
     const lowercaseFingerprint = fingerprint.toLowerCase();
-    const invalidFingerprints = ["", "unknown", "null", "undefined", "000000", "android", "ios"];
+    const invalidFingerprints = [
+      "",
+      "unknown",
+      "null",
+      "undefined",
+      "000000",
+      "android",
+      "ios",
+    ];
     if (invalidFingerprints.includes(lowercaseFingerprint)) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid device fingerprint.");
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "Invalid device fingerprint.",
+      );
     }
 
-    const device = await RegisteredDevice.findOne({ uid: payload.uid, status: "ACTIVE" }).session(session);
+    const device = await RegisteredDevice.findOne({
+      uid: payload.uid,
+      status: "ACTIVE",
+    }).session(session);
     if (!device) {
       throw new ApiError(StatusCodes.BAD_REQUEST, "Device is not registered.");
     }
 
     if (device.userId && device.userId.toString() !== userId) {
-      throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another user.");
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "This NFC key is already paired with another user.",
+      );
     }
 
     if (!device.userId || (!device.deviceFingerprint && !device.platform)) {
@@ -77,8 +102,14 @@ const handleUserPairing = async (
       }
       device.lastPairedAt = new Date();
     } else {
-      if (device.deviceFingerprint !== fingerprint || device.platform !== payload.platform) {
-        throw new ApiError(StatusCodes.BAD_REQUEST, "This NFC key is already paired with another device.");
+      if (
+        device.deviceFingerprint !== fingerprint ||
+        device.platform !== payload.platform
+      ) {
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "This NFC key is already paired with another device.",
+        );
       }
       device.userId = new mongoose.Types.ObjectId(userId);
       device.deviceModel = payload.device_model; // model can still be updated

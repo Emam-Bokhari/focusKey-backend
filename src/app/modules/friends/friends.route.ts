@@ -9,9 +9,21 @@ const router = express.Router();
 router.get("/users", isUser, FriendsController.getUsers);
 
 router.post("/nudge/initiate", isUser, FriendsController.initiateNudge);
-router.get("/nudge/pending-preview", isUser, FriendsController.getPendingNudgePreview);
-router.get("/nudge/preview/:previewId", isUser, FriendsController.getNudgePreviewDetails);
-router.post("/nudge/confirm/:previewId", isUser, FriendsController.confirmNudge);
+router.get(
+  "/nudge/pending-preview",
+  isUser,
+  FriendsController.getPendingNudgePreview,
+);
+router.get(
+  "/nudge/preview/:previewId",
+  isUser,
+  FriendsController.getNudgePreviewDetails,
+);
+router.post(
+  "/nudge/confirm/:previewId",
+  isUser,
+  FriendsController.confirmNudge,
+);
 
 router.get(
   "/join-nudge/:nudgeId",
@@ -50,6 +62,10 @@ router.get(
 
 router.post("/add-friend", isUser, FriendsController.addFriend);
 router.get("/list", isUser, FriendsController.getFriends);
-router.post("/remove-participant", isUser, FriendsController.removeNudgeParticipant);
+router.post(
+  "/remove-participant",
+  isUser,
+  FriendsController.removeNudgeParticipant,
+);
 
 export const FriendsRoutes = router;

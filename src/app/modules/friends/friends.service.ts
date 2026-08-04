@@ -1,7 +1,6 @@
 import mongoose from "mongoose";
 import { User } from "../user/user.model";
 import { Friend, Nudge, NudgePreview } from "./friends.model";
-import { INudge } from "./friends.interface";
 import { FocusSession } from "../focusSession/focusSession.model";
 import { Break } from "../breaks/breaks.model";
 import { emailHelper } from "../../../helpers/emailHelper";
@@ -20,7 +19,9 @@ const NUDGE_PREVIEW_TTL_MINUTES = 10;
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const buildLastFocusInfo = async (userId: mongoose.Types.ObjectId): Promise<string> => {
+const buildLastFocusInfo = async (
+  userId: mongoose.Types.ObjectId,
+): Promise<string> => {
   const now = new Date();
   const lastSession = await FocusSession.findOne({
     userId,
@@ -90,7 +91,8 @@ const computeSharedFocusStats = async (
       }),
     ]);
 
-    if (creatorSessions.length === 0 || participantSessions.length === 0) continue;
+    if (creatorSessions.length === 0 || participantSessions.length === 0)
+      continue;
 
     let sharedMinutes = 0;
     for (const cs of creatorSessions) {
@@ -189,8 +191,10 @@ const getUsersFromDB = async (
   });
   const friendIdsSet = new Set(
     friends.map((f) =>
-      f.userId.equals(userObjectId) ? f.friendId.toString() : f.userId.toString()
-    )
+      f.userId.equals(userObjectId)
+        ? f.friendId.toString()
+        : f.userId.toString(),
+    ),
   );
 
   const now = new Date();
@@ -208,7 +212,9 @@ const getUsersFromDB = async (
       });
 
       const isLocked = activeSession ? !activeBreak : false;
-      const lastFocusInfo = await buildLastFocusInfo(new mongoose.Types.ObjectId(user._id.toString()));
+      const lastFocusInfo = await buildLastFocusInfo(
+        new mongoose.Types.ObjectId(user._id.toString()),
+      );
       const userName = user.userName || user.email?.split("@")[0] || "user";
 
       return {
@@ -231,12 +237,19 @@ const getUsersFromDB = async (
 
 const initiateNudgePreviewInDB = async (
   userId: string,
-  payload: { participants: string[]; modeId: string; breakConfig: { breaksPerDay: number; breakDurationMinutes: number } },
+  payload: {
+    participants: string[];
+    modeId: string;
+    breakConfig: { breaksPerDay: number; breakDurationMinutes: number };
+  },
 ) => {
   const { participants, modeId, breakConfig } = payload;
 
   if (!participants || participants.length === 0) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "At least one friend must be selected");
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "At least one friend must be selected",
+    );
   }
 
   const existingPreview = await NudgePreview.findOne({
@@ -272,14 +285,18 @@ const initiateNudgePreviewInDB = async (
   }).populate("userId", "name");
 
   if (focusedParticipants.length > 0) {
-    const focusedNames = focusedParticipants.map((s: any) => s.userId?.name).join(", ");
+    const focusedNames = focusedParticipants
+      .map((s: any) => s.userId?.name)
+      .join(", ");
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `Cannot send nudge. The following users are currently in a focus session: ${focusedNames}`,
     );
   }
 
-  const expiresAt = new Date(Date.now() + NUDGE_PREVIEW_TTL_MINUTES * 60 * 1000);
+  const expiresAt = new Date(
+    Date.now() + NUDGE_PREVIEW_TTL_MINUTES * 60 * 1000,
+  );
 
   const preview = await NudgePreview.create({
     creatorId: new mongoose.Types.ObjectId(userId),
@@ -297,28 +314,43 @@ const initiateNudgePreviewInDB = async (
   };
 };
 
-const getNudgePreviewDetailsFromDB = async (userId: string, previewId: string) => {
+const getNudgePreviewDetailsFromDB = async (
+  userId: string,
+  previewId: string,
+) => {
   const preview = await NudgePreview.findById(previewId)
     .populate("participants", "name userName profileImage email")
     .populate("modeId", "name iconType lockedApps");
 
   if (!preview) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Nudge preview not found or expired");
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Nudge preview not found or expired",
+    );
   }
 
   if (preview.creatorId.toString() !== userId) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "You do not have access to this preview");
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "You do not have access to this preview",
+    );
   }
 
   if (preview.status === "confirmed") {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "This nudge has already been confirmed");
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "This nudge has already been confirmed",
+    );
   }
 
   if (preview.status === "expired" || new Date() > preview.expiresAt) {
     if (preview.status !== "expired") {
       await NudgePreview.findByIdAndUpdate(previewId, { status: "expired" });
     }
-    throw new ApiError(StatusCodes.GONE, "This nudge preview has expired. Please initiate again");
+    throw new ApiError(
+      StatusCodes.GONE,
+      "This nudge preview has expired. Please initiate again",
+    );
   }
 
   const creatorId = new mongoose.Types.ObjectId(userId);
@@ -327,42 +359,48 @@ const getNudgePreviewDetailsFromDB = async (userId: string, previewId: string) =
     (preview.participants as any[])
       .filter((participant) => participant != null)
       .map(async (participant) => {
-      const participantId = new mongoose.Types.ObjectId(participant._id.toString());
+        const participantId = new mongoose.Types.ObjectId(
+          participant._id.toString(),
+        );
 
-      const activeSession = await FocusSession.findOne({
-        userId: participantId,
-        status: "active",
-      });
+        const activeSession = await FocusSession.findOne({
+          userId: participantId,
+          status: "active",
+        });
 
-      const activeBreak = activeSession
-        ? await Break.findOne({
-            userId: participantId,
-            status: "active",
-            endTime: { $gt: new Date() },
-          })
-        : null;
+        const activeBreak = activeSession
+          ? await Break.findOne({
+              userId: participantId,
+              status: "active",
+              endTime: { $gt: new Date() },
+            })
+          : null;
 
-      const isLocked = activeSession ? !activeBreak : false;
-      const lastFocusInfo = await buildLastFocusInfo(participantId);
-      const sharedStats = await computeSharedFocusStats(creatorId, participantId);
+        const isLocked = activeSession ? !activeBreak : false;
+        const lastFocusInfo = await buildLastFocusInfo(participantId);
+        const sharedStats = await computeSharedFocusStats(
+          creatorId,
+          participantId,
+        );
 
-      return {
-        _id: participant._id,
-        name: participant.name,
-        userName: participant.userName || participant.email?.split("@")[0] || "user",
-        profileImage: participant.profileImage || "",
-        email: participant.email || "",
-        isLocked,
-        lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
-        sharedStats: {
-          togetherThisWeek: sharedStats.togetherThisWeek,
-          streak: sharedStats.streak,
-          highlightedDays: sharedStats.highlightedDays,
-          totalTogetherMinutes: sharedStats.totalTogetherMinutes,
-          hasSharedHistory: sharedStats.highlightedDays.length > 0,
-        },
-      };
-    }),
+        return {
+          _id: participant._id,
+          name: participant.name,
+          userName:
+            participant.userName || participant.email?.split("@")[0] || "user",
+          profileImage: participant.profileImage || "",
+          email: participant.email || "",
+          isLocked,
+          lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
+          sharedStats: {
+            togetherThisWeek: sharedStats.togetherThisWeek,
+            streak: sharedStats.streak,
+            highlightedDays: sharedStats.highlightedDays,
+            totalTogetherMinutes: sharedStats.totalTogetherMinutes,
+            hasSharedHistory: sharedStats.highlightedDays.length > 0,
+          },
+        };
+      }),
   );
 
   const remainingMs = preview.expiresAt.getTime() - Date.now();
@@ -379,24 +417,39 @@ const getNudgePreviewDetailsFromDB = async (userId: string, previewId: string) =
   };
 };
 
-const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) => {
+const confirmNudgeFromPreviewInDB = async (
+  userId: string,
+  previewId: string,
+) => {
   const preview = await NudgePreview.findById(previewId);
 
   if (!preview) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Nudge preview not found or expired");
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Nudge preview not found or expired",
+    );
   }
 
   if (preview.creatorId.toString() !== userId) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "You do not have access to this preview");
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "You do not have access to this preview",
+    );
   }
 
   if (preview.status === "confirmed") {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "This nudge has already been confirmed");
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "This nudge has already been confirmed",
+    );
   }
 
   if (preview.status === "expired" || new Date() > preview.expiresAt) {
     await NudgePreview.findByIdAndUpdate(previewId, { status: "expired" });
-    throw new ApiError(StatusCodes.GONE, "This nudge preview has expired. Please initiate again");
+    throw new ApiError(
+      StatusCodes.GONE,
+      "This nudge preview has expired. Please initiate again",
+    );
   }
 
   const creatorActiveSession = await FocusSession.findOne({
@@ -413,8 +466,11 @@ const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) =>
 
   const creatorActiveNudge = await Nudge.findOne({
     status: { $in: ["active", "scheduled"] },
-    "joinedParticipants": {
-      $elemMatch: { userId: new mongoose.Types.ObjectId(userId), isDeleted: false },
+    joinedParticipants: {
+      $elemMatch: {
+        userId: new mongoose.Types.ObjectId(userId),
+        isDeleted: false,
+      },
     },
   });
 
@@ -426,12 +482,18 @@ const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) =>
   }
 
   const focusedParticipants = await FocusSession.find({
-    userId: { $in: preview.participants.map((id) => new mongoose.Types.ObjectId(id.toString())) },
+    userId: {
+      $in: preview.participants.map(
+        (id) => new mongoose.Types.ObjectId(id.toString()),
+      ),
+    },
     status: "active",
   }).populate("userId", "name");
 
   if (focusedParticipants.length > 0) {
-    const focusedNames = focusedParticipants.map((s: any) => s.userId?.name).join(", ");
+    const focusedNames = focusedParticipants
+      .map((s: any) => s.userId?.name)
+      .join(", ");
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       `Cannot confirm nudge. The following users are now in a focus session: ${focusedNames}`,
@@ -500,7 +562,9 @@ const confirmNudgeFromPreviewInDB = async (userId: string, previewId: string) =>
   });
 
   const invitedUsers = await User.find({
-    _id: { $in: participants.map((id) => new mongoose.Types.ObjectId(id.toString())) },
+    _id: {
+      $in: participants.map((id) => new mongoose.Types.ObjectId(id.toString())),
+    },
   });
   const creator = await User.findById(userId);
 
@@ -551,7 +615,10 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     (p) => !p.isDeleted && p.userId.equals(userObjectId),
   );
   if (!isCreator && !isInvited) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "You are not invited to this nudge");
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "You are not invited to this nudge",
+    );
   }
 
   const existingJoined = nudge.joinedParticipants.find(
@@ -564,7 +631,7 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
   const activeNudge = await Nudge.findOne({
     _id: { $ne: new mongoose.Types.ObjectId(nudgeId) },
     status: { $in: ["active", "scheduled"] },
-    "joinedParticipants": {
+    joinedParticipants: {
       $elemMatch: { userId: userObjectId, isDeleted: false },
     },
   });
@@ -597,7 +664,9 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     updateData.status = "active";
   }
 
-  const result = await Nudge.findByIdAndUpdate(nudgeId, updateData, { new: true });
+  const result = await Nudge.findByIdAndUpdate(nudgeId, updateData, {
+    new: true,
+  });
 
   await Mode.updateMany(
     { userId: userObjectId, isDeleted: false },
@@ -640,7 +709,11 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
   return result;
 };
 
-const getNudgeHistoryFromDB = async (userId: string, page: number, limit: number) => {
+const getNudgeHistoryFromDB = async (
+  userId: string,
+  page: number,
+  limit: number,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const skip = (page - 1) * limit;
 
@@ -750,7 +823,9 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   }
 
   if (result) {
-    const activeJoinedCount = result.joinedParticipants.filter((p) => !p.isDeleted).length;
+    const activeJoinedCount = result.joinedParticipants.filter(
+      (p) => !p.isDeleted,
+    ).length;
     if (activeJoinedCount === 0) {
       await Nudge.findByIdAndUpdate(nudgeId, { status: "completed" });
     }
@@ -788,11 +863,18 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
   });
 
   if (activeBreak) {
-    if (activeBreak.nudgeId && activeBreak.nudgeId.toString() === nudgeObjectId.toString()) {
+    if (
+      activeBreak.nudgeId &&
+      activeBreak.nudgeId.toString() === nudgeObjectId.toString()
+    ) {
       const now = new Date();
-      const elapsedMinutes = (now.getTime() - activeBreak.startTime.getTime()) / 60000;
+      const elapsedMinutes =
+        (now.getTime() - activeBreak.startTime.getTime()) / 60000;
       const durationLimit = nudge.breakConfig?.breakDurationMinutes || 0;
-      const remainingMinutes = Math.max(0, Math.ceil(durationLimit - elapsedMinutes));
+      const remainingMinutes = Math.max(
+        0,
+        Math.ceil(durationLimit - elapsedMinutes),
+      );
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         `You are already on a break. Please wait ${remainingMinutes} more minute(s) for it to finish automatically.`,
@@ -874,12 +956,15 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
 
   const creatorIdStr =
     nudge.creatorId != null
-      ? (nudge.creatorId as any)?._id?.toString() ?? nudge.creatorId.toString()
+      ? ((nudge.creatorId as any)?._id?.toString() ??
+        nudge.creatorId.toString())
       : null;
 
   const isCreator = creatorIdStr === userId;
   const creatorJoinedEntry = nudge.joinedParticipants.find(
-    (p) => p.userId != null && ((p.userId as any)._id || p.userId).toString() === userId
+    (p) =>
+      p.userId != null &&
+      ((p.userId as any)._id || p.userId).toString() === userId,
   );
 
   if (isCreator && !creatorJoinedEntry && nudge.status === "active") {
@@ -888,11 +973,17 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
         joinedParticipants: { userId: userObjectId, isDeleted: false },
       },
     });
-    nudge.joinedParticipants.push({ userId: userObjectId, isDeleted: false } as any);
+    nudge.joinedParticipants.push({
+      userId: userObjectId,
+      isDeleted: false,
+    } as any);
   }
 
   const isJoined = nudge.joinedParticipants.some(
-    (p) => !p.isDeleted && p.userId != null && ((p.userId as any)._id || p.userId).toString() === userId,
+    (p) =>
+      !p.isDeleted &&
+      p.userId != null &&
+      ((p.userId as any)._id || p.userId).toString() === userId,
   );
 
   let activeSession = await FocusSession.findOne({
@@ -914,12 +1005,12 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
 
   const currentUser = await User.findById(userId).select("installedApps");
   const installedAppPackages = new Set(
-    (currentUser?.installedApps || []).map((app) => app.packageName)
+    (currentUser?.installedApps || []).map((app) => app.packageName),
   );
 
   const modeLockedApps = (nudge.modeId as any)?.lockedApps || [];
   const filteredLockedApps = modeLockedApps.filter((app: any) =>
-    installedAppPackages.has(app.packageName)
+    installedAppPackages.has(app.packageName),
   );
 
   const activeBreak = activeSession
@@ -970,7 +1061,9 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     const duration =
       session.status === "completed"
         ? session.durationMinutes || 0
-        : Math.round((new Date().getTime() - session.startTime.getTime()) / 60000);
+        : Math.round(
+            (new Date().getTime() - session.startTime.getTime()) / 60000,
+          );
     weekFocusMinutes += duration;
     if (session.startTime >= startOfDay) todayFocusMinutes += duration;
   });
@@ -979,7 +1072,9 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     const duration =
       breakItem.status === "completed"
         ? breakItem.durationMinutes || 0
-        : Math.round((new Date().getTime() - breakItem.startTime.getTime()) / 60000);
+        : Math.round(
+            (new Date().getTime() - breakItem.startTime.getTime()) / 60000,
+          );
     weekFocusMinutes -= duration;
     if (breakItem.startTime >= startOfDay) todayFocusMinutes -= duration;
   });
@@ -987,13 +1082,18 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
   weekFocusMinutes = Math.max(0, weekFocusMinutes);
 
-  const activeParticipants = nudge.participants.filter((p) => !p.isDeleted && p.userId != null);
+  const activeParticipants = nudge.participants.filter(
+    (p) => !p.isDeleted && p.userId != null,
+  );
   const participantsWithStatus = await Promise.all(
     activeParticipants.map(async (participant: any) => {
       const participantId = participant.userId._id || participant.userId;
 
       const isParticipantJoined = nudge.joinedParticipants.some(
-        (p: any) => !p.isDeleted && p.userId != null && (p.userId._id || p.userId).equals(participantId),
+        (p: any) =>
+          !p.isDeleted &&
+          p.userId != null &&
+          (p.userId._id || p.userId).equals(participantId),
       );
 
       const participantActiveBreak = await Break.findOne({
@@ -1015,7 +1115,9 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
     }),
   );
 
-  const activeJoinedParticipants = nudge.joinedParticipants.filter((p) => !p.isDeleted && p.userId != null);
+  const activeJoinedParticipants = nudge.joinedParticipants.filter(
+    (p) => !p.isDeleted && p.userId != null,
+  );
   const joinedParticipantsWithStatus = await Promise.all(
     activeJoinedParticipants.map(async (participant: any) => {
       const participantId = participant.userId._id || participant.userId;
@@ -1065,7 +1167,9 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
             endTime: activeBreak.endTime,
             remainingMinutes: Math.max(
               0,
-              Math.ceil((activeBreak.endTime.getTime() - new Date().getTime()) / 60000),
+              Math.ceil(
+                (activeBreak.endTime.getTime() - new Date().getTime()) / 60000,
+              ),
             ),
           }
         : null,
@@ -1081,7 +1185,10 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
 
 const addFriendToDB = async (userId: string, friendId: string) => {
   if (userId === friendId) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "You cannot add yourself as a friend");
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot add yourself as a friend",
+    );
   }
 
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -1152,7 +1259,8 @@ const getFriendsFromDB = async (userId: string) => {
   const friendsData = friends
     .filter((f) => f.userId && f.friendId)
     .map((f) => {
-      const otherUser = (f.userId as any)._id.toString() === userId ? f.friendId : f.userId;
+      const otherUser =
+        (f.userId as any)._id.toString() === userId ? f.friendId : f.userId;
       return otherUser;
     });
 
@@ -1171,7 +1279,9 @@ const getFriendsFromDB = async (userId: string) => {
       });
 
       const isLocked = activeSession ? !activeBreak : false;
-      const lastFocusInfo = await buildLastFocusInfo(new mongoose.Types.ObjectId(friend._id.toString()));
+      const lastFocusInfo = await buildLastFocusInfo(
+        new mongoose.Types.ObjectId(friend._id.toString()),
+      );
 
       return {
         _id: friend._id,
@@ -1201,14 +1311,20 @@ const removeNudgeParticipantFromDB = async (
   }
 
   if (preview.creatorId.toString() !== userId) {
-    throw new ApiError(StatusCodes.FORBIDDEN, "Only the nudge creator can remove a participant");
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "Only the nudge creator can remove a participant",
+    );
   }
 
   const isParticipantInPreview = preview.participants.some(
     (p) => p.toString() === participantId,
   );
   if (!isParticipantInPreview) {
-    throw new ApiError(StatusCodes.NOT_FOUND, "Participant not found in this nudge preview");
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Participant not found in this nudge preview",
+    );
   }
 
   await NudgePreview.findByIdAndUpdate(
@@ -1278,7 +1394,9 @@ const removeNudgeParticipantFromDB = async (
       );
 
       if (result) {
-        const activeJoinedCount = result.joinedParticipants.filter((p) => !p.isDeleted).length;
+        const activeJoinedCount = result.joinedParticipants.filter(
+          (p) => !p.isDeleted,
+        ).length;
         if (activeJoinedCount === 0) {
           await Nudge.findByIdAndUpdate(nudgeObjectId, { status: "completed" });
         }
@@ -1299,7 +1417,10 @@ const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
   }
 
   if (nudge.status === "completed") {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "This nudge is already completed");
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "This nudge is already completed",
+    );
   }
 
   const isCreator = nudge.creatorId.equals(userObjectId);
@@ -1363,7 +1484,9 @@ const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
   );
 
   if (result) {
-    const activeJoinedCount = result.joinedParticipants.filter((p) => !p.isDeleted).length;
+    const activeJoinedCount = result.joinedParticipants.filter(
+      (p) => !p.isDeleted,
+    ).length;
     if (activeJoinedCount === 0) {
       await Nudge.findByIdAndUpdate(nudgeId, { status: "completed" });
     }
@@ -1404,12 +1527,12 @@ const getPendingNudgePreviewInDB = async (userId: string) => {
       participants: (preview.participants as any[])
         .filter((p) => p != null)
         .map((p) => ({
-        _id: p._id,
-        name: p.name,
-        userName: p.userName || p.email?.split("@")[0] || "user",
-        profileImage: p.profileImage || "",
-        email: p.email || "",
-      })),
+          _id: p._id,
+          name: p.name,
+          userName: p.userName || p.email?.split("@")[0] || "user",
+          profileImage: p.profileImage || "",
+          email: p.email || "",
+        })),
     },
   };
 };

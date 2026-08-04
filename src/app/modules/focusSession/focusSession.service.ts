@@ -253,7 +253,10 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
 
   await ModeService.ensureDefaultModesExist(userId);
 
-  const modes = await Mode.find({ userId: userObjectId, isDeleted: false }).select("_id name icon");
+  const modes = await Mode.find({
+    userId: userObjectId,
+    isDeleted: false,
+  }).select("_id name icon");
 
   const query: any = { userId: userObjectId };
   if (modeId) {
@@ -293,8 +296,18 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
   const formatSinceDate = (date: Date | null) => {
     if (!date) return "No focus history";
     const monthNames = [
-      "January", "February", "March", "April", "May", "June",
-      "July", "August", "September", "October", "November", "December"
+      "January",
+      "February",
+      "March",
+      "April",
+      "May",
+      "June",
+      "July",
+      "August",
+      "September",
+      "October",
+      "November",
+      "December",
     ];
     return `Since ${monthNames[date.getMonth()]} ${date.getDate()}, ${date.getFullYear()}`;
   };
@@ -392,7 +405,20 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
 
     const [year, month, day] = dateStr.split("-").map(Number);
     const date = new Date(year, month - 1, day);
-    const monthNames = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
+    const monthNames = [
+      "JAN",
+      "FEB",
+      "MAR",
+      "APR",
+      "MAY",
+      "JUN",
+      "JUL",
+      "AUG",
+      "SEP",
+      "OCT",
+      "NOV",
+      "DEC",
+    ];
     return `${monthNames[date.getMonth()]} ${date.getDate()}`;
   };
 

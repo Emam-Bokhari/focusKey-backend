@@ -12,43 +12,59 @@ import {
   NOTIFICATION_TYPE,
 } from "../notification/notification.constant";
 
-const ensureDefaultModesExist = async (userId: string): Promise<void> => {
-  const count = await Mode.countDocuments({
-    userId: new mongoose.Types.ObjectId(userId),
-    isDeleted: { $in: [true, false] },
-  });
+const defaultModeCreationPromises = new Map<string, Promise<void>>();
 
-  if (count === 0) {
-    const defaultModes = [
-      {
-        userId: new mongoose.Types.ObjectId(userId),
-        name: "Deep work.",
-        description: "Blocks social media, games, and video.",
-        icon: "work",
-        lockedApps: [],
-        totalLockedApps: 0,
-        isActive: false,
-      },
-      {
-        userId: new mongoose.Types.ObjectId(userId),
-        name: "Step away.",
-        description: "Blocks all social apps. Keeps utilities.",
-        icon: "study",
-        lockedApps: [],
-        totalLockedApps: 0,
-        isActive: false,
-      },
-      {
-        userId: new mongoose.Types.ObjectId(userId),
-        name: "Nothing gets through.",
-        description: "Blocks everything except calls and messages.",
-        icon: "sleep",
-        lockedApps: [],
-        totalLockedApps: 0,
-        isActive: false,
-      },
-    ];
-    await Mode.create(defaultModes);
+const ensureDefaultModesExist = async (userId: string): Promise<void> => {
+  if (defaultModeCreationPromises.has(userId)) {
+    return defaultModeCreationPromises.get(userId)!;
+  }
+
+  const promise = (async () => {
+    const count = await Mode.countDocuments({
+      userId: new mongoose.Types.ObjectId(userId),
+      isDeleted: { $in: [true, false] },
+    });
+
+    if (count === 0) {
+      const defaultModes = [
+        {
+          userId: new mongoose.Types.ObjectId(userId),
+          name: "Deep work.",
+          description: "Blocks social media, games, and video.",
+          icon: "work",
+          lockedApps: [],
+          totalLockedApps: 0,
+          isActive: false,
+        },
+        {
+          userId: new mongoose.Types.ObjectId(userId),
+          name: "Step away.",
+          description: "Blocks all social apps. Keeps utilities.",
+          icon: "study",
+          lockedApps: [],
+          totalLockedApps: 0,
+          isActive: false,
+        },
+        {
+          userId: new mongoose.Types.ObjectId(userId),
+          name: "Nothing gets through.",
+          description: "Blocks everything except calls and messages.",
+          icon: "sleep",
+          lockedApps: [],
+          totalLockedApps: 0,
+          isActive: false,
+        },
+      ];
+      await Mode.create(defaultModes);
+    }
+  })();
+
+  defaultModeCreationPromises.set(userId, promise);
+
+  try {
+    await promise;
+  } finally {
+    defaultModeCreationPromises.delete(userId);
   }
 };
 
@@ -72,7 +88,7 @@ const createModeToDB = async (payload: IMode, userId: string): Promise<any> => {
 
   return {
     ...result.toObject(),
-    isLocked: false, // Newly created modes are not active by default
+    isLocked: false,
   };
 };
 
@@ -135,7 +151,7 @@ const getSingleModeFromDB = async (modeId: string) => {
 };
 
 const updateModeToDB = async (modeId: string, payload: Partial<IMode>) => {
-  delete payload.isActive; // prevent updating activation status directly
+  delete payload.isActive;
   if (payload.lockedApps) {
     payload.totalLockedApps = payload.lockedApps.length;
   }
@@ -187,7 +203,7 @@ const deleteModeFromDB = async (modeId: string) => {
 
   const result = await Mode.findByIdAndUpdate(
     modeId,
-    { isDeleted: true, isActive: false }, // also deactivate on delete
+    { isDeleted: true, isActive: false },
     {
       new: true,
       runValidators: true,
@@ -359,10 +375,6 @@ const getModeAppDetails = async (userId: string) => {
     lockedApps: mode.lockedApps || [],
   }));
 };
-
-/*
-
-*/
 
 const getSingleModeAppDetails = async (modeId: string, userId: string) => {
   await ensureDefaultModesExist(userId);

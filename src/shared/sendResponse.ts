@@ -22,7 +22,6 @@ const sendResponse = <T>(res: Response, data: IData<T>) => {
     data: data.data,
     meta: data.meta,
     stats: data.stats,
-
     pagination: data.pagination,
   };
 

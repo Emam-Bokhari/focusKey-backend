@@ -17,10 +17,7 @@ import generateOTP from "../../../util/generateOTP";
 import { emailTemplate } from "../../../shared/emailTemplate";
 import { STATUS, USER_ROLES } from "../../../enums/user";
 import { sendNotifications } from "../../../helpers/notificationsHelper";
-import {
-  NOTIFICATION_REFERENCE_MODEL,
-  NOTIFICATION_TYPE,
-} from "../notification/notification.constant";
+import { NOTIFICATION_TYPE } from "../notification/notification.constant";
 import { firebaseAdmin } from "../../../config/firebase";
 import { FcmTokenService } from "../fcmToken/fcmService";
 import { emailQueue } from "../../../queues";

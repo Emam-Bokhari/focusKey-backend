@@ -3,6 +3,7 @@ import { User } from "../user/user.model";
 import { Mode } from "../modes/modes.model";
 import { Break, BreakConfig } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
+import { Friend, Nudge, NudgePreview } from "../friends/friends.model";
 
 const getDashboardData = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -169,7 +170,7 @@ const getDashboardData = async (userId: string) => {
 
   const allModes = await Mode.find({ userId: userObjectId, isDeleted: false });
   const totalBlockedAppsAcrossModes = allModes.reduce(
-    (acc, mode) => acc + (mode.lockedApps?.length || 0),
+    (acc, mode) => acc + (mode.totalLockedApps ?? mode.lockedApps?.length ?? 0),
     0,
   );
 
@@ -187,10 +188,11 @@ const getDashboardData = async (userId: string) => {
       const filteredLockedApps = (activeMode.lockedApps || []).filter(
         (app: any) => installedAppPackages.has(app.packageName),
       );
+      const hasLockedApps = activeMode.lockedApps && activeMode.lockedApps.length > 0;
       return {
         ...activeMode.toObject(),
         lockedApps: filteredLockedApps,
-        totalLockedApps: filteredLockedApps.length,
+        totalLockedApps: hasLockedApps ? filteredLockedApps.length : (activeMode.totalLockedApps ?? 0),
         isLocked,
       };
     })(),
@@ -220,7 +222,7 @@ const getDashboardData = async (userId: string) => {
           }
         : null,
     },
-    totalBlockedApps: activeMode?.lockedApps?.length || 0,
+    totalBlockedApps: activeMode?.totalLockedApps ?? activeMode?.lockedApps?.length ?? 0,
     totalBlockedAppsAcrossModes,
   };
 };
@@ -608,8 +610,90 @@ const getHistoryV2 = async (userId: string) => {
   };
 };
 
+const getAdminDashboardData = async () => {
+  // 1. Social Activity Data (Friend, Nudge, NudgePreview)
+  const recentFriends = await Friend.find({ status: "accepted" })
+    .sort({ updatedAt: -1 })
+    .limit(5)
+    .populate({
+      path: "userId friendId",
+      select: "name email profileImage",
+    });
+
+  const recentNudgePreviews = await NudgePreview.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate({
+      path: "creatorId",
+      select: "name email profileImage",
+    });
+
+  const recentNudges = await Nudge.find()
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate({
+      path: "creatorId",
+      select: "name email profileImage",
+    });
+
+  // 2. Map to unified format
+  const activities: any[] = [];
+
+  recentFriends.forEach((friend: any) => {
+    if (friend.userId && friend.friendId) {
+      activities.push({
+        user: {
+          name: friend.userId.name,
+          email: friend.userId.email,
+          profileImage: friend.userId.profileImage || null,
+        },
+        event: "Partner request accepted",
+        time: friend.updatedAt || friend.createdAt,
+        status: "Completed",
+      });
+    }
+  });
+
+  recentNudgePreviews.forEach((preview: any) => {
+    if (preview.creatorId) {
+      activities.push({
+        user: {
+          name: preview.creatorId.name,
+          email: preview.creatorId.email,
+          profileImage: preview.creatorId.profileImage || null,
+        },
+        event: "Nudge sent",
+        time: preview.createdAt,
+        status: preview.status === "confirmed" ? "Completed" : "Sent",
+      });
+    }
+  });
+
+  recentNudges.forEach((nudge: any) => {
+    if (nudge.creatorId) {
+      activities.push({
+        user: {
+          name: nudge.creatorId.name,
+          email: nudge.creatorId.email,
+          profileImage: nudge.creatorId.profileImage || null,
+        },
+        event: nudge.status === "completed" ? "Joint session completed" : "Joint session joined",
+        time: nudge.updatedAt || nudge.createdAt,
+        status: nudge.status === "completed" ? "Completed" : "Active",
+      });
+    }
+  });
+
+  const sortedActivities = activities
+    .sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime())
+    .slice(0, 5);
+
+  return sortedActivities;
+};
+
 export const DashboardService = {
   getDashboardData,
   getHistoryData,
   getHistoryV2,
+  getAdminDashboardData,
 };

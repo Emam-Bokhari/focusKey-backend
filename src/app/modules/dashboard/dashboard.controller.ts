@@ -40,8 +40,21 @@ const getHistoryV2 = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const getAdminDashboardData = catchAsync(async (req: Request, res: Response) => {
+  const result = await DashboardService.getAdminDashboardData();
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Admin dashboard data retrieved successfully",
+    data: result,
+  });
+});
+
 export const DashboardController = {
   getDashboardData,
   getHistoryData,
   getHistoryV2,
+  getAdminDashboardData,
 };
+

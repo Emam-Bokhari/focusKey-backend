@@ -106,7 +106,7 @@ const getModesFromDB = async (userId: string) => {
   }
 
   const totalLockedAppsAcrossModes = modes.reduce(
-    (acc, mode) => acc + (mode.lockedApps?.length || 0),
+    (acc, mode) => acc + (mode.totalLockedApps || 0),
     0,
   );
 
@@ -152,9 +152,15 @@ const getSingleModeFromDB = async (modeId: string) => {
 
 const updateModeToDB = async (modeId: string, payload: Partial<IMode>) => {
   delete payload.isActive;
-  if (payload.lockedApps) {
+  const hasLockedApps = payload.lockedApps && payload.lockedApps.length > 0;
+  const totalLockedAppsProvided = typeof payload.totalLockedApps === "number";
+
+  if (totalLockedAppsProvided && !hasLockedApps) {
+    // Keep payload.totalLockedApps as it was explicitly provided
+  } else if (payload.lockedApps) {
     payload.totalLockedApps = payload.lockedApps.length;
   }
+
   const result = await Mode.findByIdAndUpdate(modeId, payload, {
     new: true,
     runValidators: true,
@@ -352,7 +358,7 @@ const getModeAppCount = async (userId: string) => {
   const modes = await Mode.find({ userId, isDeleted: false });
 
   const totalFocusAppsCount = modes.reduce(
-    (acc, mode) => acc + (mode.lockedApps?.length || 0),
+    (acc, mode) => acc + (mode.totalLockedApps || 0),
     0,
   );
 
@@ -360,7 +366,7 @@ const getModeAppCount = async (userId: string) => {
     _id: mode._id,
     modeName: mode.name,
     icon: mode.icon,
-    totalApps: mode.lockedApps?.length || 0,
+    totalApps: mode.totalLockedApps || 0,
     totalFocusAppsCount,
   }));
 };

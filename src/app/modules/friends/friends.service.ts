@@ -1149,11 +1149,15 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
       ? {
           ...(nudge.modeId as any).toObject(),
           lockedApps: filteredLockedApps,
-          totalLockedApps: filteredLockedApps.length,
+          totalLockedApps: ((nudge.modeId as any).lockedApps && (nudge.modeId as any).lockedApps.length > 0)
+            ? filteredLockedApps.length
+            : ((nudge.modeId as any).totalLockedApps ?? 0),
         }
       : null,
     lockedApps: filteredLockedApps,
-    totalLockedApps: filteredLockedApps.length,
+    totalLockedApps: ((nudge.modeId as any)?.lockedApps && (nudge.modeId as any).lockedApps.length > 0)
+      ? filteredLockedApps.length
+      : ((nudge.modeId as any)?.totalLockedApps ?? 0),
     participants: participantsWithStatus,
     joinedParticipants: joinedParticipantsWithStatus,
     breakStats: {

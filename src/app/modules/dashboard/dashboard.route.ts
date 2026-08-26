@@ -1,5 +1,5 @@
 import express from "express";
-import { isUser } from "../../../helpers/authHelper";
+import { isAdmin, isUser } from "../../../helpers/authHelper";
 import { DashboardController } from "./dashboard.controller";
 
 const router = express.Router();
@@ -10,4 +10,7 @@ router.get("/history", isUser, DashboardController.getHistoryData);
 
 router.get("/history-v2", isUser, DashboardController.getHistoryV2);
 
+router.get("/recent-activity", isAdmin, DashboardController.getAdminDashboardData);
+
 export const DashboardRoutes = router;
+

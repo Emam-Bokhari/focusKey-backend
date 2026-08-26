@@ -151,7 +151,12 @@ const modeSchema = new Schema<IMode, TModeModel>(
 modeSchema.plugin(softDeletePlugin);
 
 modeSchema.pre("save", function (next) {
-  if (this.lockedApps) {
+  const hasLockedApps = this.lockedApps && this.lockedApps.length > 0;
+  const totalLockedAppsProvided = typeof this.totalLockedApps === "number";
+
+  if (totalLockedAppsProvided && !hasLockedApps) {
+    // Keep the provided totalLockedApps
+  } else if (this.lockedApps) {
     this.totalLockedApps = this.lockedApps.length;
   }
   next();

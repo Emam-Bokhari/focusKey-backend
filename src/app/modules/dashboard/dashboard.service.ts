@@ -667,7 +667,7 @@ const getAdminDashboardData = async () => {
         status: preview.status === "confirmed" ? "Completed" : "Sent",
       });
     }
-  });
+  }); 
 
   recentNudges.forEach((nudge: any) => {
     if (nudge.creatorId) {

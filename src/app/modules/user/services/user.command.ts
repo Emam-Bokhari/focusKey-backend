@@ -15,7 +15,7 @@ import {
   NOTIFICATION_REFERENCE_MODEL,
   NOTIFICATION_TYPE,
 } from "../../notification/notification.constant";
-import { IDevice, IUser } from "../user.interface";
+import { IUser } from "../user.interface";
 import unlinkFile from "../../../../shared/unlinkFile";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
@@ -30,7 +30,7 @@ const handleUserPairing = async (
   payload: {
     uid: string;
     device_fingerprint?: string;
-    deviceFingerprint?: string;
+    deviceFingerprint?: string; 
     device_id?: string;
     device_model: string;
     platform: "android" | "ios" | "web";
@@ -160,6 +160,9 @@ const handleUserUnpairing = async (userId: string) => {
 
     const device = await RegisteredDevice.findOne({ userId }).session(session);
     if (device) {
+      device.deviceFingerprint = null;
+      device.deviceModel = null;
+      device.platform = null;
       device.userId = null;
       device.pairedAt = null;
       device.lastUnpairedAt = new Date();

@@ -9,7 +9,7 @@ export interface INudgeParticipant {
 export interface IFriend {
   userId: Types.ObjectId;
   friendId: Types.ObjectId;
-  status: "pending" | "accepted" | "rejected";
+  status: "pending" | "accepted" | "rejected" | "cancelled";
   isDeleted?: boolean;
   deletedAt?: Date;
 }

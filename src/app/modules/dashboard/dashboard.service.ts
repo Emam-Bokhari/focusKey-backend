@@ -59,7 +59,7 @@ const getDashboardData = async (userId: string) => {
     nudgeId: { $exists: false },
     $or: [
       { createdAt: { $gte: startOfDay, $lte: endOfDay } },
-      { status: "active" },
+      { status: { $in: ["active", "paused"] } },
     ],
   });
 
@@ -68,7 +68,7 @@ const getDashboardData = async (userId: string) => {
     nudgeId: { $exists: true },
     $or: [
       { createdAt: { $gte: startOfDay, $lte: endOfDay } },
-      { status: "active" },
+      { status: { $in: ["active", "paused"] } },
     ],
   });
 
@@ -86,6 +86,13 @@ const getDashboardData = async (userId: string) => {
   allTodayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       todayFocusMinutes -= breakItem.durationMinutes || 0;
+    } else if (breakItem.status === "paused") {
+      const totalSec = (breakItem.totalDurationMinutes || 15) * 60;
+      const spentSec = Math.max(
+        0,
+        totalSec - (breakItem.remainingSeconds || 0),
+      );
+      todayFocusMinutes -= Math.round(spentSec / 60);
     } else {
       const durationMs = new Date().getTime() - breakItem.startTime.getTime();
       todayFocusMinutes -= Math.round(durationMs / 60000);
@@ -104,7 +111,10 @@ const getDashboardData = async (userId: string) => {
 
   const weekBreaks = await Break.find({
     userId: userObjectId,
-    createdAt: { $gte: startOfWeek },
+    $or: [
+      { createdAt: { $gte: startOfWeek } },
+      { status: { $in: ["active", "paused"] } },
+    ],
   });
 
   let weekFocusMinutes = 0;
@@ -120,6 +130,13 @@ const getDashboardData = async (userId: string) => {
   weekBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       weekFocusMinutes -= breakItem.durationMinutes || 0;
+    } else if (breakItem.status === "paused") {
+      const totalSec = (breakItem.totalDurationMinutes || 15) * 60;
+      const spentSec = Math.max(
+        0,
+        totalSec - (breakItem.remainingSeconds || 0),
+      );
+      weekFocusMinutes -= Math.round(spentSec / 60);
     } else {
       const durationMs = new Date().getTime() - breakItem.startTime.getTime();
       weekFocusMinutes -= Math.round(durationMs / 60000);
@@ -159,13 +176,30 @@ const getDashboardData = async (userId: string) => {
     breakConfig.breaksPerDay - breaksTakenToday,
   );
 
-  if (activeBreak) {
-    const remainingTimeMs =
-      activeBreak.endTime.getTime() - new Date().getTime();
-    activeBreakRemainingMinutes = Math.max(
-      0,
-      Math.ceil(remainingTimeMs / 60000),
-    );
+  const currentGlobalBreak = await Break.findOne({
+    userId: userObjectId,
+    nudgeId: { $exists: false },
+    status: { $in: ["active", "paused"] },
+    $or: [
+      { status: "active", endTime: { $gt: new Date() } },
+      { status: "paused" },
+    ],
+  });
+
+  if (currentGlobalBreak) {
+    if (currentGlobalBreak.status === "paused") {
+      activeBreakRemainingMinutes = Math.max(
+        0,
+        Math.ceil((currentGlobalBreak.remainingSeconds || 0) / 60),
+      );
+    } else {
+      const remainingTimeMs =
+        currentGlobalBreak.endTime.getTime() - new Date().getTime();
+      activeBreakRemainingMinutes = Math.max(
+        0,
+        Math.ceil(remainingTimeMs / 60000),
+      );
+    }
   }
 
   const allModes = await Mode.find({ userId: userObjectId, isDeleted: false });
@@ -188,11 +222,14 @@ const getDashboardData = async (userId: string) => {
       const filteredLockedApps = (activeMode.lockedApps || []).filter(
         (app: any) => installedAppPackages.has(app.packageName),
       );
-      const hasLockedApps = activeMode.lockedApps && activeMode.lockedApps.length > 0;
+      const hasLockedApps =
+        activeMode.lockedApps && activeMode.lockedApps.length > 0;
       return {
         ...activeMode.toObject(),
         lockedApps: filteredLockedApps,
-        totalLockedApps: hasLockedApps ? filteredLockedApps.length : (activeMode.totalLockedApps ?? 0),
+        totalLockedApps: hasLockedApps
+          ? filteredLockedApps.length
+          : (activeMode.totalLockedApps ?? 0),
         isLocked,
       };
     })(),
@@ -203,10 +240,22 @@ const getDashboardData = async (userId: string) => {
     breakStats: {
       takenToday: breaksTakenToday,
       remainingToday: remainingBreaksToday,
-      activeBreak: activeBreak
+      activeBreak: currentGlobalBreak
         ? {
-            ...activeBreak.toObject(),
+            ...currentGlobalBreak.toObject(),
+            isPaused: currentGlobalBreak.status === "paused",
             remainingMinutes: activeBreakRemainingMinutes,
+            remainingSeconds:
+              currentGlobalBreak.status === "paused"
+                ? currentGlobalBreak.remainingSeconds || 0
+                : Math.max(
+                    0,
+                    Math.ceil(
+                      (currentGlobalBreak.endTime.getTime() -
+                        new Date().getTime()) /
+                        1000,
+                    ),
+                  ),
           }
         : null,
       activeNudgeBreak: activeNudgeBreak
@@ -222,7 +271,8 @@ const getDashboardData = async (userId: string) => {
           }
         : null,
     },
-    totalBlockedApps: activeMode?.totalLockedApps ?? activeMode?.lockedApps?.length ?? 0,
+    totalBlockedApps:
+      activeMode?.totalLockedApps ?? activeMode?.lockedApps?.length ?? 0,
     totalBlockedAppsAcrossModes,
   };
 };
@@ -250,98 +300,127 @@ const formatTime = (date: Date) => {
 const getHistoryData = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  const allSessions = await FocusSession.find({ userId: userObjectId });
-  const allBreaks = await Break.find({ userId: userObjectId });
+  const [allSessions, allBreaks] = await Promise.all([
+    FocusSession.find({ userId: userObjectId, isDeleted: false })
+      .populate("modeId")
+      .sort({ startTime: -1 })
+      .lean(),
+    Break.find({ userId: userObjectId, isDeleted: false }).lean(),
+  ]);
+
+  const now = new Date();
+  const nowMs = now.getTime();
 
   let totalMinutes = 0;
-  allSessions.forEach((s) => {
+  for (const s of allSessions) {
     if (s.status === "completed") {
       totalMinutes +=
         s.durationMinutes ||
         (s.endTime
-          ? Math.round((s.endTime.getTime() - s.startTime.getTime()) / 60000)
+          ? Math.round(
+              (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) /
+                60000,
+            )
           : 0);
     } else {
-      const diff = new Date().getTime() - s.startTime.getTime();
+      const diff = nowMs - new Date(s.startTime).getTime();
       totalMinutes += Math.round(diff / 60000);
     }
-  });
+  }
 
-  allBreaks.forEach((b) => {
+  for (const b of allBreaks) {
     if (b.status === "completed") {
       totalMinutes -=
         b.durationMinutes ||
         (b.endTime
-          ? Math.round((b.endTime.getTime() - b.startTime.getTime()) / 60000)
+          ? Math.round(
+              (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
+                60000,
+            )
           : 0);
     } else {
-      const diff = new Date().getTime() - b.startTime.getTime();
-      totalMinutes -= Math.round(diff / 60000);
+      const diff = nowMs - new Date(b.startTime).getTime();
+      totalMinutes += Math.round(diff / 60000);
     }
-  });
+  }
   totalMinutes = Math.max(0, totalMinutes);
 
-  const startOfDay = new Date();
+  const startOfDay = new Date(now);
   startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
+  const startOfDayMs = startOfDay.getTime();
+  const endOfDay = new Date(now);
   endOfDay.setHours(23, 59, 59, 999);
+  const endOfDayMs = endOfDay.getTime();
 
-  const todaySessions = await FocusSession.find({
-    userId: userObjectId,
-    $or: [
-      { startTime: { $gte: startOfDay, $lte: endOfDay } },
-      { status: "active" },
-    ],
-  }).populate("modeId");
+  const modeWiseToday: Record<string, number> = {};
+  for (const s of allSessions) {
+    const sStartMs = new Date(s.startTime).getTime();
+    const isActive = s.status === "active";
+    const isToday =
+      (sStartMs >= startOfDayMs && sStartMs <= endOfDayMs) || isActive;
 
-  const todayBreaks = await Break.find({
-    userId: userObjectId,
-    createdAt: { $gte: startOfDay, $lte: endOfDay },
-  });
-
-  const modeWiseToday: any = {};
-  todaySessions.forEach((s: any) => {
-    const modeName = s.modeId?.name || "Unknown Mode";
-    if (!modeWiseToday[modeName]) {
-      modeWiseToday[modeName] = 0;
-    }
-    if (s.status === "completed") {
-      modeWiseToday[modeName] +=
-        s.durationMinutes ||
-        (s.endTime
-          ? Math.round((s.endTime.getTime() - s.startTime.getTime()) / 60000)
-          : 0);
-    } else {
-      const diff = new Date().getTime() - s.startTime.getTime();
-      modeWiseToday[modeName] += Math.round(diff / 60000);
-    }
-  });
-
-  for (const b of todayBreaks) {
-    const mode = await Mode.findById(b.modeId);
-    const modeName = mode?.name || "Unknown Mode";
-    if (modeWiseToday[modeName]) {
-      const breakMin =
-        b.status === "completed"
-          ? b.durationMinutes ||
-            (b.endTime
-              ? Math.round(
-                  (b.endTime.getTime() - b.startTime.getTime()) / 60000,
-                )
-              : 0)
-          : Math.round((new Date().getTime() - b.startTime.getTime()) / 60000);
-      modeWiseToday[modeName] = Math.max(0, modeWiseToday[modeName] - breakMin);
+    if (isToday) {
+      const modeName = (s.modeId as any)?.name || "Unknown Mode";
+      if (!modeWiseToday[modeName]) {
+        modeWiseToday[modeName] = 0;
+      }
+      if (s.status === "completed") {
+        modeWiseToday[modeName] +=
+          s.durationMinutes ||
+          (s.endTime
+            ? Math.round(
+                (new Date(s.endTime).getTime() - sStartMs) / 60000,
+              )
+            : 0);
+      } else {
+        const diff = nowMs - sStartMs;
+        modeWiseToday[modeName] += Math.round(diff / 60000);
+      }
     }
   }
 
-  const historyLogs = await FocusSession.find({ userId: userObjectId })
-    .populate("modeId")
-    .sort({ startTime: -1 });
+  for (const b of allBreaks) {
+    const bCreatedMs = new Date(b.createdAt || b.startTime).getTime();
+    if (bCreatedMs >= startOfDayMs && bCreatedMs <= endOfDayMs) {
+      const modeName = (b.modeId as any)?.name || "Unknown Mode";
+      if (modeWiseToday[modeName]) {
+        const breakMin =
+          b.status === "completed"
+            ? b.durationMinutes ||
+              (b.endTime
+                ? Math.round(
+                    (new Date(b.endTime).getTime() -
+                      new Date(b.startTime).getTime()) /
+                      60000,
+                  )
+                : 0)
+            : Math.round((nowMs - new Date(b.startTime).getTime()) / 60000);
+        modeWiseToday[modeName] = Math.max(
+          0,
+          modeWiseToday[modeName] - breakMin,
+        );
+      }
+    }
+  }
+
+  const breaksByMode = new Map<string, any[]>();
+  for (const b of allBreaks) {
+    const mId = (b.modeId?._id || b.modeId)?.toString();
+    if (mId) {
+      let list = breaksByMode.get(mId);
+      if (!list) {
+        list = [];
+        breaksByMode.set(mId, list);
+      }
+      list.push(b);
+    }
+  }
 
   const groupedHistory: any = {};
 
-  for (const session of historyLogs) {
-    const dateKey = session.startTime.toISOString().split("T")[0]; // YYYY-MM-DD
+  for (const session of allSessions) {
+    const sStartTime = new Date(session.startTime);
+    const dateKey = sStartTime.toISOString().split("T")[0]; // YYYY-MM-DD
     if (!groupedHistory[dateKey]) {
       groupedHistory[dateKey] = {
         date: dateKey,
@@ -356,40 +435,46 @@ const getHistoryData = async (userId: string) => {
         session.durationMinutes ||
         (session.endTime
           ? Math.round(
-              (session.endTime.getTime() - session.startTime.getTime()) / 60000,
+              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+                60000,
             )
           : 0);
     } else {
-      sessionMinutes = Math.round(
-        (new Date().getTime() - session.startTime.getTime()) / 60000,
-      );
+      sessionMinutes = Math.round((nowMs - sStartTime.getTime()) / 60000);
     }
 
-    const sessionBreaks = await Break.find({
-      userId: userObjectId,
-      modeId: session.modeId,
-      startTime: { $gte: session.startTime },
-      endTime:
-        session.status === "completed"
-          ? { $lte: session.endTime }
-          : { $exists: true },
-    });
+    const sModeId = (session.modeId as any)?._id
+      ? (session.modeId as any)._id.toString()
+      : session.modeId?.toString();
+
+    const candidateBreaks = sModeId ? breaksByMode.get(sModeId) || [] : [];
+    const sStartMs = sStartTime.getTime();
+    const isCompleted = session.status === "completed";
+    const sEndMs = session.endTime ? new Date(session.endTime).getTime() : null;
 
     let sessionBreakMinutes = 0;
-    sessionBreaks.forEach((b) => {
+    for (const b of candidateBreaks) {
+      const bStartMs = new Date(b.startTime).getTime();
+      if (bStartMs < sStartMs) continue;
+
+      if (isCompleted) {
+        if (!b.endTime || sEndMs === null) continue;
+        if (new Date(b.endTime).getTime() > sEndMs) continue;
+      } else {
+        if (b.endTime == null) continue;
+      }
+
       if (b.status === "completed") {
         sessionBreakMinutes += b.durationMinutes || 0;
       } else {
-        sessionBreakMinutes += Math.round(
-          (new Date().getTime() - b.startTime.getTime()) / 60000,
-        );
+        sessionBreakMinutes += Math.round((nowMs - bStartMs) / 60000);
       }
-    });
+    }
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
     const duration = formatDuration(netSessionMinutes);
-    const timeRange = `${formatTime(session.startTime)} - ${
-      session.endTime ? formatTime(session.endTime) : "Active"
+    const timeRange = `${formatTime(sStartTime)} - ${
+      session.endTime ? formatTime(new Date(session.endTime)) : "Active"
     }`;
 
     groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
@@ -466,61 +551,85 @@ const formatTimeV2 = (date: Date) => {
 const getHistoryV2 = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  const allSessions = await FocusSession.find({ userId: userObjectId });
-  const allBreaks = await Break.find({ userId: userObjectId });
+  const [allSessions, allBreaks, user] = await Promise.all([
+    FocusSession.find({ userId: userObjectId, isDeleted: false })
+      .populate("modeId")
+      .sort({ startTime: -1 })
+      .lean(),
+    Break.find({ userId: userObjectId, isDeleted: false }).lean(),
+    User.findById(userId).select("createdAt").lean(),
+  ]);
+
+  const now = new Date();
+  const nowMs = now.getTime();
 
   let totalMinutes = 0;
-  allSessions.forEach((s) => {
+  for (const s of allSessions) {
     if (s.status === "completed") {
       totalMinutes +=
         s.durationMinutes ||
         (s.endTime
-          ? Math.round((s.endTime.getTime() - s.startTime.getTime()) / 60000)
+          ? Math.round(
+              (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) /
+                60000,
+            )
           : 0);
     } else {
-      const diff = new Date().getTime() - s.startTime.getTime();
+      const diff = nowMs - new Date(s.startTime).getTime();
       totalMinutes += Math.round(diff / 60000);
     }
-  });
+  }
 
-  allBreaks.forEach((b) => {
+  for (const b of allBreaks) {
     if (b.status === "completed") {
       totalMinutes -=
         b.durationMinutes ||
         (b.endTime
-          ? Math.round((b.endTime.getTime() - b.startTime.getTime()) / 60000)
+          ? Math.round(
+              (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
+                60000,
+            )
           : 0);
     } else {
-      const diff = new Date().getTime() - b.startTime.getTime();
-      totalMinutes -= Math.round(diff / 60000);
+      const diff = nowMs - new Date(b.startTime).getTime();
+      totalMinutes += Math.round(diff / 60000);
     }
-  });
+  }
   totalMinutes = Math.max(0, totalMinutes);
 
-  const user = await User.findById(userId).select("createdAt");
   let sinceDate = "";
   if (user && user.createdAt) {
-    sinceDate = `Since ${user.createdAt.toLocaleDateString("en-US", {
+    sinceDate = `Since ${new Date(user.createdAt).toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
     })}`;
   } else {
-    sinceDate = `Since ${new Date().toLocaleDateString("en-US", {
+    sinceDate = `Since ${now.toLocaleDateString("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
     })}`;
   }
 
-  const historyLogs = await FocusSession.find({ userId: userObjectId })
-    .populate("modeId")
-    .sort({ startTime: -1 });
+  const breaksByMode = new Map<string, any[]>();
+  for (const b of allBreaks) {
+    const mId = (b.modeId?._id || b.modeId)?.toString();
+    if (mId) {
+      let list = breaksByMode.get(mId);
+      if (!list) {
+        list = [];
+        breaksByMode.set(mId, list);
+      }
+      list.push(b);
+    }
+  }
 
   const groupedHistory: any = {};
 
-  for (const session of historyLogs) {
-    const dateKey = getLocalDateKey(session.startTime); // YYYY-MM-DD
+  for (const session of allSessions) {
+    const sStartTime = new Date(session.startTime);
+    const dateKey = getLocalDateKey(sStartTime); // YYYY-MM-DD
     if (!groupedHistory[dateKey]) {
       groupedHistory[dateKey] = {
         dateGroup: getDateGroupHeader(dateKey),
@@ -535,41 +644,47 @@ const getHistoryV2 = async (userId: string) => {
         session.durationMinutes ||
         (session.endTime
           ? Math.round(
-              (session.endTime.getTime() - session.startTime.getTime()) / 60000,
+              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+                60000,
             )
           : 0);
     } else {
-      sessionMinutes = Math.round(
-        (new Date().getTime() - session.startTime.getTime()) / 60000,
-      );
+      sessionMinutes = Math.round((nowMs - sStartTime.getTime()) / 60000);
     }
 
-    const sessionBreaks = await Break.find({
-      userId: userObjectId,
-      modeId: session.modeId,
-      startTime: { $gte: session.startTime },
-      endTime:
-        session.status === "completed"
-          ? { $lte: session.endTime }
-          : { $exists: true },
-    });
+    const sModeId = (session.modeId as any)?._id
+      ? (session.modeId as any)._id.toString()
+      : session.modeId?.toString();
+
+    const candidateBreaks = sModeId ? breaksByMode.get(sModeId) || [] : [];
+    const sStartMs = sStartTime.getTime();
+    const isCompleted = session.status === "completed";
+    const sEndMs = session.endTime ? new Date(session.endTime).getTime() : null;
 
     let sessionBreakMinutes = 0;
-    sessionBreaks.forEach((b) => {
+    for (const b of candidateBreaks) {
+      const bStartMs = new Date(b.startTime).getTime();
+      if (bStartMs < sStartMs) continue;
+
+      if (isCompleted) {
+        if (!b.endTime || sEndMs === null) continue;
+        if (new Date(b.endTime).getTime() > sEndMs) continue;
+      } else {
+        if (b.endTime == null) continue;
+      }
+
       if (b.status === "completed") {
         sessionBreakMinutes += b.durationMinutes || 0;
       } else {
-        sessionBreakMinutes += Math.round(
-          (new Date().getTime() - b.startTime.getTime()) / 60000,
-        );
+        sessionBreakMinutes += Math.round((nowMs - bStartMs) / 60000);
       }
-    });
+    }
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
     const durationObj = formatDuration(netSessionMinutes);
     const duration = `${durationObj.hours}h ${durationObj.minutes}m`;
-    const timeRange = `${formatTimeV2(session.startTime)} – ${
-      session.endTime ? formatTimeV2(session.endTime) : "Active"
+    const timeRange = `${formatTimeV2(sStartTime)} – ${
+      session.endTime ? formatTimeV2(new Date(session.endTime)) : "Active"
     }`;
 
     groupedHistory[dateKey].sessions.push({
@@ -588,7 +703,8 @@ const getHistoryV2 = async (userId: string) => {
   const history = sortedDates.map((dateKey) => {
     const group = groupedHistory[dateKey];
     group.sessions.sort(
-      (a: any, b: any) => a.startTime.getTime() - b.startTime.getTime(),
+      (a: any, b: any) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
     );
     const cleanSessions = group.sessions.map(
       ({ startTime, ...rest }: any) => rest,
@@ -667,7 +783,7 @@ const getAdminDashboardData = async () => {
         status: preview.status === "confirmed" ? "Completed" : "Sent",
       });
     }
-  }); 
+  });
 
   recentNudges.forEach((nudge: any) => {
     if (nudge.creatorId) {
@@ -677,7 +793,10 @@ const getAdminDashboardData = async () => {
           email: nudge.creatorId.email,
           profileImage: nudge.creatorId.profileImage || null,
         },
-        event: nudge.status === "completed" ? "Joint session completed" : "Joint session joined",
+        event:
+          nudge.status === "completed"
+            ? "Joint session completed"
+            : "Joint session joined",
         time: nudge.updatedAt || nudge.createdAt,
         status: nudge.status === "completed" ? "Completed" : "Active",
       });

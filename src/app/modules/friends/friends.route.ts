@@ -14,11 +14,13 @@ router.get(
   isUser,
   FriendsController.getPendingNudgePreview,
 );
+
 router.get(
   "/nudge/preview/:previewId",
   isUser,
   FriendsController.getNudgePreviewDetails,
 );
+
 router.post(
   "/nudge/confirm/:previewId",
   isUser,
@@ -45,7 +47,28 @@ router.delete(
   FriendsController.removeFriend,
 );
 
+router.post("/send-request", isUser, FriendsController.sendFriendRequest);
+
+router.post("/add-friend", isUser, FriendsController.oldAddFriend);
+
+router.get(
+  "/received-requests",
+  isUser,
+  FriendsController.getReceivedFriendRequests,
+);
+
+router.get("/sent-requests", isUser, FriendsController.getSentFriendRequests);
+
+router.post(
+  "/respond-request/:requestId",
+  isUser,
+  FriendsController.handleFriendRequestAction,
+);
+
+router.get("/list", isUser, FriendsController.getFriends);
+
 router.post("/unlock-nudge/:nudgeId", isUser, FriendsController.unlockNudge);
+
 router.post("/leave-nudge/:nudgeId", isUser, FriendsController.leaveNudge);
 
 router.post(
@@ -60,8 +83,6 @@ router.get(
   FriendsController.getCurrentNudgeStatus,
 );
 
-router.post("/add-friend", isUser, FriendsController.addFriend);
-router.get("/list", isUser, FriendsController.getFriends);
 router.post(
   "/remove-participant",
   isUser,

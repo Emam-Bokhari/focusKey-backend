@@ -1,6 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiErrors";
 import { Mode } from "../modes/modes.model";
+import { FocusSession } from "../focusSession/focusSession.model";
 import { Break, BreakConfig } from "./breaks.model";
 import mongoose from "mongoose";
 import { IBreakConfig } from "./breaks.interface";
@@ -12,20 +13,36 @@ const startBreak = async (userId: string) => {
     isDeleted: false,
   });
 
-  if (!activeMode) {
+  const activeSession = await FocusSession.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    status: "active",
+  });
+
+  if (!activeMode && !activeSession) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       "You can only take a break when focus mode is locked",
     );
   }
 
-  const activeBreak = await Break.findOne({
+  const modeIdToUse = activeMode?._id || activeSession?.modeId;
+
+  const existingBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
-    status: "active",
-    endTime: { $gt: new Date() },
+    status: { $in: ["active", "paused"] },
+    $or: [
+      { status: "active", endTime: { $gt: new Date() } },
+      { status: "paused" },
+    ],
   });
 
-  if (activeBreak) {
+  if (existingBreak) {
+    if (existingBreak.status === "paused") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "You have a paused break. Please resume or stop it first.",
+      );
+    }
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       "You cannot take a break when you are already in an unlocked state",
@@ -71,9 +88,12 @@ const startBreak = async (userId: string) => {
 
   const result = await Break.create({
     userId: new mongoose.Types.ObjectId(userId),
-    modeId: activeMode._id,
+    modeId: modeIdToUse,
     startTime,
     endTime,
+    totalDurationMinutes: breakDurationMinutes,
+    remainingSeconds: breakDurationMinutes * 60,
+    durationMinutes: 0,
     status: "active",
   });
 
@@ -90,13 +110,140 @@ const startBreak = async (userId: string) => {
   return result;
 };
 
-const getActiveBreakStatus = async (userId: string) => {
+const pauseBreak = async (userId: string) => {
   const now = new Date();
+
   const activeBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
-    nudgeId: { $exists: false },
     status: "active",
     endTime: { $gt: now },
+  });
+
+  if (!activeBreak) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "No active break found to pause",
+    );
+  }
+
+  const remainingMs = Math.max(
+    0,
+    activeBreak.endTime.getTime() - now.getTime(),
+  );
+  const remainingSeconds = Math.round(remainingMs / 1000);
+
+  if (remainingSeconds <= 0) {
+    const totalAllocatedMinutes = activeBreak.totalDurationMinutes || 15;
+    const spentMinutes = totalAllocatedMinutes;
+
+    await Break.findByIdAndUpdate(activeBreak._id, {
+      status: "completed",
+      durationMinutes: spentMinutes,
+      remainingSeconds: 0,
+      endTime: now,
+    });
+
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Break duration has already expired",
+    );
+  }
+
+  const updatedBreak = await Break.findByIdAndUpdate(
+    activeBreak._id,
+    {
+      status: "paused",
+      pausedAt: now,
+      remainingSeconds,
+    },
+    { new: true },
+  ).populate("modeId");
+
+  //@ts-ignore
+  const io = global.io;
+  if (io) {
+    io.emit(`breakPaused::${userId}`, {
+      message: "Break paused. Apps are now locked.",
+      isLocked: true,
+      breakDetails: updatedBreak,
+    });
+  }
+
+  return updatedBreak;
+};
+
+const resumeBreak = async (userId: string) => {
+  const activeMode = await Mode.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    isActive: true,
+    isDeleted: false,
+  });
+
+  const activeSession = await FocusSession.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    status: "active",
+  });
+
+  if (!activeMode && !activeSession) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You can only resume a break when focus mode is locked",
+    );
+  }
+
+  const pausedBreak = await Break.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    status: "paused",
+  });
+
+  if (!pausedBreak) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "No paused break found to resume",
+    );
+  }
+
+  const remainingSeconds = pausedBreak.remainingSeconds || 0;
+  if (remainingSeconds <= 0) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "No remaining break time to resume",
+    );
+  }
+
+  const now = new Date();
+  const newEndTime = new Date(now.getTime() + remainingSeconds * 1000);
+
+  const updatedBreak = await Break.findByIdAndUpdate(
+    pausedBreak._id,
+    {
+      status: "active",
+      endTime: newEndTime,
+      $unset: { pausedAt: 1 },
+    },
+    { new: true },
+  ).populate("modeId");
+
+  //@ts-ignore
+  const io = global.io;
+  if (io) {
+    io.emit(`breakResumed::${userId}`, {
+      message: "Break resumed. Apps are now unlocked.",
+      isLocked: false,
+      breakDetails: updatedBreak,
+    });
+  }
+
+  return updatedBreak;
+};
+
+const getActiveBreakStatus = async (userId: string) => {
+  const now = new Date();
+  const currentBreak = await Break.findOne({
+    userId: new mongoose.Types.ObjectId(userId),
+    nudgeId: { $exists: false },
+    status: { $in: ["active", "paused"] },
+    $or: [{ status: "active", endTime: { $gt: now } }, { status: "paused" }],
   }).populate("modeId");
 
   let breakConfig = await BreakConfig.findOne({
@@ -124,19 +271,27 @@ const getActiveBreakStatus = async (userId: string) => {
     userId: new mongoose.Types.ObjectId(userId),
     $or: [
       { createdAt: { $gte: startOfDay, $lte: endOfDay } },
-      { status: "active" },
+      { status: { $in: ["active", "paused"] } },
     ],
   });
 
   const weekBreaks = await Break.find({
     userId: new mongoose.Types.ObjectId(userId),
-    $or: [{ createdAt: { $gte: startOfWeek } }, { status: "active" }],
+    $or: [
+      { createdAt: { $gte: startOfWeek } },
+      { status: { $in: ["active", "paused"] } },
+    ],
   });
 
   let todayMinutes = 0;
   todayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       todayMinutes += breakItem.durationMinutes || 0;
+    } else if (breakItem.status === "paused") {
+      const totalSec = (breakItem.totalDurationMinutes || 15) * 60;
+      const remainingSec = breakItem.remainingSeconds || 0;
+      const spentSec = Math.max(0, totalSec - remainingSec);
+      todayMinutes += Math.round(spentSec / 60);
     } else {
       const durationMs = new Date().getTime() - breakItem.startTime.getTime();
       todayMinutes += Math.round(durationMs / 60000);
@@ -148,6 +303,11 @@ const getActiveBreakStatus = async (userId: string) => {
   weekBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       weekMinutes += breakItem.durationMinutes || 0;
+    } else if (breakItem.status === "paused") {
+      const totalSec = (breakItem.totalDurationMinutes || 15) * 60;
+      const remainingSec = breakItem.remainingSeconds || 0;
+      const spentSec = Math.max(0, totalSec - remainingSec);
+      weekMinutes += Math.round(spentSec / 60);
     } else {
       const durationMs = new Date().getTime() - breakItem.startTime.getTime();
       weekMinutes += Math.round(durationMs / 60000);
@@ -166,21 +326,30 @@ const getActiveBreakStatus = async (userId: string) => {
     weekMinutes,
   };
 
-  if (!activeBreak) {
+  if (!currentBreak) {
     return {
       isBreakActive: false,
+      isBreakPaused: false,
       remainingBreaksToday: Math.max(0, breakConfig.breaksPerDay - breaksToday),
       breakStats,
     };
   }
 
-  const remainingTimeMs = activeBreak.endTime.getTime() - now.getTime();
-  const remainingMinutes = Math.max(0, Math.ceil(remainingTimeMs / 60000));
+  const isPaused = currentBreak.status === "paused";
+  const remainingSeconds = isPaused
+    ? currentBreak.remainingSeconds || 0
+    : Math.max(
+        0,
+        Math.ceil((currentBreak.endTime.getTime() - now.getTime()) / 1000),
+      );
+  const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
 
   return {
-    isBreakActive: true,
+    isBreakActive: !isPaused,
+    isBreakPaused: isPaused,
     breakDetails: {
-      ...activeBreak.toObject(),
+      ...currentBreak.toObject(),
+      remainingSeconds,
       remainingMinutes,
     },
     remainingBreaksToday: Math.max(0, breakConfig.breaksPerDay - breaksToday),
@@ -218,59 +387,97 @@ const getRemainingBreaks = async (userId: string) => {
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
-  const activeBreak = await Break.findOne({
+  const currentBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     nudgeId: { $exists: false },
-    status: "active",
-    endTime: { $gt: new Date() },
+    status: { $in: ["active", "paused"] },
+    $or: [
+      { status: "active", endTime: { $gt: new Date() } },
+      { status: "paused" },
+    ],
   });
+
+  let activeBreakInfo = null;
+  if (currentBreak) {
+    const isPaused = currentBreak.status === "paused";
+    const remainingSeconds = isPaused
+      ? currentBreak.remainingSeconds || 0
+      : Math.max(
+          0,
+          Math.ceil(
+            (currentBreak.endTime.getTime() - new Date().getTime()) / 1000,
+          ),
+        );
+    const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
+
+    activeBreakInfo = {
+      _id: currentBreak._id,
+      status: currentBreak.status,
+      isPaused,
+      endTime: currentBreak.endTime,
+      remainingSeconds,
+      remainingMinutes,
+    };
+  }
 
   return {
     totalAllowed: breakConfig.breaksPerDay,
     durationMinutes: breakConfig.breakDurationMinutes,
     takenToday: breaksToday,
     remaining: Math.max(0, breakConfig.breaksPerDay - breaksToday),
-    activeBreak: activeBreak
-      ? {
-          endTime: activeBreak.endTime,
-          remainingMinutes: Math.max(
-            0,
-            Math.ceil(
-              (activeBreak.endTime.getTime() - new Date().getTime()) / 60000,
-            ),
-          ),
-        }
-      : null,
+    activeBreak: activeBreakInfo,
   };
 };
 
 const stopBreak = async (userId: string) => {
   const now = new Date();
 
-  const activeBreakToStop = await Break.findOne({
+  const currentBreakToStop = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
-    status: "active",
-    endTime: { $gt: now },
+    status: { $in: ["active", "paused"] },
+    $or: [{ status: "active", endTime: { $gt: now } }, { status: "paused" }],
   });
 
-  if (!activeBreakToStop) {
+  if (!currentBreakToStop) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "No active break found to stop",
+      "No active or paused break found to stop",
     );
   }
 
-  const durationMs = now.getTime() - activeBreakToStop.startTime.getTime();
-  const durationMinutes = Math.round(durationMs / 60000);
+  let remainingSeconds = 0;
+  if (currentBreakToStop.status === "paused") {
+    remainingSeconds = currentBreakToStop.remainingSeconds || 0;
+  } else {
+    const remainingMs = Math.max(
+      0,
+      currentBreakToStop.endTime.getTime() - now.getTime(),
+    );
+    remainingSeconds = Math.round(remainingMs / 1000);
+  }
 
-  const activeBreak = await Break.findOneAndUpdate(
+  const totalAllocatedMinutes =
+    currentBreakToStop.totalDurationMinutes ||
+    Math.round(
+      (currentBreakToStop.endTime.getTime() -
+        currentBreakToStop.startTime.getTime()) /
+        60000,
+    ) ||
+    15;
+  const totalAllocatedSeconds = totalAllocatedMinutes * 60;
+  const spentSeconds = Math.max(0, totalAllocatedSeconds - remainingSeconds);
+  const durationMinutes = Math.round(spentSeconds / 60);
+
+  const updatedBreak = await Break.findOneAndUpdate(
     {
-      _id: activeBreakToStop._id,
+      _id: currentBreakToStop._id,
     },
     {
       status: "completed",
-      endTime: now, // End it right now
+      endTime: now,
       durationMinutes,
+      remainingSeconds: 0,
+      $unset: { pausedAt: 1 },
     },
     { new: true },
   );
@@ -284,7 +491,7 @@ const stopBreak = async (userId: string) => {
     });
   }
 
-  return activeBreak;
+  return updatedBreak;
 };
 
 const updateExpiredBreaks = async () => {
@@ -302,14 +509,18 @@ const updateExpiredBreaks = async () => {
   const userIds = expiredBreaks.map((b) => b.userId.toString());
 
   for (const breakItem of expiredBreaks) {
-    const durationMs =
-      breakItem.endTime.getTime() - breakItem.startTime.getTime();
-    const durationMinutes = Math.round(durationMs / 60000);
+    const durationMinutes =
+      breakItem.totalDurationMinutes ||
+      Math.round(
+        (breakItem.endTime.getTime() - breakItem.startTime.getTime()) / 60000,
+      ) ||
+      0;
 
     await Break.findByIdAndUpdate(breakItem._id, {
       $set: {
         status: "completed",
         durationMinutes,
+        remainingSeconds: 0,
       },
     });
   }
@@ -355,6 +566,8 @@ const updateGlobalBreakConfig = async (
 
 export const BreakService = {
   startBreak,
+  pauseBreak,
+  resumeBreak,
   getActiveBreakStatus,
   getRemainingBreaks,
   stopBreak,

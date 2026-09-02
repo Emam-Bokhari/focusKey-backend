@@ -31,9 +31,20 @@ const breakSchema = new Schema<IBreak>(
       type: Number,
       default: 0,
     },
+    totalDurationMinutes: {
+      type: Number,
+      default: 0,
+    },
+    remainingSeconds: {
+      type: Number,
+      default: 0,
+    },
+    pausedAt: {
+      type: Date,
+    },
     status: {
       type: String,
-      enum: ["active", "completed"],
+      enum: ["active", "paused", "completed"],
       default: "active",
     },
   },
@@ -44,6 +55,10 @@ const breakSchema = new Schema<IBreak>(
 );
 
 breakSchema.plugin(softDeletePlugin);
+
+breakSchema.index({ userId: 1, startTime: -1 });
+breakSchema.index({ userId: 1, modeId: 1, startTime: -1 });
+breakSchema.index({ userId: 1, isDeleted: 1 });
 
 export const Break = model<IBreak>("Break", breakSchema);
 

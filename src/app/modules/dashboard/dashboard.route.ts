@@ -10,7 +10,10 @@ router.get("/history", isUser, DashboardController.getHistoryData);
 
 router.get("/history-v2", isUser, DashboardController.getHistoryV2);
 
-router.get("/recent-activity", isAdmin, DashboardController.getAdminDashboardData);
+router.get(
+  "/recent-activity",
+  isAdmin,
+  DashboardController.getAdminDashboardData,
+);
 
 export const DashboardRoutes = router;
-

@@ -163,5 +163,6 @@ modeSchema.pre("save", function (next) {
 });
 
 modeSchema.index({ userId: 1, isActive: 1 });
+modeSchema.index({ userId: 1, isDeleted: 1 });
 
 export const Mode = model<IMode, TModeModel>("Mode", modeSchema);

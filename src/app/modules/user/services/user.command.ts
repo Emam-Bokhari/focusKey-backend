@@ -30,7 +30,7 @@ const handleUserPairing = async (
   payload: {
     uid: string;
     device_fingerprint?: string;
-    deviceFingerprint?: string; 
+    deviceFingerprint?: string;
     device_id?: string;
     device_model: string;
     platform: "android" | "ios" | "web";

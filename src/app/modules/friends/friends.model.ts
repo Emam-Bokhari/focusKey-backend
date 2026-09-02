@@ -21,8 +21,8 @@ const friendSchema = new Schema<IFriend>(
     },
     status: {
       type: String,
-      enum: ["pending", "accepted", "rejected"],
-      default: "accepted",
+      enum: ["pending", "accepted", "rejected", "cancelled"],
+      default: "pending",
     },
   },
   {
@@ -30,6 +30,9 @@ const friendSchema = new Schema<IFriend>(
     versionKey: false,
   },
 );
+
+friendSchema.index({ userId: 1, friendId: 1 });
+friendSchema.index({ status: 1 });
 
 friendSchema.plugin(softDeletePlugin);
 

@@ -7,7 +7,10 @@ export interface IBreak {
   startTime: Date;
   endTime: Date;
   durationMinutes?: number;
-  status: "active" | "completed";
+  totalDurationMinutes?: number;
+  remainingSeconds?: number;
+  pausedAt?: Date;
+  status: "active" | "paused" | "completed";
   isDeleted?: boolean;
   deletedAt?: Date;
   createdAt: Date;

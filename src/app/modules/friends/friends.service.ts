@@ -184,18 +184,30 @@ const getUsersFromDB = async (
     .lean();
 
   const userObjectId = new mongoose.Types.ObjectId(userId);
-  const friends = await Friend.find({
+  const friendRecords = await Friend.find({
     $or: [{ userId: userObjectId }, { friendId: userObjectId }],
-    status: "accepted",
     isDeleted: { $ne: true },
   });
-  const friendIdsSet = new Set(
-    friends.map((f) =>
-      f.userId.equals(userObjectId)
-        ? f.friendId.toString()
-        : f.userId.toString(),
-    ),
-  );
+
+  const friendStatusMap = new Map<
+    string,
+    {
+      status: "pending" | "accepted" | "rejected" | "cancelled";
+      requestId: string;
+      isSender: boolean;
+    }
+  >();
+  for (const record of friendRecords) {
+    const isSender = record.userId.equals(userObjectId);
+    const targetUserId = isSender
+      ? record.friendId.toString()
+      : record.userId.toString();
+    friendStatusMap.set(targetUserId, {
+      status: record.status,
+      requestId: record._id.toString(),
+      isSender,
+    });
+  }
 
   const now = new Date();
   const usersWithStatus = await Promise.all(
@@ -217,10 +229,34 @@ const getUsersFromDB = async (
       );
       const userName = user.userName || user.email?.split("@")[0] || "user";
 
+      const friendInfo = friendStatusMap.get(user._id.toString());
+      let isFriend = false;
+      let friendshipStatus:
+        | "none"
+        | "pending_sent"
+        | "pending_received"
+        | "accepted" = "none";
+      let requestId: string | null = null;
+
+      if (friendInfo) {
+        if (friendInfo.status === "accepted") {
+          isFriend = true;
+          friendshipStatus = "accepted";
+          requestId = friendInfo.requestId;
+        } else if (friendInfo.status === "pending") {
+          friendshipStatus = friendInfo.isSender
+            ? "pending_sent"
+            : "pending_received";
+          requestId = friendInfo.requestId;
+        }
+      }
+
       return {
         ...user,
         userName,
-        isFriend: friendIdsSet.has(user._id.toString()),
+        isFriend,
+        friendshipStatus,
+        requestId,
         isLocked,
         lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
       };
@@ -503,22 +539,6 @@ const confirmNudgeFromPreviewInDB = async (
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const { participants, modeId, breakConfig } = preview;
 
-  for (const friendId of participants) {
-    const existingFriend = await Friend.findOne({
-      userId: userObjectId,
-      friendId: new mongoose.Types.ObjectId(friendId.toString()),
-      isDeleted: { $ne: true },
-    });
-
-    if (!existingFriend) {
-      await Friend.create({
-        userId: userObjectId,
-        friendId: new mongoose.Types.ObjectId(friendId.toString()),
-        status: "accepted",
-      });
-    }
-  }
-
   const nudgeData = {
     creatorId: userObjectId,
     participants: participants.map((id) => ({
@@ -767,6 +787,72 @@ const removeFriendFromDB = async (userId: string, friendId: string) => {
   return result;
 };
 
+const oldAddFriendToDB = async (userId: string, friendId: string) => {
+  if (userId === friendId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot add yourself as a friend",
+    );
+  }
+
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const friendObjectId = new mongoose.Types.ObjectId(friendId);
+
+  const userExists = await User.findById(friendId);
+  if (!userExists) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
+  }
+
+  const existingFriend = await Friend.findOne({
+    $or: [
+      { userId: userObjectId, friendId: friendObjectId },
+      { userId: friendObjectId, friendId: userObjectId },
+    ],
+    isDeleted: { $ne: true },
+  });
+
+  if (existingFriend) {
+    if (existingFriend.status === "accepted") {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "You are already friends");
+    }
+    existingFriend.status = "accepted";
+    await existingFriend.save();
+
+    const sender = await User.findById(userId).select("name");
+    await sendNotifications({
+      title: "New Friend Connected",
+      text: `${sender?.name || "Someone"} connected with you as a friend.`,
+      receiver: friendId,
+      sender: userId,
+      type: NOTIFICATION_TYPE.USER,
+      referenceId: existingFriend._id.toString(),
+      referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
+    });
+
+    return existingFriend;
+  }
+
+  const result = await Friend.create({
+    userId: userObjectId,
+    friendId: friendObjectId,
+    status: "accepted",
+  });
+
+  const sender = await User.findById(userId).select("name");
+  await sendNotifications({
+    title: "New Friend Connected",
+    text: `${sender?.name || "Someone"} connected with you as a friend.`,
+    receiver: friendId,
+    sender: userId,
+    type: NOTIFICATION_TYPE.USER,
+    referenceId: result._id.toString(),
+    referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
+  });
+
+  return result;
+};
+
+
 const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
@@ -858,11 +944,20 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
 
   const activeBreak = await Break.findOne({
     userId: userObjectId,
-    status: "active",
-    endTime: { $gt: new Date() },
+    status: { $in: ["active", "paused"] },
+    $or: [
+      { status: "active", endTime: { $gt: new Date() } },
+      { status: "paused" },
+    ],
   });
 
   if (activeBreak) {
+    if (activeBreak.status === "paused") {
+      throw new ApiError(
+        StatusCodes.BAD_REQUEST,
+        "You have a paused break. Please resume or stop it first.",
+      );
+    }
     if (
       activeBreak.nudgeId &&
       activeBreak.nudgeId.toString() === nudgeObjectId.toString()
@@ -917,6 +1012,9 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
     nudgeId: nudgeObjectId,
     startTime,
     endTime,
+    totalDurationMinutes: breakDurationMinutes,
+    remainingSeconds: breakDurationMinutes * 60,
+    durationMinutes: 0,
     status: "active",
   });
 
@@ -1149,15 +1247,19 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
       ? {
           ...(nudge.modeId as any).toObject(),
           lockedApps: filteredLockedApps,
-          totalLockedApps: ((nudge.modeId as any).lockedApps && (nudge.modeId as any).lockedApps.length > 0)
-            ? filteredLockedApps.length
-            : ((nudge.modeId as any).totalLockedApps ?? 0),
+          totalLockedApps:
+            (nudge.modeId as any).lockedApps &&
+            (nudge.modeId as any).lockedApps.length > 0
+              ? filteredLockedApps.length
+              : ((nudge.modeId as any).totalLockedApps ?? 0),
         }
       : null,
     lockedApps: filteredLockedApps,
-    totalLockedApps: ((nudge.modeId as any)?.lockedApps && (nudge.modeId as any).lockedApps.length > 0)
-      ? filteredLockedApps.length
-      : ((nudge.modeId as any)?.totalLockedApps ?? 0),
+    totalLockedApps:
+      (nudge.modeId as any)?.lockedApps &&
+      (nudge.modeId as any).lockedApps.length > 0
+        ? filteredLockedApps.length
+        : ((nudge.modeId as any)?.totalLockedApps ?? 0),
     participants: participantsWithStatus,
     joinedParticipants: joinedParticipantsWithStatus,
     breakStats: {
@@ -1187,19 +1289,23 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   };
 };
 
-const addFriendToDB = async (userId: string, friendId: string) => {
+const sendFriendRequestInDB = async (userId: string, friendId: string) => {
   if (userId === friendId) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "You cannot add yourself as a friend",
+      "You cannot send a friend request to yourself",
     );
   }
 
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const friendObjectId = new mongoose.Types.ObjectId(friendId);
 
-  const userExists = await User.findById(friendId);
-  if (!userExists) {
+  const receiverUser = await User.findOne({
+    _id: friendObjectId,
+    isDeleted: { $ne: true },
+  });
+
+  if (!receiverUser) {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
   }
 
@@ -1211,17 +1317,36 @@ const addFriendToDB = async (userId: string, friendId: string) => {
     isDeleted: { $ne: true },
   });
 
+  const sender = await User.findById(userId).select("name");
+
   if (existingFriend) {
     if (existingFriend.status === "accepted") {
       throw new ApiError(StatusCodes.BAD_REQUEST, "You are already friends");
     }
-    existingFriend.status = "accepted";
+
+    if (existingFriend.status === "pending") {
+      if (existingFriend.userId.equals(userObjectId)) {
+        throw new ApiError(
+          StatusCodes.CONFLICT,
+          "Friend request already sent and is pending approval",
+        );
+      } else {
+        throw new ApiError(
+          StatusCodes.BAD_REQUEST,
+          "This user has already sent you a friend request. Please accept their request.",
+        );
+      }
+    }
+
+    // If status was 'rejected' or 'cancelled', re-initiate as pending from current user
+    existingFriend.userId = userObjectId;
+    existingFriend.friendId = friendObjectId;
+    existingFriend.status = "pending";
     await existingFriend.save();
 
-    const sender = await User.findById(userId).select("name");
     await sendNotifications({
-      title: "New Friend Connected",
-      text: `${sender?.name || "Someone"} connected with you as a friend.`,
+      title: "New Friend Request",
+      text: `${sender?.name || "Someone"} sent you a friend request.`,
       receiver: friendId,
       sender: userId,
       type: NOTIFICATION_TYPE.USER,
@@ -1235,13 +1360,12 @@ const addFriendToDB = async (userId: string, friendId: string) => {
   const result = await Friend.create({
     userId: userObjectId,
     friendId: friendObjectId,
-    status: "accepted",
+    status: "pending",
   });
 
-  const sender = await User.findById(userId).select("name");
   await sendNotifications({
-    title: "New Friend Connected",
-    text: `${sender?.name || "Someone"} connected with you as a friend.`,
+    title: "New Friend Request",
+    text: `${sender?.name || "Someone"} sent you a friend request.`,
     receiver: friendId,
     sender: userId,
     type: NOTIFICATION_TYPE.USER,
@@ -1250,6 +1374,234 @@ const addFriendToDB = async (userId: string, friendId: string) => {
   });
 
   return result;
+};
+
+const addFriendToDB = async (userId: string, friendId: string) => {
+  return await sendFriendRequestInDB(userId, friendId);
+};
+
+const getReceivedFriendRequestsFromDB = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 10,
+) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const skip = (page - 1) * limit;
+
+  const query = {
+    friendId: userObjectId,
+    status: "pending",
+    isDeleted: { $ne: true },
+  };
+
+  const requests = await Friend.find(query)
+    .populate("userId", "name userName profileImage email")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await Friend.countDocuments(query);
+
+  const formattedData = requests.map((req: any) => ({
+    _id: req._id,
+    status: req.status,
+    createdAt: req.createdAt,
+    sender: req.userId,
+  }));
+
+  return {
+    meta: { page, limit, total },
+    data: formattedData,
+  };
+};
+
+const getSentFriendRequestsFromDB = async (
+  userId: string,
+  page: number = 1,
+  limit: number = 10,
+) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const skip = (page - 1) * limit;
+
+  const query = {
+    userId: userObjectId,
+    status: "pending",
+    isDeleted: { $ne: true },
+  };
+
+  const requests = await Friend.find(query)
+    .populate("friendId", "name userName profileImage email")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limit)
+    .lean();
+
+  const total = await Friend.countDocuments(query);
+
+  const formattedData = requests.map((req: any) => ({
+    _id: req._id,
+    status: req.status,
+    createdAt: req.createdAt,
+    recipient: req.friendId,
+  }));
+
+  return {
+    meta: { page, limit, total },
+    data: formattedData,
+  };
+};
+
+const acceptFriendRequestInDB = async (
+  userId: string,
+  requestIdOrSenderId: string,
+) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  let requestDoc = null;
+
+  if (mongoose.Types.ObjectId.isValid(requestIdOrSenderId)) {
+    const targetObjectId = new mongoose.Types.ObjectId(requestIdOrSenderId);
+    requestDoc = await Friend.findOne({
+      $or: [
+        { _id: targetObjectId, friendId: userObjectId, status: "pending" },
+        { userId: targetObjectId, friendId: userObjectId, status: "pending" },
+      ],
+      isDeleted: { $ne: true },
+    });
+  }
+
+  if (!requestDoc) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Pending friend request not found",
+    );
+  }
+
+  requestDoc.status = "accepted";
+  await requestDoc.save();
+
+  const receiver = await User.findById(userId).select("name");
+  await sendNotifications({
+    title: "Friend Request Accepted",
+    text: `${receiver?.name || "Someone"} accepted your friend request.`,
+    receiver: requestDoc.userId.toString(),
+    sender: userId,
+    type: NOTIFICATION_TYPE.USER,
+    referenceId: requestDoc._id.toString(),
+    referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
+  });
+
+  return requestDoc;
+};
+
+const rejectFriendRequestInDB = async (
+  userId: string,
+  requestIdOrSenderId: string,
+) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  let requestDoc = null;
+
+  if (mongoose.Types.ObjectId.isValid(requestIdOrSenderId)) {
+    const targetObjectId = new mongoose.Types.ObjectId(requestIdOrSenderId);
+    requestDoc = await Friend.findOne({
+      $or: [
+        { _id: targetObjectId, friendId: userObjectId, status: "pending" },
+        { userId: targetObjectId, friendId: userObjectId, status: "pending" },
+      ],
+      isDeleted: { $ne: true },
+    });
+  }
+
+  if (!requestDoc) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Pending friend request not found",
+    );
+  }
+
+  requestDoc.status = "rejected";
+  await requestDoc.save();
+
+  return { message: "Friend request rejected successfully" };
+};
+
+const cancelFriendRequestInDB = async (
+  userId: string,
+  requestIdOrReceiverId: string,
+) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  let requestDoc = null;
+
+  if (mongoose.Types.ObjectId.isValid(requestIdOrReceiverId)) {
+    const targetObjectId = new mongoose.Types.ObjectId(requestIdOrReceiverId);
+    requestDoc = await Friend.findOne({
+      $or: [
+        { _id: targetObjectId, userId: userObjectId, status: "pending" },
+        { userId: userObjectId, friendId: targetObjectId, status: "pending" },
+      ],
+      isDeleted: { $ne: true },
+    });
+  }
+
+  if (!requestDoc) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Pending friend request not found or cannot be cancelled",
+    );
+  }
+
+  requestDoc.status = "cancelled";
+  await requestDoc.save();
+
+  return { message: "Friend request cancelled successfully" };
+};
+
+const handleFriendRequestActionInDB = async (
+  userId: string,
+  payload: {
+    requestId?: string;
+    friendId?: string;
+    action?: string;
+    status?: string;
+  },
+) => {
+  const { requestId, friendId } = payload;
+  const rawAction = (payload.action || payload.status || "")
+    .toLowerCase()
+    .trim();
+
+  const identifier = requestId || friendId;
+  if (!identifier) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "requestId or friendId is required in request body",
+    );
+  }
+
+  if (["accept", "accepted"].includes(rawAction)) {
+    const data = await acceptFriendRequestInDB(userId, identifier);
+    return {
+      message: "Friend request accepted successfully",
+      data,
+    };
+  } else if (["reject", "rejected"].includes(rawAction)) {
+    const result = await rejectFriendRequestInDB(userId, identifier);
+    return {
+      message: result.message || "Friend request rejected successfully",
+      data: null,
+    };
+  } else if (["cancel", "cancelled", "canceled"].includes(rawAction)) {
+    const result = await cancelFriendRequestInDB(userId, identifier);
+    return {
+      message: result.message || "Friend request cancelled successfully",
+      data: null,
+    };
+  } else {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Invalid action. Supported actions: 'accept', 'reject', 'cancel' (or status: 'accepted', 'rejected', 'cancelled')",
+    );
+  }
 };
 
 const getFriendsFromDB = async (userId: string) => {
@@ -1554,6 +1906,14 @@ export const FriendsService = {
   takeNudgeBreakInDB,
   getCurrentNudgeStatusInDB,
   addFriendToDB,
+  oldAddFriendToDB,
+  sendFriendRequestInDB,
+  getReceivedFriendRequestsFromDB,
+  getSentFriendRequestsFromDB,
+  acceptFriendRequestInDB,
+  rejectFriendRequestInDB,
+  cancelFriendRequestInDB,
+  handleFriendRequestActionInDB,
   getFriendsFromDB,
   removeNudgeParticipantFromDB,
   leaveNudgeInDB,

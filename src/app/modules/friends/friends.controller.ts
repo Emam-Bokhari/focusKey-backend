@@ -191,7 +191,7 @@ const getCurrentNudgeStatus = catchAsync(
   },
 );
 
-const addFriend = catchAsync(async (req: Request, res: Response) => {
+const sendFriendRequest = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
   const friendId = req.body.friendId || req.params.friendId;
 
@@ -204,7 +204,72 @@ const addFriend = catchAsync(async (req: Request, res: Response) => {
     return;
   }
 
-  const result = await FriendsService.addFriendToDB(userId, friendId);
+  const result = await FriendsService.sendFriendRequestInDB(userId, friendId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Friend request sent successfully",
+    data: result,
+  });
+});
+
+const getReceivedFriendRequests = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any).id;
+    const { page, limit } = req.query;
+
+    const result = await FriendsService.getReceivedFriendRequestsFromDB(
+      userId,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Received friend requests fetched successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  },
+);
+
+const getSentFriendRequests = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any).id;
+    const { page, limit } = req.query;
+
+    const result = await FriendsService.getSentFriendRequestsFromDB(
+      userId,
+      Number(page) || 1,
+      Number(limit) || 10,
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Sent friend requests fetched successfully",
+      meta: result.meta,
+      data: result.data,
+    });
+  },
+);
+
+const oldAddFriend = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const friendId = req.body.friendId || req.params.friendId;
+
+  if (!friendId) {
+    sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "friendId is required",
+    });
+    return;
+  }
+
+  const result = await FriendsService.oldAddFriendToDB(userId, friendId);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -213,6 +278,30 @@ const addFriend = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
+const handleFriendRequestAction = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any).id;
+    const payload = {
+      requestId: req.body.requestId || req.params.requestId,
+      friendId: req.body.friendId || req.params.friendId,
+      action: req.body.action,
+      status: req.body.status,
+    };
+
+    const result = await FriendsService.handleFriendRequestActionInDB(
+      userId,
+      payload,
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: result.message,
+      data: result.data,
+    });
+  },
+);
 
 const getFriends = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
@@ -272,18 +361,22 @@ const removeNudgeParticipant = catchAsync(
 
 export const FriendsController = {
   getUsers,
+  sendFriendRequest,
+  oldAddFriend,
+  getReceivedFriendRequests,
+  getSentFriendRequests,
+  handleFriendRequestAction,
+  getFriends,
+  removeFriend,
   initiateNudge,
   getNudgePreviewDetails,
   confirmNudge,
   getPendingNudgePreview,
   joinNudge,
   getNudgeHistory,
-  removeFriend,
   unlockNudge,
   takeNudgeBreak,
   getCurrentNudgeStatus,
-  addFriend,
-  getFriends,
   leaveNudge,
   removeNudgeParticipant,
 };

@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "app.ts",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "start": "node dist/server.js",
+    "dev": "node init && ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node init && node dist/server.js",
     "docs:generate": "ts-node scripts/generate-docs.ts",
     "generate:erd": "ts-node scripts/generate-erd.ts",
     "render:erd": "ts-node scripts/render-erd.ts",
@@ -12,7 +12,7 @@
     "export:erd": "ts-node scripts/export-erd.ts",
     "erd:download": "npm run erd && npm run export:erd",
     "generate:diagram": "ts-node scripts/generate-erd.ts && ts-node scripts/render-erd.ts && ts-node scripts/export-erd.ts",
-    "build": "tsc",
+    "build": "node init && tsc",
     "format": "prettier . --write",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -48,6 +48,7 @@
     "cors": "^2.8.5",
     "crypto": "^1.0.1",
     "crypto-js": "^4.2.0",
+    "dayjs": "^1.11.23",
     "dotenv": "^16.4.5",
     "ejs": "^4.0.1",
     "express": "^4.19.2",

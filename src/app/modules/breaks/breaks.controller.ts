@@ -6,7 +6,8 @@ import { BreakService } from "./breaks.service";
 
 const startBreak = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await BreakService.startBreak(userId);
+  const userTimezone = req.user.timezone;
+  const result = await BreakService.startBreak(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -18,7 +19,8 @@ const startBreak = catchAsync(async (req: Request, res: Response) => {
 
 const getActiveBreakStatus = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await BreakService.getActiveBreakStatus(userId);
+  const userTimezone = req.user.timezone;
+  const result = await BreakService.getActiveBreakStatus(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -30,7 +32,8 @@ const getActiveBreakStatus = catchAsync(async (req: Request, res: Response) => {
 
 const getRemainingBreaks = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await BreakService.getRemainingBreaks(userId);
+  const userTimezone = req.user.timezone;
+  const result = await BreakService.getRemainingBreaks(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -78,7 +81,8 @@ const stopBreak = catchAsync(async (req: Request, res: Response) => {
 
 const getGlobalBreakConfig = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await BreakService.getGlobalBreakConfig(userId);
+  const userTimezone = req.user.timezone;
+  const result = await BreakService.getGlobalBreakConfig(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

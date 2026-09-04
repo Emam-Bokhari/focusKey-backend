@@ -1,9 +1,11 @@
-.env
 dist
 node_modules
 scripts/
+temp_auto_push.bat
 /winston
 /uploads
 *.drawio
 docs/erd/**/*.pdf
-docs/erd/**/*.svg
+docs/erd/**/*.svg.gitignore
+branch_structure.json
+config.bat

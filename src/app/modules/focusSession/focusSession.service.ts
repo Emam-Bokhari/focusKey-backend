@@ -3,6 +3,16 @@ import { FocusSession } from "./focusSession.model";
 import { Break, BreakConfig } from "../breaks/breaks.model";
 import { Mode } from "../modes/modes.model";
 import { ModeService } from "../modes/modes.service";
+import dayjs from "dayjs";
+import {
+  DEFAULT_TIMEZONE,
+  formatZonedDateKey,
+  formatZonedSinceDate,
+  formatZonedTimeRange,
+  getZonedDateGroupHeader,
+  getZonedEndOfDay,
+  getZonedStartOfDay,
+} from "../../../helpers/timezoneHelper";
 
 const formatDuration = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -93,20 +103,21 @@ const calculateSevenDaysStats = (
   now: Date,
   nowMs: number,
   isV2 = false,
+  userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
   const stats = [];
   for (let i = 6; i >= 0; i--) {
-    const date = new Date(now);
-    date.setDate(date.getDate() - i);
-    date.setHours(0, 0, 0, 0);
-    const startOfDay = new Date(date);
+    const zonedTargetDate = dayjs().tz(userTimezone).subtract(i, "day");
+    const startOfDay = zonedTargetDate.startOf("day").toDate();
     const startOfDayMs = startOfDay.getTime();
-    const endOfDay = new Date(date);
-    endOfDay.setHours(23, 59, 59, 999);
+    const endOfDay = zonedTargetDate.endOf("day").toDate();
     const endOfDayMs = endOfDay.getTime();
 
-    const dayName = date.toLocaleDateString("en-US", { weekday: "short" });
+    const dayName = isV2
+      ? zonedTargetDate.format("dddd")
+      : zonedTargetDate.format("ddd");
     const dayLabel = dayName[0];
+    const dateStr = zonedTargetDate.format("YYYY-MM-DD");
 
     let dayMinutes = 0;
 
@@ -168,14 +179,14 @@ const calculateSevenDaysStats = (
       stats.push({
         day: dayName,
         dayLabel,
-        date: date.toISOString().split("T")[0],
+        date: dateStr,
         totalMinutes: maxDayMinutes,
         formatted: formatDuration(maxDayMinutes).formatted,
       });
     } else {
       stats.push({
         day: dayName,
-        date: date.toISOString().split("T")[0],
+        date: dateStr,
         totalMinutes: maxDayMinutes,
         formatted: formatDuration(maxDayMinutes).formatted,
       });
@@ -226,7 +237,11 @@ const calculateSessionBreakMinutes = (
   return sessionBreakMinutes;
 };
 
-const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
+const getFocusHistoryFromDB = async (
+  userId: string,
+  modeId?: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const modeObjectId = modeId ? new mongoose.Types.ObjectId(modeId) : undefined;
 
@@ -265,13 +280,12 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
     now,
     nowMs,
     false,
+    userTimezone,
   );
 
-  const startOfToday = new Date(now);
-  startOfToday.setHours(0, 0, 0, 0);
+  const startOfToday = getZonedStartOfDay(now, userTimezone);
   const startOfTodayMs = startOfToday.getTime();
-  const endOfToday = new Date(now);
-  endOfToday.setHours(23, 59, 59, 999);
+  const endOfToday = getZonedEndOfDay(now, userTimezone);
   const endOfTodayMs = endOfToday.getTime();
 
   const modeWiseToday: Record<string, number> = {};
@@ -319,7 +333,7 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
 
   for (const session of allSessions) {
     const sStartTime = new Date(session.startTime);
-    const dateKey = sStartTime.toISOString().split("T")[0];
+    const dateKey = formatZonedDateKey(sStartTime, userTimezone);
 
     if (!groupedHistory[dateKey]) {
       groupedHistory[dateKey] = {
@@ -349,9 +363,12 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
     const duration = formatDuration(netSessionMinutes);
-    const timeRange = `${formatTime(sStartTime)} - ${
-      session.endTime ? formatTime(new Date(session.endTime)) : "Active"
-    }`;
+    const timeRange = formatZonedTimeRange(
+      sStartTime,
+      session.endTime,
+      userTimezone,
+      false,
+    );
 
     groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
@@ -380,7 +397,11 @@ const getFocusHistoryFromDB = async (userId: string, modeId?: string) => {
   };
 };
 
-const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
+const getFocusHistoryV2FromDB = async (
+  userId: string,
+  modeId?: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const modeObjectId = modeId ? new mongoose.Types.ObjectId(modeId) : undefined;
 
@@ -431,7 +452,7 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
     firstSessionResult ||
     (allSessions.length > 0 ? allSessions[allSessions.length - 1] : null);
   const firstFocusDate = firstSession ? firstSession.startTime : null;
-  const sinceDate = formatSinceDate(firstFocusDate);
+  const sinceDate = formatZonedSinceDate(firstFocusDate, userTimezone);
 
   const sevenDaysStats = calculateSevenDaysStats(
     allSessions,
@@ -439,6 +460,7 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
     now,
     nowMs,
     true,
+    userTimezone,
   );
 
   const breaksByMode = indexBreaksByMode(allBreaks);
@@ -474,12 +496,12 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
 
   for (const session of allSessions) {
     const sStartTime = new Date(session.startTime);
-    const dateKey = sStartTime.toISOString().split("T")[0];
+    const dateKey = formatZonedDateKey(sStartTime, userTimezone);
 
     if (!groupedHistory[dateKey]) {
       groupedHistory[dateKey] = {
         date: dateKey,
-        dateHeader: formatHeaderDate(dateKey),
+        dateHeader: getZonedDateGroupHeader(dateKey, userTimezone),
         totalFocusMinutes: 0,
         sessions: [],
       };
@@ -505,9 +527,12 @@ const getFocusHistoryV2FromDB = async (userId: string, modeId?: string) => {
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
     const duration = formatDuration(netSessionMinutes);
-    const timeRange = `${formatTimeV2(sStartTime)} - ${
-      session.endTime ? formatTimeV2(new Date(session.endTime)) : "Active"
-    }`;
+    const timeRange = formatZonedTimeRange(
+      sStartTime,
+      session.endTime,
+      userTimezone,
+      true,
+    );
 
     groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
@@ -568,7 +593,10 @@ const getFocusStatsFromDB = async (userId: string) => {
   };
 };
 
-const exportFocusHistoryToCSVFromDB = async (userId: string) => {
+const exportFocusHistoryToCSVFromDB = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   const [sessions, allBreaks] = await Promise.all([
@@ -586,7 +614,7 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
 
   for (const session of sessions) {
     const sStartTime = new Date(session.startTime);
-    const date = sStartTime.toISOString().split("T")[0];
+    const date = formatZonedDateKey(sStartTime, userTimezone);
     const modeName = (session.modeId as any)?.name || "Unknown Mode";
 
     let sessionMinutes = 0;
@@ -609,9 +637,12 @@ const exportFocusHistoryToCSVFromDB = async (userId: string) => {
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
     const durationFormatted = formatDuration(netSessionMinutes).formatted;
-    const timeRange = `${formatTime(sStartTime)} - ${
-      session.endTime ? formatTime(new Date(session.endTime)) : "Active"
-    }`;
+    const timeRange = formatZonedTimeRange(
+      sStartTime,
+      session.endTime,
+      userTimezone,
+      false,
+    );
 
     const escapedModeName = `"${modeName.replace(/"/g, '""')}"`;
 

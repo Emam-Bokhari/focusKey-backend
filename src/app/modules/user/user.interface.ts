@@ -23,6 +23,7 @@ export type IUser = {
   country?: string;
   postalCode?: string;
   dateOfBirth?: Date;
+  timezone?: string;
 
   password: string;
 

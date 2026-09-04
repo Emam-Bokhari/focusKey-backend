@@ -5,8 +5,14 @@ import { FocusSession } from "../focusSession/focusSession.model";
 import { Break, BreakConfig } from "./breaks.model";
 import mongoose from "mongoose";
 import { IBreakConfig } from "./breaks.interface";
+import {
+  DEFAULT_TIMEZONE,
+  getZonedEndOfDay,
+  getZonedStartOfDay,
+  getZonedStartOfWeek,
+} from "../../../helpers/timezoneHelper";
 
-const startBreak = async (userId: string) => {
+const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZONE) => {
   const activeMode = await Mode.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     isActive: true,
@@ -67,11 +73,8 @@ const startBreak = async (userId: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Breaks are not allowed");
   }
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
+  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
@@ -237,7 +240,10 @@ const resumeBreak = async (userId: string) => {
   return updatedBreak;
 };
 
-const getActiveBreakStatus = async (userId: string) => {
+const getActiveBreakStatus = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const now = new Date();
   const currentBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
@@ -258,14 +264,9 @@ const getActiveBreakStatus = async (userId: string) => {
     });
   }
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
-
-  const startOfWeek = new Date();
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay()); // Sunday
-  startOfWeek.setHours(0, 0, 0, 0);
+  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
+  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
+  const startOfWeek = getZonedStartOfWeek(new Date(), userTimezone);
 
   const todayBreaks = await Break.find({
     userId: new mongoose.Types.ObjectId(userId),
@@ -357,7 +358,10 @@ const getActiveBreakStatus = async (userId: string) => {
   };
 };
 
-const getRemainingBreaks = async (userId: string) => {
+const getRemainingBreaks = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     isDeleted: { $in: [true, false] },
@@ -376,10 +380,8 @@ const getRemainingBreaks = async (userId: string) => {
     await breakConfig.save();
   }
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
+  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
 
   const breaksToday = await Break.countDocuments({
     userId: new mongoose.Types.ObjectId(userId),
@@ -531,7 +533,10 @@ const updateExpiredBreaks = async () => {
   };
 };
 
-const getGlobalBreakConfig = async (userId: string) => {
+const getGlobalBreakConfig = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   let breakConfig = await BreakConfig.findOne({
     userId: new mongoose.Types.ObjectId(userId),
   });

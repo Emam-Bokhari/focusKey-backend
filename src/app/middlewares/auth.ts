@@ -7,6 +7,8 @@ import ApiError from "../../errors/ApiErrors";
 import { verifyToken } from "../../util/verifyToken";
 import { STATUS } from "../../enums/user";
 
+import { resolveTimezone } from "../../helpers/timezoneHelper";
+
 const auth =
   (...roles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
@@ -57,7 +59,13 @@ const auth =
           );
         }
 
-        req.user = verifyUser;
+        req.user = {
+          ...verifyUser,
+          timezone: resolveTimezone(
+            user?.timezone,
+            req.headers["x-timezone"] as string,
+          ),
+        };
         next();
       }
     } catch (error) {

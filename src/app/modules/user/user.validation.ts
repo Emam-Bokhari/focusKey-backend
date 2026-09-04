@@ -25,6 +25,7 @@ const createUserZodSchema = z.object({
     country: z.string().optional(),
     postalCode: z.string().optional(),
     dateOfBirth: z.string().optional(),
+    timezone: z.string().optional(),
   }),
 });
 

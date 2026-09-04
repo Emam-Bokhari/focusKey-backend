@@ -6,7 +6,8 @@ import { DashboardService } from "./dashboard.service";
 
 const getDashboardData = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await DashboardService.getDashboardData(userId);
+  const userTimezone = req.user.timezone;
+  const result = await DashboardService.getDashboardData(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -18,7 +19,8 @@ const getDashboardData = catchAsync(async (req: Request, res: Response) => {
 
 const getHistoryData = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await DashboardService.getHistoryData(userId);
+  const userTimezone = req.user.timezone;
+  const result = await DashboardService.getHistoryData(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -30,7 +32,8 @@ const getHistoryData = catchAsync(async (req: Request, res: Response) => {
 
 const getHistoryV2 = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await DashboardService.getHistoryV2(userId);
+  const userTimezone = req.user.timezone;
+  const result = await DashboardService.getHistoryV2(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

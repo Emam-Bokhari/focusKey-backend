@@ -14,6 +14,12 @@ import {
   NOTIFICATION_REFERENCE_MODEL,
   NOTIFICATION_TYPE,
 } from "../notification/notification.constant";
+import {
+  DEFAULT_TIMEZONE,
+  getZonedEndOfDay,
+  getZonedStartOfDay,
+  getZonedStartOfWeek,
+} from "../../../helpers/timezoneHelper";
 
 const NUDGE_PREVIEW_TTL_MINUTES = 10;
 
@@ -920,7 +926,11 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   return result;
 };
 
-const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
+const takeNudgeBreakInDB = async (
+  userId: string,
+  nudgeId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
 
@@ -981,10 +991,8 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
     );
   }
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
+  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
 
   const breaksTodayCount = await Break.countDocuments({
     userId: userObjectId,
@@ -1026,7 +1034,10 @@ const takeNudgeBreakInDB = async (userId: string, nudgeId: string) => {
   };
 };
 
-const getCurrentNudgeStatusInDB = async (userId: string) => {
+const getCurrentNudgeStatusInDB = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   const nudge = await Nudge.findOne({
@@ -1122,10 +1133,8 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
 
   const isLocked = isJoined ? !activeBreak : false;
 
-  const startOfDay = new Date();
-  startOfDay.setHours(0, 0, 0, 0);
-  const endOfDay = new Date();
-  endOfDay.setHours(23, 59, 59, 999);
+  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
+  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
 
   const breaksTakenToday = await Break.countDocuments({
     userId: userObjectId,
@@ -1136,9 +1145,7 @@ const getCurrentNudgeStatusInDB = async (userId: string) => {
   const totalAllowedBreaks = nudge.breakConfig?.breaksPerDay || 0;
   const remainingBreaks = Math.max(0, totalAllowedBreaks - breaksTakenToday);
 
-  const startOfWeek = new Date();
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
+  const startOfWeek = getZonedStartOfWeek(new Date(), userTimezone);
 
   const sessionsThisWeek = await FocusSession.find({
     userId: userObjectId,

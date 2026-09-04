@@ -6,11 +6,13 @@ import { FocusSessionService } from "./focusSession.service";
 
 const getFocusHistory = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
+  const userTimezone = req.user.timezone;
   const { modeId } = req.query;
 
   const result = await FocusSessionService.getFocusHistoryFromDB(
     userId,
     modeId as string,
+    userTimezone,
   );
 
   sendResponse(res, {
@@ -23,11 +25,13 @@ const getFocusHistory = catchAsync(async (req: Request, res: Response) => {
 
 const getFocusHistoryV2 = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
+  const userTimezone = req.user.timezone;
   const { modeId } = req.query;
 
   const result = await FocusSessionService.getFocusHistoryV2FromDB(
     userId,
     modeId as string,
+    userTimezone,
   );
 
   sendResponse(res, {
@@ -52,8 +56,9 @@ const getFocusStats = catchAsync(async (req: Request, res: Response) => {
 
 const exportHistoryToCSV = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
+  const userTimezone = req.user.timezone;
   const result =
-    await FocusSessionService.exportFocusHistoryToCSVFromDB(userId);
+    await FocusSessionService.exportFocusHistoryToCSVFromDB(userId, userTimezone);
 
   const fileName = `focus_history_${new Date().toISOString().split("T")[0]}.csv`;
 

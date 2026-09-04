@@ -164,9 +164,14 @@ const unlockNudge = catchAsync(async (req: Request, res: Response) => {
 
 const takeNudgeBreak = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
+  const userTimezone = (req.user as any).timezone;
   const { nudgeId } = req.params;
 
-  const result = await FriendsService.takeNudgeBreakInDB(userId, nudgeId);
+  const result = await FriendsService.takeNudgeBreakInDB(
+    userId,
+    nudgeId,
+    userTimezone,
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -179,8 +184,12 @@ const takeNudgeBreak = catchAsync(async (req: Request, res: Response) => {
 const getCurrentNudgeStatus = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req.user as any).id;
+    const userTimezone = (req.user as any).timezone;
 
-    const result = await FriendsService.getCurrentNudgeStatusInDB(userId);
+    const result = await FriendsService.getCurrentNudgeStatusInDB(
+      userId,
+      userTimezone,
+    );
 
     sendResponse(res, {
       statusCode: StatusCodes.OK,

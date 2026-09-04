@@ -113,6 +113,12 @@ const userSchema = new Schema<IUser, IUserModel>(
       default: null,
     },
 
+    timezone: {
+      type: String,
+      default: "UTC",
+      trim: true,
+    },
+
     installedApps: [installedAppSchema],
 
     device: deviceSchema,

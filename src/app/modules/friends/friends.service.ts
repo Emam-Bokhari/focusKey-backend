@@ -1266,11 +1266,113 @@ const takeNudgeBreakInDB = async (
     status: "active",
   });
 
+  //@ts-ignore
+  const io = global.io;
+  if (io) {
+    io.emit(`breakStarted::${userId}`, {
+      message: "Break started. Apps are now unlocked.",
+      isLocked: false,
+      breakDetails: createdBreak,
+    });
+  }
+
   return {
     break: createdBreak,
     remainingBreaks: remainingBreaks - 1,
     breakDurationMinutes,
     message: `Break started. You have ${breakDurationMinutes} minutes. After this, apps will lock again.`,
+  };
+};
+
+const stopNudgeBreakInDB = async (
+  userId: string,
+  nudgeId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
+  const now = new Date();
+
+  const currentBreakToStop = await Break.findOne({
+    userId: userObjectId,
+    nudgeId: nudgeObjectId,
+    status: { $in: ["active", "paused"] },
+    $or: [{ status: "active", endTime: { $gt: now } }, { status: "paused" }],
+  });
+
+  if (!currentBreakToStop) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "No active or paused nudge break found to stop",
+    );
+  }
+
+  let remainingSeconds = 0;
+  if (currentBreakToStop.status === "paused") {
+    remainingSeconds = currentBreakToStop.remainingSeconds || 0;
+  } else {
+    const remainingMs = Math.max(
+      0,
+      currentBreakToStop.endTime.getTime() - now.getTime(),
+    );
+    remainingSeconds = Math.round(remainingMs / 1000);
+  }
+
+  const totalAllocatedMinutes =
+    currentBreakToStop.totalDurationMinutes ||
+    Math.round(
+      (currentBreakToStop.endTime.getTime() -
+        currentBreakToStop.startTime.getTime()) /
+        60000,
+    ) ||
+    15;
+  const totalAllocatedSeconds = totalAllocatedMinutes * 60;
+  const spentSeconds = Math.max(0, totalAllocatedSeconds - remainingSeconds);
+  const durationMinutes = Math.round(spentSeconds / 60);
+
+  const updatedBreak = await Break.findOneAndUpdate(
+    {
+      _id: currentBreakToStop._id,
+    },
+    {
+      status: "completed",
+      endTime: now,
+      durationMinutes,
+      remainingSeconds: 0,
+      $unset: { pausedAt: 1 },
+    },
+    { new: true },
+  );
+
+  //@ts-ignore
+  const io = global.io;
+  if (io) {
+    io.emit(`breakEnded::${userId}`, {
+      message: "Break stopped. Apps are now locked.",
+      isLocked: true,
+    });
+  }
+
+  const startOfDay = getZonedStartOfDay(now, userTimezone);
+  const endOfDay = getZonedEndOfDay(now, userTimezone);
+
+  const [nudge, breaksTodayCount] = await Promise.all([
+    Nudge.findById(currentBreakToStop.nudgeId).lean(),
+    Break.countDocuments({
+      userId: userObjectId,
+      nudgeId: currentBreakToStop.nudgeId,
+      startTime: { $gte: startOfDay, $lte: endOfDay },
+    }),
+  ]);
+
+  const maxBreaks = nudge?.breakConfig?.breaksPerDay || 0;
+  const remainingBreaks = Math.max(0, maxBreaks - breaksTodayCount);
+
+  return {
+    ...updatedBreak?.toObject(),
+    break: updatedBreak,
+    remainingBreaks,
+    message: "Break stopped successfully. Apps are now locked again.",
   };
 };
 
@@ -2160,6 +2262,7 @@ export const FriendsService = {
   removeFriendFromDB,
   unlockNudgeInDB,
   takeNudgeBreakInDB,
+  stopNudgeBreakInDB,
   getCurrentNudgeStatusInDB,
   addFriendToDB,
   oldAddFriendToDB,

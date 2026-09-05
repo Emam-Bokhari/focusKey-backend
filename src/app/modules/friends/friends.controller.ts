@@ -181,6 +181,25 @@ const takeNudgeBreak = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const stopNudgeBreak = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const userTimezone = (req.user as any).timezone;
+  const { nudgeId } = req.params;
+
+  const result = await FriendsService.stopNudgeBreakInDB(
+    userId,
+    nudgeId,
+    userTimezone,
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Break stopped successfully. Apps are now locked again.",
+    data: result,
+  });
+});
+
 const getCurrentNudgeStatus = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req.user as any).id;
@@ -385,6 +404,7 @@ export const FriendsController = {
   getNudgeHistory,
   unlockNudge,
   takeNudgeBreak,
+  stopNudgeBreak,
   getCurrentNudgeStatus,
   leaveNudge,
   removeNudgeParticipant,

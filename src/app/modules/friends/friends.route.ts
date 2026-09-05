@@ -77,6 +77,12 @@ router.post(
   FriendsController.takeNudgeBreak,
 );
 
+router.post(
+  "/stop-nudge-break/:nudgeId",
+  isUser,
+  FriendsController.stopNudgeBreak,
+);
+
 router.get(
   "/current-nudge-status",
   isUser,

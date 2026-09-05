@@ -46,6 +46,9 @@ focusSessionSchema.plugin(softDeletePlugin);
 
 focusSessionSchema.index({ userId: 1, startTime: -1 });
 focusSessionSchema.index({ userId: 1, modeId: 1, startTime: -1 });
+focusSessionSchema.index({ userId: 1, status: 1, endTime: -1 });
+focusSessionSchema.index({ userId: 1, status: 1, startTime: -1 });
+focusSessionSchema.index({ nudgeId: 1, status: 1 });
 focusSessionSchema.index({ userId: 1, isDeleted: 1 });
 
 export const FocusSession = model<IFocusSession>(

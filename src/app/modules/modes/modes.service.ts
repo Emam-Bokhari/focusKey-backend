@@ -13,8 +13,13 @@ import {
 } from "../notification/notification.constant";
 
 const defaultModeCreationPromises = new Map<string, Promise<void>>();
+const knownUsersWithModes = new Set<string>();
 
 const ensureDefaultModesExist = async (userId: string): Promise<void> => {
+  if (knownUsersWithModes.has(userId)) {
+    return;
+  }
+
   if (defaultModeCreationPromises.has(userId)) {
     return defaultModeCreationPromises.get(userId)!;
   }
@@ -57,6 +62,7 @@ const ensureDefaultModesExist = async (userId: string): Promise<void> => {
       ];
       await Mode.create(defaultModes);
     }
+    knownUsersWithModes.add(userId);
   })();
 
   defaultModeCreationPromises.set(userId, promise);
@@ -77,14 +83,14 @@ const createModeToDB = async (payload: IMode, userId: string): Promise<any> => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to create mode");
   }
 
-  await sendNotifications({
+  sendNotifications({
     title: "New Mode Created",
     text: `You have successfully created a new focus mode: "${result.name}".`,
     receiver: userId,
     type: NOTIFICATION_TYPE.USER,
     referenceId: result._id.toString(),
     referenceModel: NOTIFICATION_REFERENCE_MODEL.MODE,
-  });
+  }).catch(() => {});
 
   return {
     ...result.toObject(),
@@ -93,8 +99,23 @@ const createModeToDB = async (payload: IMode, userId: string): Promise<any> => {
 };
 
 const getModesFromDB = async (userId: string) => {
-  await ensureDefaultModesExist(userId);
-  const modes = await Mode.find({ userId });
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  let [modes, activeBreak] = await Promise.all([
+    Mode.find({ userId }).lean(),
+    Break.findOne({
+      userId: userObjectId,
+      status: "active",
+      endTime: { $gt: new Date() },
+    }).lean(),
+  ]);
+
+  if (!modes || modes.length === 0) {
+    await ensureDefaultModesExist(userId);
+    modes = await Mode.find({ userId }).lean();
+  } else {
+    knownUsersWithModes.add(userId);
+  }
 
   if (!modes || modes.length === 0) {
     return {
@@ -110,19 +131,11 @@ const getModesFromDB = async (userId: string) => {
     0,
   );
 
-  const activeBreak = await Break.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
-
-  const modesWithStatus = modes.map((mode) => {
-    const modeObj = mode.toObject();
-    return {
-      ...modeObj,
-      isLocked: mode.isActive && !activeBreak,
-    };
-  });
+  const isBreakActive = !!activeBreak;
+  const modesWithStatus = modes.map((mode) => ({
+    ...mode,
+    isLocked: Boolean(mode.isActive && !isBreakActive),
+  }));
 
   return {
     modes: modesWithStatus,
@@ -133,20 +146,22 @@ const getModesFromDB = async (userId: string) => {
 };
 
 const getSingleModeFromDB = async (modeId: string) => {
-  const mode = await Mode.findById(modeId);
+  const mode = await Mode.findById(modeId).lean();
   if (!mode) {
     return {};
   }
 
-  const activeBreak = await Break.findOne({
-    userId: mode.userId,
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
+  const activeBreak = mode.isActive
+    ? await Break.findOne({
+        userId: mode.userId,
+        status: "active",
+        endTime: { $gt: new Date() },
+      }).lean()
+    : null;
 
   return {
-    ...mode.toObject(),
-    isLocked: mode.isActive && !activeBreak,
+    ...mode,
+    isLocked: Boolean(mode.isActive && !activeBreak),
   };
 };
 
@@ -164,20 +179,23 @@ const updateModeToDB = async (modeId: string, payload: Partial<IMode>) => {
   const result = await Mode.findByIdAndUpdate(modeId, payload, {
     new: true,
     runValidators: true,
-  });
+  }).lean();
+
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
   }
 
-  const activeBreak = await Break.findOne({
-    userId: result.userId,
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
+  const activeBreak = result.isActive
+    ? await Break.findOne({
+        userId: result.userId,
+        status: "active",
+        endTime: { $gt: new Date() },
+      }).lean()
+    : null;
 
   return {
-    ...result.toObject(),
-    isLocked: result.isActive && !activeBreak,
+    ...result,
+    isLocked: Boolean(result.isActive && !activeBreak),
   };
 };
 
@@ -192,18 +210,27 @@ const deleteModeFromDB = async (modeId: string) => {
       userId: mode.userId,
       modeId: mode._id,
       status: "active",
-    });
+    }).lean();
 
-    for (const session of activeSessions) {
+    if (activeSessions.length > 0) {
       const endTime = new Date();
-      const durationMs = endTime.getTime() - session.startTime.getTime();
-      const durationMinutes = Math.round(durationMs / 60000);
-
-      await FocusSession.findByIdAndUpdate(session._id, {
-        status: "completed",
-        endTime,
-        durationMinutes,
+      const bulkOps = activeSessions.map((session) => {
+        const durationMs = endTime.getTime() - session.startTime.getTime();
+        const durationMinutes = Math.round(durationMs / 60000);
+        return {
+          updateOne: {
+            filter: { _id: session._id },
+            update: {
+              $set: {
+                status: "completed",
+                endTime,
+                durationMinutes,
+              },
+            },
+          },
+        };
       });
+      await FocusSession.bulkWrite(bulkOps);
     }
   }
 
@@ -217,12 +244,12 @@ const deleteModeFromDB = async (modeId: string) => {
   );
 
   if (result) {
-    await sendNotifications({
+    sendNotifications({
       title: "Mode Deleted",
       text: `You have successfully deleted the focus mode: "${mode.name}".`,
       receiver: mode.userId.toString(),
       type: NOTIFICATION_TYPE.USER,
-    });
+    }).catch(() => {});
   }
 
   return result;
@@ -244,13 +271,14 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
   }
 
   const newStatus = !mode.isActive;
+  const userObjectId = new mongoose.Types.ObjectId(userId);
 
   if (newStatus) {
     const activeMode = await Mode.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userObjectId,
       isActive: true,
       _id: { $ne: modeId },
-    });
+    }).lean();
 
     if (activeMode) {
       throw new ApiError(
@@ -260,40 +288,49 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
     }
 
     await Mode.updateMany(
-      { userId: new mongoose.Types.ObjectId(userId), _id: { $ne: modeId } },
+      { userId: userObjectId, _id: { $ne: modeId } },
       { isActive: false },
     );
 
     const activeSessions = await FocusSession.find({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userObjectId,
       status: "active",
-    });
+    }).lean();
 
-    for (const session of activeSessions) {
+    if (activeSessions.length > 0) {
       const endTime = new Date();
-      const durationMs = endTime.getTime() - session.startTime.getTime();
-      const durationMinutes = Math.round(durationMs / 60000);
-
-      await FocusSession.findByIdAndUpdate(session._id, {
-        status: "completed",
-        endTime,
-        durationMinutes,
+      const bulkOps = activeSessions.map((session) => {
+        const durationMs = endTime.getTime() - session.startTime.getTime();
+        const durationMinutes = Math.round(durationMs / 60000);
+        return {
+          updateOne: {
+            filter: { _id: session._id },
+            update: {
+              $set: {
+                status: "completed",
+                endTime,
+                durationMinutes,
+              },
+            },
+          },
+        };
       });
+      await FocusSession.bulkWrite(bulkOps);
     }
 
     await FocusSession.create({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userObjectId,
       modeId: modeId,
       startTime: new Date(),
       status: "active",
     });
   } else {
     const activeNudgeSession = await FocusSession.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userObjectId,
       modeId: modeId,
       status: "active",
       nudgeId: { $exists: true },
-    });
+    }).lean();
 
     if (activeNudgeSession) {
       throw new ApiError(
@@ -303,59 +340,81 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
     }
 
     const activeSessions = await FocusSession.find({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userObjectId,
       modeId: modeId,
       status: "active",
-    });
+    }).lean();
 
-    for (const session of activeSessions) {
+    if (activeSessions.length > 0) {
       const endTime = new Date();
-      const durationMs = endTime.getTime() - session.startTime.getTime();
-      const durationMinutes = Math.round(durationMs / 60000);
-
-      await FocusSession.findByIdAndUpdate(session._id, {
-        status: "completed",
-        endTime,
-        durationMinutes,
+      const bulkOps = activeSessions.map((session) => {
+        const durationMs = endTime.getTime() - session.startTime.getTime();
+        const durationMinutes = Math.round(durationMs / 60000);
+        return {
+          updateOne: {
+            filter: { _id: session._id },
+            update: {
+              $set: {
+                status: "completed",
+                endTime,
+                durationMinutes,
+              },
+            },
+          },
+        };
       });
+      await FocusSession.bulkWrite(bulkOps);
     }
   }
 
   const now = new Date();
-  const result = await Mode.findByIdAndUpdate(
-    modeId,
-    {
-      isActive: newStatus,
-      $push: {
-        lockEvents: {
-          type: newStatus ? "lock" : "unlock",
-          source: "mode",
-          timestamp: now,
+  const [result, activeBreak] = await Promise.all([
+    Mode.findByIdAndUpdate(
+      modeId,
+      {
+        isActive: newStatus,
+        $push: {
+          lockEvents: {
+            type: newStatus ? "lock" : "unlock",
+            source: "mode",
+            timestamp: now,
+          },
         },
       },
-    },
-    { new: true },
-  );
+      { new: true },
+    ).lean(),
+    newStatus
+      ? Break.findOne({
+          userId: userObjectId,
+          status: "active",
+          endTime: { $gt: now },
+        }).lean()
+      : Promise.resolve(null),
+  ]);
 
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
   }
 
-  const activeBreak = await Break.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
-
   return {
-    ...result.toObject(),
-    isLocked: result.isActive && !activeBreak,
+    ...result,
+    isLocked: Boolean(result.isActive && !activeBreak),
   };
 };
 
 const getModeAppCount = async (userId: string) => {
-  await ensureDefaultModesExist(userId);
-  const modes = await Mode.find({ userId, isDeleted: false });
+  let modes = await Mode.find({ userId, isDeleted: false })
+    .select("name icon totalLockedApps")
+    .lean();
+
+  if (modes.length === 0) {
+    await ensureDefaultModesExist(userId);
+    modes = await Mode.find({ userId, isDeleted: false })
+      .select("name icon totalLockedApps")
+      .lean();
+  } else {
+    knownUsersWithModes.add(userId);
+  }
 
   const totalFocusAppsCount = modes.reduce(
     (acc, mode) => acc + (mode.totalLockedApps || 0),
@@ -372,8 +431,18 @@ const getModeAppCount = async (userId: string) => {
 };
 
 const getModeAppDetails = async (userId: string) => {
-  await ensureDefaultModesExist(userId);
-  const modes = await Mode.find({ userId, isDeleted: false });
+  let modes = await Mode.find({ userId, isDeleted: false })
+    .select("name lockedApps")
+    .lean();
+
+  if (modes.length === 0) {
+    await ensureDefaultModesExist(userId);
+    modes = await Mode.find({ userId, isDeleted: false })
+      .select("name lockedApps")
+      .lean();
+  } else {
+    knownUsersWithModes.add(userId);
+  }
 
   return modes.map((mode) => ({
     _id: mode._id,
@@ -383,8 +452,9 @@ const getModeAppDetails = async (userId: string) => {
 };
 
 const getSingleModeAppDetails = async (modeId: string, userId: string) => {
-  await ensureDefaultModesExist(userId);
-  const mode = await Mode.findOne({ _id: modeId, userId, isDeleted: false });
+  const mode = await Mode.findOne({ _id: modeId, userId, isDeleted: false })
+    .select("name lockedApps")
+    .lean();
 
   if (!mode) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
@@ -398,41 +468,54 @@ const getSingleModeAppDetails = async (modeId: string, userId: string) => {
 };
 
 const getTotalFocusApps = async (userId: string) => {
-  await ensureDefaultModesExist(userId);
-  const modes = await Mode.find({ userId, isDeleted: false });
+  let modes = await Mode.find({ userId, isDeleted: false })
+    .select("lockedApps")
+    .lean();
+
+  if (modes.length === 0) {
+    await ensureDefaultModesExist(userId);
+    modes = await Mode.find({ userId, isDeleted: false })
+      .select("lockedApps")
+      .lean();
+  } else {
+    knownUsersWithModes.add(userId);
+  }
 
   const allLockedApps: any[] = [];
-  const seenPackages = new Set();
+  const seenPackages = new Set<string>();
 
-  modes.forEach((mode) => {
-    mode.lockedApps?.forEach((app) => {
-      if (!seenPackages.has(app.packageName)) {
-        seenPackages.add(app.packageName);
-        allLockedApps.push(app);
+  for (const mode of modes) {
+    if (mode.lockedApps) {
+      for (const app of mode.lockedApps) {
+        if (!seenPackages.has(app.packageName)) {
+          seenPackages.add(app.packageName);
+          allLockedApps.push(app);
+        }
       }
-    });
-  });
+    }
+  }
 
   return allLockedApps;
 };
 
 const getLockStatusFromDB = async (userId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
-  const dashboardData = await DashboardService.getDashboardData(userId);
-
-  const activeSession = await FocusSession.findOne({
-    userId: userObjectId,
-    status: "active",
-  });
+  const [dashboardData, activeSession] = await Promise.all([
+    DashboardService.getDashboardData(userId),
+    FocusSession.findOne({
+      userId: userObjectId,
+      status: "active",
+    }).lean(),
+  ]);
 
   return {
     ...dashboardData,
     isLocked: dashboardData.lockStatus.isLocked,
     activeSession: activeSession
       ? {
-          ...activeSession.toObject(),
+          ...activeSession,
           elapsedMinutes: Math.round(
-            (new Date().getTime() - activeSession.startTime.getTime()) / 60000,
+            (new Date().getTime() - new Date(activeSession.startTime).getTime()) / 60000,
           ),
         }
       : null,

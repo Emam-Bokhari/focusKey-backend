@@ -22,33 +22,33 @@ import {
 } from "../../../helpers/timezoneHelper";
 
 const NUDGE_PREVIEW_TTL_MINUTES = 10;
-
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
-const buildLastFocusInfo = async (
-  userId: mongoose.Types.ObjectId,
-): Promise<string> => {
-  const now = new Date();
-  const lastSession = await FocusSession.findOne({
-    userId,
-    status: "completed",
-  }).sort({ endTime: -1 });
-
+/**
+ * Pure helper to format last focus session info into display string
+ */
+const formatLastFocusString = (
+  lastSession:
+    | { endTime?: Date | string | null; durationMinutes?: number }
+    | null
+    | undefined,
+  now: Date = new Date(),
+): string => {
   if (!lastSession || !lastSession.endTime) return "No focus history";
 
-  const diffMs = now.getTime() - lastSession.endTime.getTime();
+  const sessionEndTime = new Date(lastSession.endTime);
+  const diffMs = now.getTime() - sessionEndTime.getTime();
   const diffMins = Math.floor(diffMs / (1000 * 60));
   const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays > 0) {
-    const lastSessionDate = new Date(lastSession.endTime);
-    const yesterday = new Date();
+    const yesterday = new Date(now);
     yesterday.setDate(yesterday.getDate() - 1);
     const isYesterday =
-      lastSessionDate.getDate() === yesterday.getDate() &&
-      lastSessionDate.getMonth() === yesterday.getMonth() &&
-      lastSessionDate.getFullYear() === yesterday.getFullYear();
+      sessionEndTime.getDate() === yesterday.getDate() &&
+      sessionEndTime.getMonth() === yesterday.getMonth() &&
+      sessionEndTime.getFullYear() === yesterday.getFullYear();
 
     if (isYesterday) {
       let durationStr = "some time";
@@ -65,101 +65,222 @@ const buildLastFocusInfo = async (
   return `Last focused ${diffMins}m ago`;
 };
 
-const computeSharedFocusStats = async (
+const buildLastFocusInfo = async (
+  userId: mongoose.Types.ObjectId,
+): Promise<string> => {
+  const lastSession = await FocusSession.findOne({
+    userId,
+    status: "completed",
+  })
+    .sort({ endTime: -1 })
+    .select("endTime durationMinutes")
+    .lean();
+
+  return formatLastFocusString(lastSession);
+};
+
+/**
+ * Batch retrieves the latest completed focus session for multiple users in 1 aggregation query
+ */
+const batchGetLastFocusSessions = async (
+  userIds: mongoose.Types.ObjectId[],
+): Promise<Map<string, { endTime: Date; durationMinutes: number }>> => {
+  const map = new Map<string, { endTime: Date; durationMinutes: number }>();
+  if (userIds.length === 0) return map;
+
+  const sessions = await FocusSession.aggregate([
+    {
+      $match: {
+        userId: { $in: userIds },
+        status: "completed",
+        endTime: { $exists: true, $ne: null },
+      },
+    },
+    { $sort: { endTime: -1 } },
+    {
+      $group: {
+        _id: "$userId",
+        endTime: { $first: "$endTime" },
+        durationMinutes: { $first: "$durationMinutes" },
+      },
+    },
+  ]);
+
+  for (const s of sessions) {
+    map.set(s._id.toString(), {
+      endTime: s.endTime,
+      durationMinutes: s.durationMinutes,
+    });
+  }
+
+  return map;
+};
+
+interface ISharedFocusStatsResult {
+  togetherThisWeek: string;
+  streak: number;
+  highlightedDays: string[];
+  totalTogetherMinutes: number;
+}
+
+/**
+ * Batch computes shared focus stats for creator and multiple participants in memory using 2 database queries
+ */
+const batchComputeSharedFocusStats = async (
   creatorId: mongoose.Types.ObjectId,
-  participantId: mongoose.Types.ObjectId,
-) => {
-  const highlightedDays: string[] = [];
-  let totalTogetherMinutes = 0;
+  participantIds: mongoose.Types.ObjectId[],
+): Promise<Map<string, ISharedFocusStatsResult>> => {
+  const results = new Map<string, ISharedFocusStatsResult>();
+  if (participantIds.length === 0) return results;
 
+  const now = new Date();
+  const startOfRange = new Date(now);
+  startOfRange.setDate(startOfRange.getDate() - 6);
+  startOfRange.setHours(0, 0, 0, 0);
+
+  const endOfRange = new Date(now);
+  endOfRange.setHours(23, 59, 59, 999);
+
+  const [creatorSessions, allParticipantSessions] = await Promise.all([
+    FocusSession.find({
+      userId: creatorId,
+      status: "completed",
+      startTime: { $lte: endOfRange },
+      endTime: { $gte: startOfRange },
+    })
+      .select("startTime endTime durationMinutes")
+      .lean(),
+    FocusSession.find({
+      userId: { $in: participantIds },
+      status: "completed",
+      startTime: { $lte: endOfRange },
+      endTime: { $gte: startOfRange },
+    })
+      .select("userId startTime endTime durationMinutes")
+      .lean(),
+  ]);
+
+  const participantSessionsMap = new Map<string, any[]>();
+  for (const s of allParticipantSessions) {
+    const pIdStr = s.userId.toString();
+    const list = participantSessionsMap.get(pIdStr) || [];
+    list.push(s);
+    participantSessionsMap.set(pIdStr, list);
+  }
+
+  // Pre-calculate 7-day boundaries
+  const daysInfo: { startOfDay: Date; endOfDay: Date; dayName: string }[] = [];
   for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    date.setHours(0, 0, 0, 0);
-    const startOfDay = new Date(date);
-    const endOfDay = new Date(date);
+    const d = new Date(now);
+    d.setDate(d.getDate() - i);
+    d.setHours(0, 0, 0, 0);
+    const startOfDay = new Date(d);
+    const endOfDay = new Date(d);
     endOfDay.setHours(23, 59, 59, 999);
+    daysInfo.push({
+      startOfDay,
+      endOfDay,
+      dayName: DAY_NAMES[d.getDay()],
+    });
+  }
 
-    const dayName = DAY_NAMES[date.getDay()];
+  for (const participantId of participantIds) {
+    const pIdStr = participantId.toString();
+    const pSessions = participantSessionsMap.get(pIdStr) || [];
 
-    const [creatorSessions, participantSessions] = await Promise.all([
-      FocusSession.find({
-        userId: creatorId,
-        status: "completed",
-        startTime: { $lte: endOfDay },
-        endTime: { $gte: startOfDay },
-      }),
-      FocusSession.find({
-        userId: participantId,
-        status: "completed",
-        startTime: { $lte: endOfDay },
-        endTime: { $gte: startOfDay },
-      }),
-    ]);
+    const highlightedDays: string[] = [];
+    let totalTogetherMinutes = 0;
 
-    if (creatorSessions.length === 0 || participantSessions.length === 0)
-      continue;
+    for (const day of daysInfo) {
+      const cDaySessions = creatorSessions.filter(
+        (s) =>
+          new Date(s.startTime) <= day.endOfDay &&
+          new Date(s.endTime || day.endOfDay) >= day.startOfDay,
+      );
+      const pDaySessions = pSessions.filter(
+        (s) =>
+          new Date(s.startTime) <= day.endOfDay &&
+          new Date(s.endTime || day.endOfDay) >= day.startOfDay,
+      );
 
-    let sharedMinutes = 0;
-    for (const cs of creatorSessions) {
-      for (const ps of participantSessions) {
-        const overlapStart = Math.max(
-          cs.startTime.getTime(),
-          ps.startTime.getTime(),
-          startOfDay.getTime(),
-        );
-        const overlapEnd = Math.min(
-          (cs.endTime || endOfDay).getTime(),
-          (ps.endTime || endOfDay).getTime(),
-          endOfDay.getTime(),
-        );
-        if (overlapEnd > overlapStart) {
-          sharedMinutes += Math.round((overlapEnd - overlapStart) / 60000);
+      if (cDaySessions.length === 0 || pDaySessions.length === 0) {
+        continue;
+      }
+
+      let sharedMinutes = 0;
+      for (const cs of cDaySessions) {
+        const csStart = new Date(cs.startTime).getTime();
+        const csEnd = (cs.endTime ? new Date(cs.endTime) : day.endOfDay).getTime();
+
+        for (const ps of pDaySessions) {
+          const psStart = new Date(ps.startTime).getTime();
+          const psEnd = (ps.endTime ? new Date(ps.endTime) : day.endOfDay).getTime();
+
+          const overlapStart = Math.max(csStart, psStart, day.startOfDay.getTime());
+          const overlapEnd = Math.min(csEnd, psEnd, day.endOfDay.getTime());
+
+          if (overlapEnd > overlapStart) {
+            sharedMinutes += Math.round((overlapEnd - overlapStart) / 60000);
+          }
         }
+      }
+
+      if (sharedMinutes === 0) {
+        const creatorMin = cDaySessions.reduce(
+          (acc, s) => acc + (s.durationMinutes || 0),
+          0,
+        );
+        const participantMin = pDaySessions.reduce(
+          (acc, s) => acc + (s.durationMinutes || 0),
+          0,
+        );
+        sharedMinutes = Math.min(creatorMin, participantMin);
+      }
+
+      highlightedDays.push(day.dayName);
+      totalTogetherMinutes += sharedMinutes;
+    }
+
+    let streak = 0;
+    for (const day of daysInfo) {
+      if (highlightedDays.includes(day.dayName)) {
+        streak++;
+      } else {
+        streak = 0;
       }
     }
 
-    if (sharedMinutes === 0) {
-      const creatorMin = creatorSessions.reduce(
-        (acc, s) => acc + (s.durationMinutes || 0),
-        0,
-      );
-      const participantMin = participantSessions.reduce(
-        (acc, s) => acc + (s.durationMinutes || 0),
-        0,
-      );
-      sharedMinutes = Math.min(creatorMin, participantMin);
-    }
+    const togetherHours = Math.floor(totalTogetherMinutes / 60);
+    const togetherMins = totalTogetherMinutes % 60;
+    const togetherFormatted =
+      togetherHours > 0
+        ? `${togetherHours}h${togetherMins > 0 ? ` ${togetherMins}m` : ""}`
+        : `${togetherMins}m`;
 
-    highlightedDays.push(dayName);
-    totalTogetherMinutes += sharedMinutes;
+    results.set(pIdStr, {
+      togetherThisWeek: togetherFormatted,
+      streak,
+      highlightedDays,
+      totalTogetherMinutes,
+    });
   }
 
-  let streak = 0;
-  for (let i = 6; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const dayName = DAY_NAMES[date.getDay()];
-    if (highlightedDays.includes(dayName)) {
-      streak++;
-    } else {
-      streak = 0;
+  return results;
+};
+
+const computeSharedFocusStats = async (
+  creatorId: mongoose.Types.ObjectId,
+  participantId: mongoose.Types.ObjectId,
+): Promise<ISharedFocusStatsResult> => {
+  const map = await batchComputeSharedFocusStats(creatorId, [participantId]);
+  return (
+    map.get(participantId.toString()) || {
+      togetherThisWeek: "0m",
+      streak: 0,
+      highlightedDays: [],
+      totalTogetherMinutes: 0,
     }
-  }
-
-  const togetherHours = Math.floor(totalTogetherMinutes / 60);
-  const togetherMins = totalTogetherMinutes % 60;
-  const togetherFormatted =
-    togetherHours > 0
-      ? `${togetherHours}h${togetherMins > 0 ? ` ${togetherMins}m` : ""}`
-      : `${togetherMins}m`;
-
-  return {
-    togetherThisWeek: togetherFormatted,
-    streak,
-    highlightedDays,
-    totalTogetherMinutes,
-  };
+  );
 };
 
 const getUsersFromDB = async (
@@ -169,8 +290,10 @@ const getUsersFromDB = async (
   limit: number,
 ) => {
   const skip = (page - 1) * limit;
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
   const query: any = {
-    _id: { $ne: new mongoose.Types.ObjectId(userId) },
+    _id: { $ne: userObjectId },
     isDeleted: { $ne: true },
     role: USER_ROLES.USER,
   };
@@ -183,17 +306,53 @@ const getUsersFromDB = async (
     ];
   }
 
-  const users = await User.find(query)
-    .select("name userName profileImage email")
-    .skip(skip)
-    .limit(limit)
-    .lean();
+  // Fetch paginated users and total count concurrently
+  const [users, total] = await Promise.all([
+    User.find(query)
+      .select("name userName profileImage email")
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    User.countDocuments(query),
+  ]);
 
-  const userObjectId = new mongoose.Types.ObjectId(userId);
-  const friendRecords = await Friend.find({
-    $or: [{ userId: userObjectId }, { friendId: userObjectId }],
-    isDeleted: { $ne: true },
-  });
+  if (!users || users.length === 0) {
+    return {
+      meta: { page, limit, total },
+      data: [],
+    };
+  }
+
+  const userIds = users.map((u) => new mongoose.Types.ObjectId(u._id.toString()));
+  const now = new Date();
+
+  // Fetch friend records, active sessions, active breaks, and last completed sessions in parallel
+  const [friendRecords, activeSessions, activeBreaks, lastSessionsMap] =
+    await Promise.all([
+      Friend.find({
+        $or: [
+          { userId: userObjectId, friendId: { $in: userIds } },
+          { friendId: userObjectId, userId: { $in: userIds } },
+        ],
+        isDeleted: { $ne: true },
+      })
+        .select("userId friendId status")
+        .lean(),
+      FocusSession.find({
+        userId: { $in: userIds },
+        status: "active",
+      })
+        .select("userId")
+        .lean(),
+      Break.find({
+        userId: { $in: userIds },
+        status: "active",
+        endTime: { $gt: now },
+      })
+        .select("userId")
+        .lean(),
+      batchGetLastFocusSessions(userIds),
+    ]);
 
   const friendStatusMap = new Map<
     string,
@@ -203,73 +362,70 @@ const getUsersFromDB = async (
       isSender: boolean;
     }
   >();
+
   for (const record of friendRecords) {
-    const isSender = record.userId.equals(userObjectId);
+    const isSender = (record.userId as any).toString() === userId;
     const targetUserId = isSender
-      ? record.friendId.toString()
-      : record.userId.toString();
+      ? (record.friendId as any).toString()
+      : (record.userId as any).toString();
     friendStatusMap.set(targetUserId, {
-      status: record.status,
+      status: record.status as any,
       requestId: record._id.toString(),
       isSender,
     });
   }
 
-  const now = new Date();
-  const usersWithStatus = await Promise.all(
-    users.map(async (user) => {
-      const activeSession = await FocusSession.findOne({
-        userId: user._id,
-        status: "active",
-      });
-
-      const activeBreak = await Break.findOne({
-        userId: user._id,
-        status: "active",
-        endTime: { $gt: now },
-      });
-
-      const isLocked = activeSession ? !activeBreak : false;
-      const lastFocusInfo = await buildLastFocusInfo(
-        new mongoose.Types.ObjectId(user._id.toString()),
-      );
-      const userName = user.userName || user.email?.split("@")[0] || "user";
-
-      const friendInfo = friendStatusMap.get(user._id.toString());
-      let isFriend = false;
-      let friendshipStatus:
-        | "none"
-        | "pending_sent"
-        | "pending_received"
-        | "accepted" = "none";
-      let requestId: string | null = null;
-
-      if (friendInfo) {
-        if (friendInfo.status === "accepted") {
-          isFriend = true;
-          friendshipStatus = "accepted";
-          requestId = friendInfo.requestId;
-        } else if (friendInfo.status === "pending") {
-          friendshipStatus = friendInfo.isSender
-            ? "pending_sent"
-            : "pending_received";
-          requestId = friendInfo.requestId;
-        }
-      }
-
-      return {
-        ...user,
-        userName,
-        isFriend,
-        friendshipStatus,
-        requestId,
-        isLocked,
-        lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
-      };
-    }),
+  const activeSessionSet = new Set(
+    activeSessions.map((s) => s.userId.toString()),
+  );
+  const activeBreakSet = new Set(
+    activeBreaks.map((b) => b.userId.toString()),
   );
 
-  const total = await User.countDocuments(query);
+  const usersWithStatus = users.map((user) => {
+    const targetIdStr = user._id.toString();
+    const hasActiveSession = activeSessionSet.has(targetIdStr);
+    const hasActiveBreak = activeBreakSet.has(targetIdStr);
+    const isLocked = hasActiveSession ? !hasActiveBreak : false;
+
+    const lastFocusInfo = formatLastFocusString(
+      lastSessionsMap.get(targetIdStr),
+      now,
+    );
+    const userName = user.userName || user.email?.split("@")[0] || "user";
+
+    const friendInfo = friendStatusMap.get(targetIdStr);
+    let isFriend = false;
+    let friendshipStatus:
+      | "none"
+      | "pending_sent"
+      | "pending_received"
+      | "accepted" = "none";
+    let requestId: string | null = null;
+
+    if (friendInfo) {
+      if (friendInfo.status === "accepted") {
+        isFriend = true;
+        friendshipStatus = "accepted";
+        requestId = friendInfo.requestId;
+      } else if (friendInfo.status === "pending") {
+        friendshipStatus = friendInfo.isSender
+          ? "pending_sent"
+          : "pending_received";
+        requestId = friendInfo.requestId;
+      }
+    }
+
+    return {
+      ...user,
+      userName,
+      isFriend,
+      friendshipStatus,
+      requestId,
+      isLocked,
+      lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
+    };
+  });
 
   return {
     meta: { page, limit, total },
@@ -294,64 +450,103 @@ const initiateNudgePreviewInDB = async (
     );
   }
 
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
   const existingPreview = await NudgePreview.findOne({
-    creatorId: new mongoose.Types.ObjectId(userId),
+    creatorId: userObjectId,
     status: "pending",
     expiresAt: { $gt: new Date() },
-  });
+  }).lean();
 
   if (existingPreview) {
-    const remainingMs = existingPreview.expiresAt.getTime() - Date.now();
+    const remainingMs =
+      new Date(existingPreview.expiresAt).getTime() - Date.now();
     const remainingMinutes = Math.max(0, Math.ceil(remainingMs / 60000));
-    throw new ApiError(
-      StatusCodes.CONFLICT,
-      `You already have a pending nudge preview. Please confirm or wait for it to expire (${remainingMinutes} min remaining). Preview ID: ${existingPreview._id}`,
-    );
+    return {
+      previewId: existingPreview._id,
+      status: existingPreview.status,
+      expiresAt: existingPreview.expiresAt,
+      expiresInMinutes: remainingMinutes,
+      message:
+        "You already have a pending nudge preview. Confirm or wait for it to expire.",
+    };
   }
 
-  const creatorActiveSession = await FocusSession.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    status: "active",
-  });
+  const [creatorActiveSession, creatorActiveNudge] = await Promise.all([
+    FocusSession.findOne({
+      userId: userObjectId,
+      status: "active",
+    }).lean(),
+    Nudge.findOne({
+      status: { $in: ["active", "scheduled"] },
+      joinedParticipants: {
+        $elemMatch: { userId: userObjectId, isDeleted: false },
+      },
+    }).lean(),
+  ]);
 
   if (creatorActiveSession) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "You cannot send a nudge while you are in a focus session",
+      "You cannot initiate a nudge while you are in a focus session",
     );
   }
 
-  const focusedParticipants = await FocusSession.find({
-    userId: { $in: participants.map((id) => new mongoose.Types.ObjectId(id)) },
-    status: "active",
-  }).populate("userId", "name");
-
-  if (focusedParticipants.length > 0) {
-    const focusedNames = focusedParticipants
-      .map((s: any) => s.userId?.name)
-      .join(", ");
+  if (creatorActiveNudge) {
     throw new ApiError(
-      StatusCodes.BAD_REQUEST,
-      `Cannot send nudge. The following users are currently in a focus session: ${focusedNames}`,
+      StatusCodes.CONFLICT,
+      "You are already part of an active nudge session. Please leave or complete it before starting another.",
     );
   }
 
-  const expiresAt = new Date(
-    Date.now() + NUDGE_PREVIEW_TTL_MINUTES * 60 * 1000,
+  const participantObjectIds = participants.map(
+    (id) => new mongoose.Types.ObjectId(id),
   );
 
+  const activeFriendships = await Friend.find({
+    $or: [
+      { userId: userObjectId, friendId: { $in: participantObjectIds } },
+      { friendId: userObjectId, userId: { $in: participantObjectIds } },
+    ],
+    status: "accepted",
+    isDeleted: { $ne: true },
+  })
+    .select("userId friendId")
+    .lean();
+
+  const acceptedFriendIds = new Set<string>();
+  for (const f of activeFriendships) {
+    const isUser = (f.userId as any).toString() === userId;
+    acceptedFriendIds.add(
+      isUser ? (f.friendId as any).toString() : (f.userId as any).toString(),
+    );
+  }
+
+  const invalidParticipants = participants.filter(
+    (id) => !acceptedFriendIds.has(id),
+  );
+  if (invalidParticipants.length > 0) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "One or more selected users are not your confirmed friends",
+    );
+  }
+
+  const expiresAt = new Date(Date.now() + NUDGE_PREVIEW_TTL_MINUTES * 60 * 1000);
+
   const preview = await NudgePreview.create({
-    creatorId: new mongoose.Types.ObjectId(userId),
-    participants: participants.map((id) => new mongoose.Types.ObjectId(id)),
+    creatorId: userObjectId,
+    participants: participantObjectIds,
     modeId: new mongoose.Types.ObjectId(modeId),
     breakConfig,
-    status: "pending",
     expiresAt,
+    status: "pending",
   });
 
   return {
     previewId: preview._id,
-    expiresAt,
+    status: preview.status,
+    expiresAt: preview.expiresAt,
     expiresInMinutes: NUDGE_PREVIEW_TTL_MINUTES,
   };
 };
@@ -362,7 +557,8 @@ const getNudgePreviewDetailsFromDB = async (
 ) => {
   const preview = await NudgePreview.findById(previewId)
     .populate("participants", "name userName profileImage email")
-    .populate("modeId", "name iconType lockedApps");
+    .populate("modeId", "name iconType lockedApps")
+    .lean();
 
   if (!preview) {
     throw new ApiError(
@@ -385,7 +581,7 @@ const getNudgePreviewDetailsFromDB = async (
     );
   }
 
-  if (preview.status === "expired" || new Date() > preview.expiresAt) {
+  if (preview.status === "expired" || new Date() > new Date(preview.expiresAt)) {
     if (preview.status !== "expired") {
       await NudgePreview.findByIdAndUpdate(previewId, { status: "expired" });
     }
@@ -396,56 +592,79 @@ const getNudgePreviewDetailsFromDB = async (
   }
 
   const creatorId = new mongoose.Types.ObjectId(userId);
-
-  const participantsWithDetails = await Promise.all(
-    (preview.participants as any[])
-      .filter((participant) => participant != null)
-      .map(async (participant) => {
-        const participantId = new mongoose.Types.ObjectId(
-          participant._id.toString(),
-        );
-
-        const activeSession = await FocusSession.findOne({
-          userId: participantId,
-          status: "active",
-        });
-
-        const activeBreak = activeSession
-          ? await Break.findOne({
-              userId: participantId,
-              status: "active",
-              endTime: { $gt: new Date() },
-            })
-          : null;
-
-        const isLocked = activeSession ? !activeBreak : false;
-        const lastFocusInfo = await buildLastFocusInfo(participantId);
-        const sharedStats = await computeSharedFocusStats(
-          creatorId,
-          participantId,
-        );
-
-        return {
-          _id: participant._id,
-          name: participant.name,
-          userName:
-            participant.userName || participant.email?.split("@")[0] || "user",
-          profileImage: participant.profileImage || "",
-          email: participant.email || "",
-          isLocked,
-          lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
-          sharedStats: {
-            togetherThisWeek: sharedStats.togetherThisWeek,
-            streak: sharedStats.streak,
-            highlightedDays: sharedStats.highlightedDays,
-            totalTogetherMinutes: sharedStats.totalTogetherMinutes,
-            hasSharedHistory: sharedStats.highlightedDays.length > 0,
-          },
-        };
-      }),
+  const rawParticipants = (preview.participants as any[]).filter(
+    (p) => p != null,
+  );
+  const participantIds = rawParticipants.map(
+    (p) => new mongoose.Types.ObjectId(p._id.toString()),
   );
 
-  const remainingMs = preview.expiresAt.getTime() - Date.now();
+  const now = new Date();
+
+  // Fetch active sessions, active breaks, last completed sessions, and shared focus stats in parallel
+  const [activeSessions, activeBreaks, lastSessionsMap, sharedStatsMap] =
+    await Promise.all([
+      FocusSession.find({
+        userId: { $in: participantIds },
+        status: "active",
+      })
+        .select("userId")
+        .lean(),
+      Break.find({
+        userId: { $in: participantIds },
+        status: "active",
+        endTime: { $gt: now },
+      })
+        .select("userId")
+        .lean(),
+      batchGetLastFocusSessions(participantIds),
+      batchComputeSharedFocusStats(creatorId, participantIds),
+    ]);
+
+  const activeSessionSet = new Set(
+    activeSessions.map((s) => s.userId.toString()),
+  );
+  const activeBreakSet = new Set(
+    activeBreaks.map((b) => b.userId.toString()),
+  );
+
+  const participantsWithDetails = rawParticipants.map((participant) => {
+    const pIdStr = participant._id.toString();
+    const hasActiveSession = activeSessionSet.has(pIdStr);
+    const hasActiveBreak = activeBreakSet.has(pIdStr);
+    const isLocked = hasActiveSession ? !hasActiveBreak : false;
+
+    const lastFocusInfo = formatLastFocusString(
+      lastSessionsMap.get(pIdStr),
+      now,
+    );
+    const sharedStats = sharedStatsMap.get(pIdStr) || {
+      togetherThisWeek: "0m",
+      streak: 0,
+      highlightedDays: [],
+      totalTogetherMinutes: 0,
+    };
+
+    return {
+      _id: participant._id,
+      name: participant.name,
+      userName:
+        participant.userName || participant.email?.split("@")[0] || "user",
+      profileImage: participant.profileImage || "",
+      email: participant.email || "",
+      isLocked,
+      lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
+      sharedStats: {
+        togetherThisWeek: sharedStats.togetherThisWeek,
+        streak: sharedStats.streak,
+        highlightedDays: sharedStats.highlightedDays,
+        totalTogetherMinutes: sharedStats.totalTogetherMinutes,
+        hasSharedHistory: sharedStats.highlightedDays.length > 0,
+      },
+    };
+  });
+
+  const remainingMs = new Date(preview.expiresAt).getTime() - Date.now();
   const remainingMinutes = Math.max(0, Math.ceil(remainingMs / 60000));
 
   return {
@@ -494,10 +713,34 @@ const confirmNudgeFromPreviewInDB = async (
     );
   }
 
-  const creatorActiveSession = await FocusSession.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    status: "active",
-  });
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const participantIds = preview.participants.map(
+    (id) => new mongoose.Types.ObjectId(id.toString()),
+  );
+
+  const [creatorActiveSession, creatorActiveNudge, focusedParticipants, creator] =
+    await Promise.all([
+      FocusSession.findOne({
+        userId: userObjectId,
+        status: "active",
+      }).lean(),
+      Nudge.findOne({
+        status: { $in: ["active", "scheduled"] },
+        joinedParticipants: {
+          $elemMatch: {
+            userId: userObjectId,
+            isDeleted: false,
+          },
+        },
+      }).lean(),
+      FocusSession.find({
+        userId: { $in: participantIds },
+        status: "active",
+      })
+        .populate("userId", "name")
+        .lean(),
+      User.findById(userId).select("name").lean(),
+    ]);
 
   if (creatorActiveSession) {
     throw new ApiError(
@@ -506,16 +749,6 @@ const confirmNudgeFromPreviewInDB = async (
     );
   }
 
-  const creatorActiveNudge = await Nudge.findOne({
-    status: { $in: ["active", "scheduled"] },
-    joinedParticipants: {
-      $elemMatch: {
-        userId: new mongoose.Types.ObjectId(userId),
-        isDeleted: false,
-      },
-    },
-  });
-
   if (creatorActiveNudge) {
     throw new ApiError(
       StatusCodes.CONFLICT,
@@ -523,18 +756,10 @@ const confirmNudgeFromPreviewInDB = async (
     );
   }
 
-  const focusedParticipants = await FocusSession.find({
-    userId: {
-      $in: preview.participants.map(
-        (id) => new mongoose.Types.ObjectId(id.toString()),
-      ),
-    },
-    status: "active",
-  }).populate("userId", "name");
-
   if (focusedParticipants.length > 0) {
     const focusedNames = focusedParticipants
       .map((s: any) => s.userId?.name)
+      .filter(Boolean)
       .join(", ");
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
@@ -542,7 +767,6 @@ const confirmNudgeFromPreviewInDB = async (
     );
   }
 
-  const userObjectId = new mongoose.Types.ObjectId(userId);
   const { participants, modeId, breakConfig } = preview;
 
   const nudgeData = {
@@ -559,66 +783,76 @@ const confirmNudgeFromPreviewInDB = async (
   };
 
   const nudge = await Nudge.create(nudgeData);
-
-  await NudgePreview.findByIdAndUpdate(previewId, { status: "confirmed" });
-
-  await Mode.updateMany(
-    { userId: userObjectId, isDeleted: false },
-    { $set: { isActive: false } },
-  );
-
   const now = new Date();
-  await Mode.findByIdAndUpdate(modeId, {
-    $set: { isActive: true },
-    $push: {
-      lockEvents: {
-        type: "lock",
-        source: "nudge",
-        timestamp: now,
-      },
-    },
-  });
 
-  await FocusSession.create({
-    userId: userObjectId,
-    modeId: new mongoose.Types.ObjectId(modeId.toString()),
-    nudgeId: nudge._id,
-    startTime: now,
-    status: "active",
-  });
+  await Promise.all([
+    NudgePreview.findByIdAndUpdate(previewId, { status: "confirmed" }),
+    Mode.updateMany(
+      { userId: userObjectId, isDeleted: false },
+      { $set: { isActive: false } },
+    ),
+    Mode.findByIdAndUpdate(modeId, {
+      $set: { isActive: true },
+      $push: {
+        lockEvents: {
+          type: "lock",
+          source: "nudge",
+          timestamp: now,
+        },
+      },
+    }),
+    FocusSession.create({
+      userId: userObjectId,
+      modeId: new mongoose.Types.ObjectId(modeId.toString()),
+      nudgeId: nudge._id,
+      startTime: now,
+      status: "active",
+    }),
+  ]);
 
   const invitedUsers = await User.find({
-    _id: {
-      $in: participants.map((id) => new mongoose.Types.ObjectId(id.toString())),
-    },
-  });
-  const creator = await User.findById(userId);
+    _id: { $in: participantIds },
+  })
+    .select("name email")
+    .lean();
 
-  for (const user of invitedUsers) {
-    if (user.email) {
-      await emailHelper.sendEmail({
-        to: user.email,
-        subject: "New Nudge Invitation",
-        html: `
-          <p>Hi ${user.name},</p>
-          <p><b>${creator?.name}</b> invited you to join a focus session (Nudge).</p>
-          <p>Click the link below to join:</p>
-          <a href="${config.base_url}/api/v1/friends/join-nudge/${nudge._id}?userId=${user._id}">Join Nudge</a>
-        `,
-      });
-    }
+  // Send invitations concurrently via Promise.all
+  await Promise.all(
+    invitedUsers.map(async (user) => {
+      const joinLink = `${config.base_url}/api/v1/friends/join-nudge/${nudge._id}?userId=${user._id}`;
 
-    const joinLink = `${config.base_url}/api/v1/friends/join-nudge/${nudge._id}?userId=${user._id}`;
-    await sendNotifications({
-      title: "New Nudge Invitation",
-      text: `${creator?.name || "Someone"} has invited you to join a focus session (Nudge). Click here to join: ${joinLink}`,
-      receiver: user._id.toString(),
-      sender: creator?._id.toString(),
-      type: NOTIFICATION_TYPE.USER,
-      referenceId: nudge._id.toString(),
-      referenceModel: NOTIFICATION_REFERENCE_MODEL.NUDGE,
-    });
-  }
+      const tasks: Promise<any>[] = [
+        sendNotifications({
+          title: "New Nudge Invitation",
+          text: `${creator?.name || "Someone"} has invited you to join a focus session (Nudge). Click here to join: ${joinLink}`,
+          receiver: user._id.toString(),
+          sender: creator?._id?.toString() || userId,
+          type: NOTIFICATION_TYPE.USER,
+          referenceId: nudge._id.toString(),
+          referenceModel: NOTIFICATION_REFERENCE_MODEL.NUDGE,
+        }).catch(() => {}),
+      ];
+
+      if (user.email) {
+        tasks.push(
+          emailHelper
+            .sendEmail({
+              to: user.email,
+              subject: "New Nudge Invitation",
+              html: `
+                <p>Hi ${user.name},</p>
+                <p><b>${creator?.name}</b> invited you to join a focus session (Nudge).</p>
+                <p>Click the link below to join:</p>
+                <a href="${joinLink}">Join Nudge</a>
+              `,
+            })
+            .catch(() => {}),
+        );
+      }
+
+      return Promise.all(tasks);
+    }),
+  );
 
   return nudge;
 };
@@ -660,7 +894,7 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     joinedParticipants: {
       $elemMatch: { userId: userObjectId, isDeleted: false },
     },
-  });
+  }).lean();
 
   if (activeNudge) {
     throw new ApiError(
@@ -690,46 +924,48 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
     updateData.status = "active";
   }
 
-  const result = await Nudge.findByIdAndUpdate(nudgeId, updateData, {
-    new: true,
-  });
-
-  await Mode.updateMany(
-    { userId: userObjectId, isDeleted: false },
-    { $set: { isActive: false } },
-  );
-
   const now = new Date();
-  await Mode.findByIdAndUpdate(nudge.modeId, {
-    $set: { isActive: true },
-    $push: {
-      lockEvents: {
-        type: "lock",
-        source: "nudge",
-        timestamp: now,
+  const [result] = await Promise.all([
+    Nudge.findByIdAndUpdate(nudgeId, updateData, { new: true }),
+    Mode.updateMany(
+      { userId: userObjectId, isDeleted: false },
+      { $set: { isActive: false } },
+    ),
+    Mode.findByIdAndUpdate(nudge.modeId, {
+      $set: { isActive: true },
+      $push: {
+        lockEvents: {
+          type: "lock",
+          source: "nudge",
+          timestamp: now,
+        },
       },
-    },
-  });
-
-  await FocusSession.create({
-    userId: userObjectId,
-    modeId: nudge.modeId,
-    nudgeId: nudge._id,
-    startTime: now,
-    status: "active",
-  });
+    }),
+    FocusSession.create({
+      userId: userObjectId,
+      modeId: nudge.modeId,
+      nudgeId: nudge._id,
+      startTime: now,
+      status: "active",
+    }),
+  ]);
 
   if (!nudge.creatorId.equals(userObjectId)) {
-    const joiningUser = await User.findById(userId).select("name");
-    await sendNotifications({
-      title: "Nudge Invitation Accepted",
-      text: `${joiningUser?.name || "A friend"} joined your focus session (Nudge).`,
-      receiver: nudge.creatorId.toString(),
-      sender: userId,
-      type: NOTIFICATION_TYPE.USER,
-      referenceId: nudge._id.toString(),
-      referenceModel: NOTIFICATION_REFERENCE_MODEL.NUDGE,
-    });
+    User.findById(userId)
+      .select("name")
+      .lean()
+      .then((joiningUser) => {
+        sendNotifications({
+          title: "Nudge Invitation Accepted",
+          text: `${joiningUser?.name || "A friend"} joined your focus session (Nudge).`,
+          receiver: nudge.creatorId.toString(),
+          sender: userId,
+          type: NOTIFICATION_TYPE.USER,
+          referenceId: nudge._id.toString(),
+          referenceModel: NOTIFICATION_REFERENCE_MODEL.NUDGE,
+        }).catch(() => {});
+      })
+      .catch(() => {});
   }
 
   return result;
@@ -754,17 +990,18 @@ const getNudgeHistoryFromDB = async (
     isDeleted: { $ne: true },
   };
 
-  const nudges = await Nudge.find(query)
-    .populate("creatorId", "name profileImage")
-    .populate("participants.userId", "name profileImage")
-    .populate("joinedParticipants.userId", "name profileImage")
-    .populate("modeId", "name")
-    .sort({ startTime: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
-
-  const total = await Nudge.countDocuments(query);
+  const [nudges, total] = await Promise.all([
+    Nudge.find(query)
+      .populate("creatorId", "name profileImage")
+      .populate("participants.userId", "name profileImage")
+      .populate("joinedParticipants.userId", "name profileImage")
+      .populate("modeId", "name")
+      .sort({ startTime: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Nudge.countDocuments(query),
+  ]);
 
   return {
     meta: { page, limit, total },
@@ -804,18 +1041,21 @@ const oldAddFriendToDB = async (userId: string, friendId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const friendObjectId = new mongoose.Types.ObjectId(friendId);
 
-  const userExists = await User.findById(friendId);
+  const [userExists, existingFriend, sender] = await Promise.all([
+    User.findById(friendId).select("_id").lean(),
+    Friend.findOne({
+      $or: [
+        { userId: userObjectId, friendId: friendObjectId },
+        { userId: friendObjectId, friendId: userObjectId },
+      ],
+      isDeleted: { $ne: true },
+    }),
+    User.findById(userId).select("name").lean(),
+  ]);
+
   if (!userExists) {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
   }
-
-  const existingFriend = await Friend.findOne({
-    $or: [
-      { userId: userObjectId, friendId: friendObjectId },
-      { userId: friendObjectId, friendId: userObjectId },
-    ],
-    isDeleted: { $ne: true },
-  });
 
   if (existingFriend) {
     if (existingFriend.status === "accepted") {
@@ -824,8 +1064,7 @@ const oldAddFriendToDB = async (userId: string, friendId: string) => {
     existingFriend.status = "accepted";
     await existingFriend.save();
 
-    const sender = await User.findById(userId).select("name");
-    await sendNotifications({
+    sendNotifications({
       title: "New Friend Connected",
       text: `${sender?.name || "Someone"} connected with you as a friend.`,
       receiver: friendId,
@@ -833,7 +1072,7 @@ const oldAddFriendToDB = async (userId: string, friendId: string) => {
       type: NOTIFICATION_TYPE.USER,
       referenceId: existingFriend._id.toString(),
       referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
-    });
+    }).catch(() => {});
 
     return existingFriend;
   }
@@ -844,8 +1083,7 @@ const oldAddFriendToDB = async (userId: string, friendId: string) => {
     status: "accepted",
   });
 
-  const sender = await User.findById(userId).select("name");
-  await sendNotifications({
+  sendNotifications({
     title: "New Friend Connected",
     text: `${sender?.name || "Someone"} connected with you as a friend.`,
     receiver: friendId,
@@ -853,11 +1091,10 @@ const oldAddFriendToDB = async (userId: string, friendId: string) => {
     type: NOTIFICATION_TYPE.USER,
     referenceId: result._id.toString(),
     referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
-  });
+  }).catch(() => {});
 
   return result;
 };
-
 
 const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -881,38 +1118,40 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
     (endTime.getTime() - session.startTime.getTime()) / 60000,
   );
 
-  await FocusSession.findByIdAndUpdate(
-    session._id,
-    { status: "completed", endTime, durationMinutes },
-    { new: true },
-  );
-
-  const result = await Nudge.findByIdAndUpdate(
-    nudgeId,
-    {
-      $set: {
-        "joinedParticipants.$[elem].isDeleted": true,
-        "joinedParticipants.$[elem].deletedAt": new Date(),
-      },
-    },
-    {
-      new: true,
-      arrayFilters: [{ "elem.userId": userObjectId, "elem.isDeleted": false }],
-    },
-  );
-
-  if (session.modeId) {
-    await Mode.findByIdAndUpdate(session.modeId, {
-      $set: { isActive: false },
-      $push: {
-        lockEvents: {
-          type: "unlock",
-          source: "nudge",
-          timestamp: endTime,
+  const [result] = await Promise.all([
+    Nudge.findByIdAndUpdate(
+      nudgeId,
+      {
+        $set: {
+          "joinedParticipants.$[elem].isDeleted": true,
+          "joinedParticipants.$[elem].deletedAt": endTime,
         },
       },
-    });
-  }
+      {
+        new: true,
+        arrayFilters: [
+          { "elem.userId": userObjectId, "elem.isDeleted": false },
+        ],
+      },
+    ),
+    FocusSession.findByIdAndUpdate(
+      session._id,
+      { status: "completed", endTime, durationMinutes },
+      { new: true },
+    ),
+    session.modeId
+      ? Mode.findByIdAndUpdate(session.modeId, {
+          $set: { isActive: false },
+          $push: {
+            lockEvents: {
+              type: "unlock",
+              source: "nudge",
+              timestamp: endTime,
+            },
+          },
+        })
+      : Promise.resolve(),
+  ]);
 
   if (result) {
     const activeJoinedCount = result.joinedParticipants.filter(
@@ -934,16 +1173,26 @@ const takeNudgeBreakInDB = async (
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const nudgeObjectId = new mongoose.Types.ObjectId(nudgeId);
 
-  const nudge = await Nudge.findById(nudgeId);
+  const [nudge, activeSession, activeBreak] = await Promise.all([
+    Nudge.findById(nudgeId).lean(),
+    FocusSession.findOne({
+      userId: userObjectId,
+      nudgeId: nudgeObjectId,
+      status: "active",
+    }).lean(),
+    Break.findOne({
+      userId: userObjectId,
+      status: { $in: ["active", "paused"] },
+      $or: [
+        { status: "active", endTime: { $gt: new Date() } },
+        { status: "paused" },
+      ],
+    }).lean(),
+  ]);
+
   if (!nudge) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Nudge not found");
   }
-
-  const activeSession = await FocusSession.findOne({
-    userId: userObjectId,
-    nudgeId: nudgeObjectId,
-    status: "active",
-  });
 
   if (!activeSession) {
     throw new ApiError(
@@ -951,15 +1200,6 @@ const takeNudgeBreakInDB = async (
       "You don't have an active focus session in this nudge",
     );
   }
-
-  const activeBreak = await Break.findOne({
-    userId: userObjectId,
-    status: { $in: ["active", "paused"] },
-    $or: [
-      { status: "active", endTime: { $gt: new Date() } },
-      { status: "paused" },
-    ],
-  });
 
   if (activeBreak) {
     if (activeBreak.status === "paused") {
@@ -974,7 +1214,7 @@ const takeNudgeBreakInDB = async (
     ) {
       const now = new Date();
       const elapsedMinutes =
-        (now.getTime() - activeBreak.startTime.getTime()) / 60000;
+        (now.getTime() - new Date(activeBreak.startTime).getTime()) / 60000;
       const durationLimit = nudge.breakConfig?.breakDurationMinutes || 0;
       const remainingMinutes = Math.max(
         0,
@@ -1112,7 +1352,48 @@ const getCurrentNudgeStatusInDB = async (
     });
   }
 
-  const currentUser = await User.findById(userId).select("installedApps");
+  const now = new Date();
+  const startOfDay = getZonedStartOfDay(now, userTimezone);
+  const endOfDay = getZonedEndOfDay(now, userTimezone);
+  const startOfWeek = getZonedStartOfWeek(now, userTimezone);
+
+  // Execute independent queries concurrently with Promise.all
+  const [
+    currentUser,
+    activeBreaksForNudge,
+    breaksTakenToday,
+    sessionsThisWeek,
+    breaksThisWeek,
+  ] = await Promise.all([
+    User.findById(userId).select("installedApps").lean(),
+    Break.find({
+      nudgeId: nudge._id,
+      status: "active",
+      endTime: { $gt: now },
+    })
+      .select("userId")
+      .lean(),
+    Break.countDocuments({
+      userId: userObjectId,
+      nudgeId: nudge._id,
+      startTime: { $gte: startOfDay, $lte: endOfDay },
+    }),
+    FocusSession.find({
+      userId: userObjectId,
+      nudgeId: { $exists: true, $ne: null },
+      startTime: { $gte: startOfWeek },
+    }).lean(),
+    Break.find({
+      userId: userObjectId,
+      nudgeId: { $exists: true, $ne: null },
+      createdAt: { $gte: startOfWeek },
+    }).lean(),
+  ]);
+
+  const activeBreakUserIds = new Set(
+    activeBreaksForNudge.map((b) => b.userId.toString()),
+  );
+
   const installedAppPackages = new Set(
     (currentUser?.installedApps || []).map((app) => app.packageName),
   );
@@ -1122,42 +1403,11 @@ const getCurrentNudgeStatusInDB = async (
     installedAppPackages.has(app.packageName),
   );
 
-  const activeBreak = activeSession
-    ? await Break.findOne({
-        userId: userObjectId,
-        nudgeId: nudge._id,
-        status: "active",
-        endTime: { $gt: new Date() },
-      })
-    : null;
-
-  const isLocked = isJoined ? !activeBreak : false;
-
-  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
-  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
-
-  const breaksTakenToday = await Break.countDocuments({
-    userId: userObjectId,
-    nudgeId: nudge._id,
-    startTime: { $gte: startOfDay, $lte: endOfDay },
-  });
+  const isUserOnBreak = activeSession ? activeBreakUserIds.has(userId) : false;
+  const isLocked = isJoined ? !isUserOnBreak : false;
 
   const totalAllowedBreaks = nudge.breakConfig?.breaksPerDay || 0;
   const remainingBreaks = Math.max(0, totalAllowedBreaks - breaksTakenToday);
-
-  const startOfWeek = getZonedStartOfWeek(new Date(), userTimezone);
-
-  const sessionsThisWeek = await FocusSession.find({
-    userId: userObjectId,
-    nudgeId: { $exists: true, $ne: null },
-    startTime: { $gte: startOfWeek },
-  });
-
-  const breaksThisWeek = await Break.find({
-    userId: userObjectId,
-    nudgeId: { $exists: true, $ne: null },
-    createdAt: { $gte: startOfWeek },
-  });
 
   let todayFocusMinutes = 0;
   let weekFocusMinutes = 0;
@@ -1167,10 +1417,10 @@ const getCurrentNudgeStatusInDB = async (
       session.status === "completed"
         ? session.durationMinutes || 0
         : Math.round(
-            (new Date().getTime() - session.startTime.getTime()) / 60000,
+            (new Date().getTime() - new Date(session.startTime).getTime()) / 60000,
           );
     weekFocusMinutes += duration;
-    if (session.startTime >= startOfDay) todayFocusMinutes += duration;
+    if (new Date(session.startTime) >= startOfDay) todayFocusMinutes += duration;
   });
 
   breaksThisWeek.forEach((breakItem) => {
@@ -1178,10 +1428,10 @@ const getCurrentNudgeStatusInDB = async (
       breakItem.status === "completed"
         ? breakItem.durationMinutes || 0
         : Math.round(
-            (new Date().getTime() - breakItem.startTime.getTime()) / 60000,
+            (new Date().getTime() - new Date(breakItem.startTime).getTime()) / 60000,
           );
     weekFocusMinutes -= duration;
-    if (breakItem.startTime >= startOfDay) todayFocusMinutes -= duration;
+    if (new Date(breakItem.startTime) >= startOfDay) todayFocusMinutes -= duration;
   });
 
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
@@ -1190,109 +1440,71 @@ const getCurrentNudgeStatusInDB = async (
   const activeParticipants = nudge.participants.filter(
     (p) => !p.isDeleted && p.userId != null,
   );
-  const participantsWithStatus = await Promise.all(
-    activeParticipants.map(async (participant: any) => {
-      const participantId = participant.userId._id || participant.userId;
 
-      const isParticipantJoined = nudge.joinedParticipants.some(
-        (p: any) =>
-          !p.isDeleted &&
-          p.userId != null &&
-          (p.userId._id || p.userId).equals(participantId),
-      );
+  const participantsWithStatus = activeParticipants.map((participant: any) => {
+    const participantId = participant.userId._id || participant.userId;
+    const pIdStr = participantId.toString();
 
-      const participantActiveBreak = await Break.findOne({
-        userId: participantId,
-        nudgeId: nudge._id,
-        status: "active",
-        endTime: { $gt: new Date() },
-      });
+    const isParticipantJoined = nudge.joinedParticipants.some(
+      (p: any) =>
+        !p.isDeleted &&
+        p.userId != null &&
+        ((p.userId._id || p.userId).toString() === pIdStr),
+    );
 
-      return {
-        _id: participant.userId._id || participant.userId,
-        name: participant.userId.name ?? null,
-        profileImage: participant.userId.profileImage ?? null,
-        email: participant.userId.email ?? null,
-        isJoined: isParticipantJoined,
-        isFocused: isParticipantJoined && !participantActiveBreak,
-        isOnBreak: !!participantActiveBreak,
-      };
-    }),
-  );
+    const isOnBreak = activeBreakUserIds.has(pIdStr);
+
+    return {
+      _id: participant.userId._id || participant.userId,
+      name: participant.userId.name ?? null,
+      profileImage: participant.userId.profileImage ?? null,
+      email: participant.userId.email ?? null,
+      isJoined: isParticipantJoined,
+      isFocused: isParticipantJoined && !isOnBreak,
+      isOnBreak,
+    };
+  });
 
   const activeJoinedParticipants = nudge.joinedParticipants.filter(
     (p) => !p.isDeleted && p.userId != null,
   );
-  const joinedParticipantsWithStatus = await Promise.all(
-    activeJoinedParticipants.map(async (participant: any) => {
-      const participantId = participant.userId._id || participant.userId;
 
-      const participantActiveBreak = await Break.findOne({
-        userId: participantId,
-        nudgeId: nudge._id,
-        status: "active",
-        endTime: { $gt: new Date() },
-      });
+  const joinedParticipantsWithStatus = activeJoinedParticipants.map(
+    (participant: any) => {
+      const participantId = participant.userId._id || participant.userId;
+      const pIdStr = participantId.toString();
+      const isOnBreak = activeBreakUserIds.has(pIdStr);
 
       return {
         _id: participant.userId._id || participant.userId,
         name: participant.userId.name ?? null,
         profileImage: participant.userId.profileImage ?? null,
         email: participant.userId.email ?? null,
-        isFocused: !participantActiveBreak,
-        isOnBreak: !!participantActiveBreak,
+        isFocused: !isOnBreak,
+        isOnBreak,
       };
-    }),
+    },
   );
 
   return {
     isActive: isJoined,
     nudgeId: nudge._id,
-    status: nudge.status,
-    isLocked,
-    currentMode: nudge.modeId
-      ? {
-          ...(nudge.modeId as any).toObject(),
-          lockedApps: filteredLockedApps,
-          totalLockedApps:
-            (nudge.modeId as any).lockedApps &&
-            (nudge.modeId as any).lockedApps.length > 0
-              ? filteredLockedApps.length
-              : ((nudge.modeId as any).totalLockedApps ?? 0),
-        }
-      : null,
-    lockedApps: filteredLockedApps,
-    totalLockedApps:
-      (nudge.modeId as any)?.lockedApps &&
-      (nudge.modeId as any).lockedApps.length > 0
-        ? filteredLockedApps.length
-        : ((nudge.modeId as any)?.totalLockedApps ?? 0),
+    modeId: nudge.modeId?._id || nudge.modeId,
+    modeName: (nudge.modeId as any)?.name || "Nudge Mode",
+    creator: nudge.creatorId,
     participants: participantsWithStatus,
     joinedParticipants: joinedParticipantsWithStatus,
-    breakStats: {
-      totalAllowed: totalAllowedBreaks,
-      takenToday: breaksTakenToday,
-      remaining: remainingBreaks,
-      durationMinutes: nudge.breakConfig?.breakDurationMinutes || 0,
-      activeBreak: activeBreak
-        ? {
-            startTime: activeBreak.startTime,
-            endTime: activeBreak.endTime,
-            remainingMinutes: Math.max(
-              0,
-              Math.ceil(
-                (activeBreak.endTime.getTime() - new Date().getTime()) / 60000,
-              ),
-            ),
-          }
-        : null,
-    },
-    focusStats: {
-      todayMinutes: todayFocusMinutes,
-      weekMinutes: weekFocusMinutes,
-      todayFormatted: `${Math.floor(todayFocusMinutes / 60)}h ${todayFocusMinutes % 60}m`,
-      weekFormatted: `${Math.floor(weekFocusMinutes / 60)}h ${weekFocusMinutes % 60}m`,
-    },
+    isJoined,
+    isLocked,
+    isOnBreak: isUserOnBreak,
+    remainingBreaks,
+    breakDurationMinutes: nudge.breakConfig?.breakDurationMinutes || 0,
+    startTime: nudge.startTime,
+    totalLockedApps: filteredLockedApps.length,
+    todayFocusMinutes,
+    weekFocusMinutes,
+    lockedApps: filteredLockedApps,
+    focusSessionId: activeSession ? activeSession._id : null,
   };
 };
 
@@ -1307,24 +1519,26 @@ const sendFriendRequestInDB = async (userId: string, friendId: string) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const friendObjectId = new mongoose.Types.ObjectId(friendId);
 
-  const receiverUser = await User.findOne({
-    _id: friendObjectId,
-    isDeleted: { $ne: true },
-  });
+  const [receiverUser, existingFriend, sender] = await Promise.all([
+    User.findOne({
+      _id: friendObjectId,
+      isDeleted: { $ne: true },
+    })
+      .select("_id")
+      .lean(),
+    Friend.findOne({
+      $or: [
+        { userId: userObjectId, friendId: friendObjectId },
+        { userId: friendObjectId, friendId: userObjectId },
+      ],
+      isDeleted: { $ne: true },
+    }),
+    User.findById(userId).select("name").lean(),
+  ]);
 
   if (!receiverUser) {
     throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
   }
-
-  const existingFriend = await Friend.findOne({
-    $or: [
-      { userId: userObjectId, friendId: friendObjectId },
-      { userId: friendObjectId, friendId: userObjectId },
-    ],
-    isDeleted: { $ne: true },
-  });
-
-  const sender = await User.findById(userId).select("name");
 
   if (existingFriend) {
     if (existingFriend.status === "accepted") {
@@ -1351,7 +1565,7 @@ const sendFriendRequestInDB = async (userId: string, friendId: string) => {
     existingFriend.status = "pending";
     await existingFriend.save();
 
-    await sendNotifications({
+    sendNotifications({
       title: "New Friend Request",
       text: `${sender?.name || "Someone"} sent you a friend request.`,
       receiver: friendId,
@@ -1359,7 +1573,7 @@ const sendFriendRequestInDB = async (userId: string, friendId: string) => {
       type: NOTIFICATION_TYPE.USER,
       referenceId: existingFriend._id.toString(),
       referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
-    });
+    }).catch(() => {});
 
     return existingFriend;
   }
@@ -1370,7 +1584,7 @@ const sendFriendRequestInDB = async (userId: string, friendId: string) => {
     status: "pending",
   });
 
-  await sendNotifications({
+  sendNotifications({
     title: "New Friend Request",
     text: `${sender?.name || "Someone"} sent you a friend request.`,
     receiver: friendId,
@@ -1378,7 +1592,7 @@ const sendFriendRequestInDB = async (userId: string, friendId: string) => {
     type: NOTIFICATION_TYPE.USER,
     referenceId: result._id.toString(),
     referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
-  });
+  }).catch(() => {});
 
   return result;
 };
@@ -1401,14 +1615,15 @@ const getReceivedFriendRequestsFromDB = async (
     isDeleted: { $ne: true },
   };
 
-  const requests = await Friend.find(query)
-    .populate("userId", "name userName profileImage email")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
-
-  const total = await Friend.countDocuments(query);
+  const [requests, total] = await Promise.all([
+    Friend.find(query)
+      .populate("userId", "name userName profileImage email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Friend.countDocuments(query),
+  ]);
 
   const formattedData = requests.map((req: any) => ({
     _id: req._id,
@@ -1437,14 +1652,15 @@ const getSentFriendRequestsFromDB = async (
     isDeleted: { $ne: true },
   };
 
-  const requests = await Friend.find(query)
-    .populate("friendId", "name userName profileImage email")
-    .sort({ createdAt: -1 })
-    .skip(skip)
-    .limit(limit)
-    .lean();
-
-  const total = await Friend.countDocuments(query);
+  const [requests, total] = await Promise.all([
+    Friend.find(query)
+      .populate("friendId", "name userName profileImage email")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit)
+      .lean(),
+    Friend.countDocuments(query),
+  ]);
 
   const formattedData = requests.map((req: any) => ({
     _id: req._id,
@@ -1487,16 +1703,21 @@ const acceptFriendRequestInDB = async (
   requestDoc.status = "accepted";
   await requestDoc.save();
 
-  const receiver = await User.findById(userId).select("name");
-  await sendNotifications({
-    title: "Friend Request Accepted",
-    text: `${receiver?.name || "Someone"} accepted your friend request.`,
-    receiver: requestDoc.userId.toString(),
-    sender: userId,
-    type: NOTIFICATION_TYPE.USER,
-    referenceId: requestDoc._id.toString(),
-    referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
-  });
+  User.findById(userId)
+    .select("name")
+    .lean()
+    .then((receiver) => {
+      sendNotifications({
+        title: "Friend Request Accepted",
+        text: `${receiver?.name || "Someone"} accepted your friend request.`,
+        receiver: requestDoc.userId.toString(),
+        sender: userId,
+        type: NOTIFICATION_TYPE.USER,
+        referenceId: requestDoc._id.toString(),
+        referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
+      }).catch(() => {});
+    })
+    .catch(() => {});
 
   return requestDoc;
 };
@@ -1617,46 +1838,73 @@ const getFriendsFromDB = async (userId: string) => {
     $or: [{ userId: userObjectId }, { friendId: userObjectId }],
     status: "accepted",
     isDeleted: { $ne: true },
-  }).populate("userId friendId", "name userName profileImage email");
+  })
+    .populate("userId friendId", "name userName profileImage email")
+    .lean();
 
   const friendsData = friends
     .filter((f) => f.userId && f.friendId)
     .map((f) => {
-      const otherUser =
+      const otherUser: any =
         (f.userId as any)._id.toString() === userId ? f.friendId : f.userId;
       return otherUser;
     });
 
-  const now = new Date();
-  const friendsWithStatus = await Promise.all(
-    friendsData.map(async (friend: any) => {
-      const activeSession = await FocusSession.findOne({
-        userId: friend._id,
-        status: "active",
-      });
+  if (friendsData.length === 0) {
+    return [];
+  }
 
-      const activeBreak = await Break.findOne({
-        userId: friend._id,
-        status: "active",
-        endTime: { $gt: now },
-      });
-
-      const isLocked = activeSession ? !activeBreak : false;
-      const lastFocusInfo = await buildLastFocusInfo(
-        new mongoose.Types.ObjectId(friend._id.toString()),
-      );
-
-      return {
-        _id: friend._id,
-        name: friend.name,
-        userName: friend.userName || friend.email?.split("@")[0] || "user",
-        profileImage: friend.profileImage || "",
-        email: friend.email || "",
-        isLocked,
-        lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
-      };
-    }),
+  const friendIds = friendsData.map(
+    (friend: any) => new mongoose.Types.ObjectId(friend._id.toString()),
   );
+  const now = new Date();
+
+  // Fetch active sessions, active breaks, and last completed sessions in parallel
+  const [activeSessions, activeBreaks, lastSessionsMap] = await Promise.all([
+    FocusSession.find({
+      userId: { $in: friendIds },
+      status: "active",
+    })
+      .select("userId")
+      .lean(),
+    Break.find({
+      userId: { $in: friendIds },
+      status: "active",
+      endTime: { $gt: now },
+    })
+      .select("userId")
+      .lean(),
+    batchGetLastFocusSessions(friendIds),
+  ]);
+
+  const activeSessionSet = new Set(
+    activeSessions.map((s) => s.userId.toString()),
+  );
+  const activeBreakSet = new Set(
+    activeBreaks.map((b) => b.userId.toString()),
+  );
+
+  const friendsWithStatus = friendsData.map((friend: any) => {
+    const friendIdStr = friend._id.toString();
+    const hasActiveSession = activeSessionSet.has(friendIdStr);
+    const hasActiveBreak = activeBreakSet.has(friendIdStr);
+    const isLocked = hasActiveSession ? !hasActiveBreak : false;
+
+    const lastFocusInfo = formatLastFocusString(
+      lastSessionsMap.get(friendIdStr),
+      now,
+    );
+
+    return {
+      _id: friend._id,
+      name: friend.name,
+      userName: friend.userName || friend.email?.split("@")[0] || "user",
+      profileImage: friend.profileImage || "",
+      email: friend.email || "",
+      isLocked,
+      lastFocusInfo: isLocked ? "Focusing now" : lastFocusInfo,
+    };
+  });
 
   return friendsWithStatus;
 };
@@ -1866,7 +2114,8 @@ const getPendingNudgePreviewInDB = async (userId: string) => {
   })
     .sort({ createdAt: -1 })
     .populate("participants", "name userName profileImage email")
-    .populate("modeId", "name iconType");
+    .populate("modeId", "name iconType")
+    .lean();
 
   if (!preview) {
     return {
@@ -1875,7 +2124,7 @@ const getPendingNudgePreviewInDB = async (userId: string) => {
     };
   }
 
-  const remainingMs = preview.expiresAt.getTime() - Date.now();
+  const remainingMs = new Date(preview.expiresAt).getTime() - Date.now();
   const remainingMinutes = Math.max(0, Math.ceil(remainingMs / 60000));
 
   return {

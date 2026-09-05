@@ -218,6 +218,10 @@ const userSchema = new Schema<IUser, IUserModel>(
 );
 
 userSchema.index({ email: 1 });
+userSchema.index({ role: 1, verified: 1, status: 1 });
+userSchema.index({ role: 1, isDeleted: 1 });
+userSchema.index({ userName: 1 });
+userSchema.index({ name: 1 });
 userSchema.index({ location: "2dsphere" });
 
 userSchema.plugin(softDeletePlugin);

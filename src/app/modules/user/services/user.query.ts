@@ -10,7 +10,7 @@ import { ModeService } from "../../modes/modes.service";
 const getUserProfileFromDB = async (user: JwtPayload): Promise<any> => {
   const { id } = user;
 
-  const result: any = await User.findById(id);
+  const result = await User.findById(id).lean();
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
@@ -34,6 +34,10 @@ const getAllUsersFromDB = async (query: any) => {
 
   const baseQuery = User.find(filter);
 
+  if (!remainingQuery.fields) {
+    baseQuery.select("-installedApps");
+  }
+
   const searchableFields = ["name", "email"];
 
   const queryBuilder = new QueryBuilder<IUser>(baseQuery, remainingQuery)
@@ -43,8 +47,10 @@ const getAllUsersFromDB = async (query: any) => {
     .filter()
     .paginate();
 
-  let users: any[] = await queryBuilder.modelQuery.lean();
-  const meta = await queryBuilder.countTotal();
+  const [users, meta] = await Promise.all([
+    queryBuilder.modelQuery.lean(),
+    queryBuilder.countTotal(),
+  ]);
 
   if (!users || users.length === 0) {
     throw new ApiError(404, "No users are found in the database");
@@ -60,7 +66,7 @@ const getUserByIdFromDB = async (id: string) => {
   const result = await User.findOne({
     _id: id,
     role: USER_ROLES.USER,
-  });
+  }).lean();
 
   if (!result)
     throw new ApiError(404, "No user is found in the database by this ID");
@@ -82,9 +88,10 @@ const getAdminFromDB = async (query: any) => {
     .fields()
     .paginate();
 
-  const admins = await queryBuilder.modelQuery;
-
-  const meta = await queryBuilder.countTotal();
+  const [admins, meta] = await Promise.all([
+    queryBuilder.modelQuery.lean(),
+    queryBuilder.countTotal(),
+  ]);
 
   return {
     data: admins,

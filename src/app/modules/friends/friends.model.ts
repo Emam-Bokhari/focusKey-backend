@@ -32,6 +32,9 @@ const friendSchema = new Schema<IFriend>(
 );
 
 friendSchema.index({ userId: 1, friendId: 1 });
+friendSchema.index({ friendId: 1, userId: 1 });
+friendSchema.index({ friendId: 1, status: 1 });
+friendSchema.index({ userId: 1, status: 1 });
 friendSchema.index({ status: 1 });
 
 friendSchema.plugin(softDeletePlugin);
@@ -93,6 +96,12 @@ const nudgeSchema = new Schema<INudge>(
   },
 );
 
+nudgeSchema.index({ creatorId: 1, status: 1, startTime: -1 });
+nudgeSchema.index({ "participants.userId": 1, status: 1, startTime: -1 });
+nudgeSchema.index({ "joinedParticipants.userId": 1, status: 1 });
+nudgeSchema.index({ status: 1, createdAt: -1 });
+nudgeSchema.index({ modeId: 1 });
+
 nudgeSchema.plugin(softDeletePlugin);
 
 const nudgePreviewSchema = new Schema<INudgePreview>(
@@ -133,6 +142,8 @@ const nudgePreviewSchema = new Schema<INudgePreview>(
     versionKey: false,
   },
 );
+
+nudgePreviewSchema.index({ creatorId: 1, status: 1 });
 
 export const Friend = model<IFriend>("Friend", friendSchema);
 export const Nudge = model<INudge>("Nudge", nudgeSchema);

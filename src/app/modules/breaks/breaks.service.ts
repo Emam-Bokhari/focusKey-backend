@@ -43,12 +43,12 @@ const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZON
   });
 
   if (existingBreak) {
-    if (existingBreak.status === "paused") {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        "You have a paused break. Please resume or stop it first.",
-      );
-    }
+    // if (existingBreak.status === "paused") {
+    //   throw new ApiError(
+    //     StatusCodes.BAD_REQUEST,
+    //     "You have a paused break. Please resume or stop it first.",
+    //   );
+    // }
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
       "You cannot take a break when you are already in an unlocked state",
@@ -113,6 +113,7 @@ const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZON
   return result;
 };
 
+/*
 const pauseBreak = async (userId: string) => {
   const now = new Date();
 
@@ -239,6 +240,7 @@ const resumeBreak = async (userId: string) => {
 
   return updatedBreak;
 };
+*/
 
 const getActiveBreakStatus = async (
   userId: string,
@@ -571,8 +573,8 @@ const updateGlobalBreakConfig = async (
 
 export const BreakService = {
   startBreak,
-  pauseBreak,
-  resumeBreak,
+  // pauseBreak,
+  // resumeBreak,
   getActiveBreakStatus,
   getRemainingBreaks,
   stopBreak,

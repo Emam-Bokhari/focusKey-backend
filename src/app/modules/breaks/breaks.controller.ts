@@ -43,6 +43,7 @@ const getRemainingBreaks = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+/*
 const pauseBreak = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const result = await BreakService.pauseBreak(userId);
@@ -66,6 +67,7 @@ const resumeBreak = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+*/
 
 const stopBreak = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
@@ -108,8 +110,8 @@ const updateGlobalBreakConfig = catchAsync(
 
 export const BreakController = {
   startBreak,
-  pauseBreak,
-  resumeBreak,
+  // pauseBreak,
+  // resumeBreak,
   getActiveBreakStatus,
   getRemainingBreaks,
   stopBreak,

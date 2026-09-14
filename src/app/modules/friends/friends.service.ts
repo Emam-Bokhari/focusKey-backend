@@ -1202,12 +1202,12 @@ const takeNudgeBreakInDB = async (
   }
 
   if (activeBreak) {
-    if (activeBreak.status === "paused") {
-      throw new ApiError(
-        StatusCodes.BAD_REQUEST,
-        "You have a paused break. Please resume or stop it first.",
-      );
-    }
+    // if (activeBreak.status === "paused") {
+    //   throw new ApiError(
+    //     StatusCodes.BAD_REQUEST,
+    //     "You have a paused break. Please resume or stop it first.",
+    //   );
+    // }
     if (
       activeBreak.nudgeId &&
       activeBreak.nudgeId.toString() === nudgeObjectId.toString()

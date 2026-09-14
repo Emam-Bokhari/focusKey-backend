@@ -14,8 +14,10 @@ import {
   NOTIFICATION_REFERENCE_MODEL,
   NOTIFICATION_TYPE,
 } from "../notification/notification.constant";
+import dayjs from "dayjs";
 import {
   DEFAULT_TIMEZONE,
+  formatZonedDateKey,
   getZonedEndOfDay,
   getZonedStartOfDay,
   getZonedStartOfWeek,
@@ -33,6 +35,7 @@ const formatLastFocusString = (
     | null
     | undefined,
   now: Date = new Date(),
+  userTimezone: string = DEFAULT_TIMEZONE,
 ): string => {
   if (!lastSession || !lastSession.endTime) return "No focus history";
 
@@ -43,12 +46,12 @@ const formatLastFocusString = (
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays > 0) {
-    const yesterday = new Date(now);
-    yesterday.setDate(yesterday.getDate() - 1);
-    const isYesterday =
-      sessionEndTime.getDate() === yesterday.getDate() &&
-      sessionEndTime.getMonth() === yesterday.getMonth() &&
-      sessionEndTime.getFullYear() === yesterday.getFullYear();
+    const sessionDateKey = formatZonedDateKey(sessionEndTime, userTimezone);
+    const yesterdayDateKey = dayjs(now)
+      .tz(userTimezone)
+      .subtract(1, "day")
+      .format("YYYY-MM-DD");
+    const isYesterday = sessionDateKey === yesterdayDateKey;
 
     if (isYesterday) {
       let durationStr = "some time";
@@ -129,17 +132,19 @@ interface ISharedFocusStatsResult {
 const batchComputeSharedFocusStats = async (
   creatorId: mongoose.Types.ObjectId,
   participantIds: mongoose.Types.ObjectId[],
+  userTimezone: string = DEFAULT_TIMEZONE,
 ): Promise<Map<string, ISharedFocusStatsResult>> => {
   const results = new Map<string, ISharedFocusStatsResult>();
   if (participantIds.length === 0) return results;
 
   const now = new Date();
-  const startOfRange = new Date(now);
-  startOfRange.setDate(startOfRange.getDate() - 6);
-  startOfRange.setHours(0, 0, 0, 0);
+  const startOfRange = dayjs(now)
+    .tz(userTimezone)
+    .subtract(6, "day")
+    .startOf("day")
+    .toDate();
 
-  const endOfRange = new Date(now);
-  endOfRange.setHours(23, 59, 59, 999);
+  const endOfRange = dayjs(now).tz(userTimezone).endOf("day").toDate();
 
   const [creatorSessions, allParticipantSessions] = await Promise.all([
     FocusSession.find({
@@ -171,16 +176,11 @@ const batchComputeSharedFocusStats = async (
   // Pre-calculate 7-day boundaries
   const daysInfo: { startOfDay: Date; endOfDay: Date; dayName: string }[] = [];
   for (let i = 6; i >= 0; i--) {
-    const d = new Date(now);
-    d.setDate(d.getDate() - i);
-    d.setHours(0, 0, 0, 0);
-    const startOfDay = new Date(d);
-    const endOfDay = new Date(d);
-    endOfDay.setHours(23, 59, 59, 999);
+    const zonedDate = dayjs(now).tz(userTimezone).subtract(i, "day");
     daysInfo.push({
-      startOfDay,
-      endOfDay,
-      dayName: DAY_NAMES[d.getDay()],
+      startOfDay: zonedDate.startOf("day").toDate(),
+      endOfDay: zonedDate.endOf("day").toDate(),
+      dayName: DAY_NAMES[zonedDate.day()],
     });
   }
 
@@ -285,9 +285,10 @@ const computeSharedFocusStats = async (
 
 const getUsersFromDB = async (
   userId: string,
-  searchTerm: string,
-  page: number,
-  limit: number,
+  searchTerm?: string,
+  page: number = 1,
+  limit: number = 10,
+  userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
   const skip = (page - 1) * limit;
   const userObjectId = new mongoose.Types.ObjectId(userId);
@@ -391,6 +392,7 @@ const getUsersFromDB = async (
     const lastFocusInfo = formatLastFocusString(
       lastSessionsMap.get(targetIdStr),
       now,
+      userTimezone,
     );
     const userName = user.userName || user.email?.split("@")[0] || "user";
 
@@ -554,6 +556,7 @@ const initiateNudgePreviewInDB = async (
 const getNudgePreviewDetailsFromDB = async (
   userId: string,
   previewId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
   const preview = await NudgePreview.findById(previewId)
     .populate("participants", "name userName profileImage email")
@@ -618,7 +621,7 @@ const getNudgePreviewDetailsFromDB = async (
         .select("userId")
         .lean(),
       batchGetLastFocusSessions(participantIds),
-      batchComputeSharedFocusStats(creatorId, participantIds),
+      batchComputeSharedFocusStats(creatorId, participantIds, userTimezone),
     ]);
 
   const activeSessionSet = new Set(
@@ -637,6 +640,7 @@ const getNudgePreviewDetailsFromDB = async (
     const lastFocusInfo = formatLastFocusString(
       lastSessionsMap.get(pIdStr),
       now,
+      userTimezone,
     );
     const sharedStats = sharedStatsMap.get(pIdStr) || {
       togetherThisWeek: "0m",
@@ -1934,7 +1938,10 @@ const handleFriendRequestActionInDB = async (
   }
 };
 
-const getFriendsFromDB = async (userId: string) => {
+const getFriendsFromDB = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const friends = await Friend.find({
     $or: [{ userId: userObjectId }, { friendId: userObjectId }],
@@ -1995,6 +2002,7 @@ const getFriendsFromDB = async (userId: string) => {
     const lastFocusInfo = formatLastFocusString(
       lastSessionsMap.get(friendIdStr),
       now,
+      userTimezone,
     );
 
     return {

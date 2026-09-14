@@ -296,15 +296,6 @@ const formatDuration = (totalMinutes: number) => {
   };
 };
 
-const formatTime = (date: Date) => {
-  return date
-    .toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })
-    .toLowerCase();
-};
 
 const getHistoryData = async (
   userId: string,
@@ -514,52 +505,6 @@ const getHistoryData = async (
   };
 };
 
-const getLocalDateKey = (date: Date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
-const getDateGroupHeader = (dateStr: string) => {
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-
-  const todayStr = getLocalDateKey(today);
-  const yesterdayStr = getLocalDateKey(yesterday);
-
-  if (dateStr === todayStr) {
-    return "TODAY";
-  } else if (dateStr === yesterdayStr) {
-    return "YESTERDAY";
-  } else {
-    const [year, month, day] = dateStr.split("-").map(Number);
-    const months = [
-      "JAN",
-      "FEB",
-      "MAR",
-      "APR",
-      "MAY",
-      "JUN",
-      "JUL",
-      "AUG",
-      "SEP",
-      "OCT",
-      "NOV",
-      "DEC",
-    ];
-    return `${months[month - 1]} ${day}`;
-  }
-};
-
-const formatTimeV2 = (date: Date) => {
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
 
 const getHistoryV2 = async (
   userId: string,

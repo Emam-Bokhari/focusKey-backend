@@ -3,6 +3,7 @@ import { StatusCodes } from "http-status-codes";
 import catchAsync from "../../../shared/catchAsync";
 import sendResponse from "../../../shared/sendResponse";
 import { FocusSessionService } from "./focusSession.service";
+import { formatZonedDateKey } from "../../../helpers/timezoneHelper";
 
 const getFocusHistory = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
@@ -44,7 +45,11 @@ const getFocusHistoryV2 = catchAsync(async (req: Request, res: Response) => {
 
 const getFocusStats = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await FocusSessionService.getFocusStatsFromDB(userId);
+  const userTimezone = req.user.timezone;
+  const result = await FocusSessionService.getFocusStatsFromDB(
+    userId,
+    userTimezone,
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -60,7 +65,7 @@ const exportHistoryToCSV = catchAsync(async (req: Request, res: Response) => {
   const result =
     await FocusSessionService.exportFocusHistoryToCSVFromDB(userId, userTimezone);
 
-  const fileName = `focus_history_${new Date().toISOString().split("T")[0]}.csv`;
+  const fileName = `focus_history_${formatZonedDateKey(new Date(), userTimezone)}.csv`;
 
   res.setHeader("Content-Type", "text/csv; charset=utf-8");
   res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);

@@ -59,11 +59,16 @@ const auth =
           );
         }
 
+        const headerTz = (req.headers["x-timezone"] ||
+          req.headers["timezone"]) as string;
+        const queryTz = req.query.timezone as string;
+
         req.user = {
           ...verifyUser,
           timezone: resolveTimezone(
             user?.timezone,
-            req.headers["x-timezone"] as string,
+            headerTz,
+            queryTz,
           ),
         };
         next();

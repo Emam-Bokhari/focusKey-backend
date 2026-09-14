@@ -5,7 +5,8 @@ import sendResponse from "../../../shared/sendResponse";
 import { AnalyticsServices } from "./analytics.service";
 
 const getStats = catchAsync(async (req: Request, res: Response) => {
-  const result = await AnalyticsServices.getStatsFromDB();
+  const userTimezone = (req.user as any)?.timezone;
+  const result = await AnalyticsServices.getStatsFromDB(userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -16,9 +17,14 @@ const getStats = catchAsync(async (req: Request, res: Response) => {
 });
 
 const getFocusTimeOverTime = catchAsync(async (req: Request, res: Response) => {
+  const userTimezone = (req.user as any)?.timezone;
   const year = req.query.year ? Number(req.query.year) : undefined;
   const days = req.query.days ? Number(req.query.days) : undefined;
-  const result = await AnalyticsServices.getFocusTimeOverTime(year, days);
+  const result = await AnalyticsServices.getFocusTimeOverTime(
+    year,
+    days,
+    userTimezone,
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,
@@ -30,11 +36,13 @@ const getFocusTimeOverTime = catchAsync(async (req: Request, res: Response) => {
 
 const getFocusTimeTogetherOverTime = catchAsync(
   async (req: Request, res: Response) => {
+    const userTimezone = (req.user as any)?.timezone;
     const year = req.query.year ? Number(req.query.year) : undefined;
     const days = req.query.days ? Number(req.query.days) : undefined;
     const result = await AnalyticsServices.getFocusTimeTogetherOverTime(
       year,
       days,
+      userTimezone,
     );
 
     sendResponse(res, {

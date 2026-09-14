@@ -12,6 +12,7 @@ import {
   getZonedDateGroupHeader,
   getZonedEndOfDay,
   getZonedStartOfDay,
+  formatZonedIso,
 } from "../../../helpers/timezoneHelper";
 
 const formatDuration = (totalMinutes: number) => {
@@ -24,43 +25,6 @@ const formatDuration = (totalMinutes: number) => {
   };
 };
 
-const formatTime = (date: Date) => {
-  return date
-    .toLocaleTimeString("en-US", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })
-    .toLowerCase();
-};
-
-const formatTimeV2 = (date: Date) => {
-  return date.toLocaleTimeString("en-US", {
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  });
-};
-
-const formatSinceDate = (date: Date | null) => {
-  if (!date) return "No focus history";
-  const d = new Date(date);
-  const monthNames = [
-    "January",
-    "February",
-    "March",
-    "April",
-    "May",
-    "June",
-    "July",
-    "August",
-    "September",
-    "October",
-    "November",
-    "December",
-  ];
-  return `Since ${monthNames[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
-};
 
 const calculateBreakMinutes = (b: any, nowMs: number) => {
   if (b.status === "completed") {
@@ -373,23 +337,38 @@ const getFocusHistoryFromDB = async (
     groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
       modeName: (session.modeId as any)?.name,
-      startTime: session.startTime,
-      endTime: session.endTime || null,
+      startTime: formatZonedIso(session.startTime, userTimezone),
+      endTime: session.endTime
+        ? formatZonedIso(session.endTime, userTimezone)
+        : null,
       timeRange,
       duration,
       status: session.status,
     });
   }
 
-  const history = Object.values(groupedHistory).map((day: any) => ({
-    ...day,
-    totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
-  }));
+  const sortedDates = Object.keys(groupedHistory).sort((a, b) =>
+    b.localeCompare(a),
+  );
+
+  const history = sortedDates.map((dateKey) => {
+    const day = groupedHistory[dateKey];
+    day.sessions.sort(
+      (a: any, b: any) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
+    return {
+      ...day,
+      totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
+    };
+  });
 
   return {
     summary: {
       totalFocusTime: formatDuration(totalMinutes),
-      firstFocusDate,
+      firstFocusDate: firstFocusDate
+        ? formatZonedIso(firstFocusDate, userTimezone)
+        : null,
     },
     sevenDaysStats,
     todayStats,
@@ -537,24 +516,39 @@ const getFocusHistoryV2FromDB = async (
     groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
       modeName: (session.modeId as any)?.name,
-      startTime: session.startTime,
-      endTime: session.endTime || null,
+      startTime: formatZonedIso(session.startTime, userTimezone),
+      endTime: session.endTime
+        ? formatZonedIso(session.endTime, userTimezone)
+        : null,
       timeRange,
       duration,
       status: session.status,
     });
   }
 
-  const history = Object.values(groupedHistory).map((day: any) => ({
-    ...day,
-    totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
-  }));
+  const sortedDates = Object.keys(groupedHistory).sort((a, b) =>
+    b.localeCompare(a),
+  );
+
+  const history = sortedDates.map((dateKey) => {
+    const day = groupedHistory[dateKey];
+    day.sessions.sort(
+      (a: any, b: any) =>
+        new Date(a.startTime).getTime() - new Date(b.startTime).getTime(),
+    );
+    return {
+      ...day,
+      totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
+    };
+  });
 
   return {
     modes,
     summary: {
       totalFocusTime: formatDuration(totalMinutes),
-      firstFocusDate,
+      firstFocusDate: firstFocusDate
+        ? formatZonedIso(firstFocusDate, userTimezone)
+        : null,
       sinceDate,
     },
     sevenDaysStats,
@@ -562,7 +556,10 @@ const getFocusHistoryV2FromDB = async (
   };
 };
 
-const getFocusStatsFromDB = async (userId: string) => {
+const getFocusStatsFromDB = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   const [allSessions, allBreaks] = await Promise.all([
@@ -580,8 +577,12 @@ const getFocusStatsFromDB = async (userId: string) => {
     allSessions.length > 0 ? allSessions[allSessions.length - 1] : null;
   const lastSession = allSessions.length > 0 ? allSessions[0] : null;
 
-  const startDate = firstSession ? firstSession.startTime : null;
-  const endDate = lastSession ? lastSession.endTime || new Date() : null;
+  const startDate = firstSession
+    ? formatZonedIso(firstSession.startTime, userTimezone)
+    : null;
+  const endDate = lastSession
+    ? formatZonedIso(lastSession.endTime || new Date(), userTimezone)
+    : null;
 
   return {
     totalSessions,

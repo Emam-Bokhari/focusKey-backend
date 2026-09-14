@@ -4,15 +4,19 @@ import { Break } from "../breaks/breaks.model";
 import { Friend, Nudge } from "../friends/friends.model";
 import { Mode } from "../modes/modes.model";
 import QueryBuilder from "../../builder/queryBuilder";
+import {
+  dayjs,
+  DEFAULT_TIMEZONE,
+  formatZonedDateKey,
+  getZonedEndOfDay,
+  getZonedStartOfWeek,
+} from "../../../helpers/timezoneHelper";
 
-const getStatsFromDB = async () => {
-  const startOfWeek = new Date();
-  startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
-  startOfWeek.setHours(0, 0, 0, 0);
+const getStatsFromDB = async (userTimezone: string = DEFAULT_TIMEZONE) => {
+  const now = new Date();
+  const startOfWeek = getZonedStartOfWeek(now, userTimezone);
 
-  const sevenDaysAgo = new Date();
-  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-  sevenDaysAgo.setHours(0, 0, 0, 0);
+  const sevenDaysAgo = dayjs().tz(userTimezone).subtract(7, "day").startOf("day").toDate();
 
   const totalUsers = await User.countDocuments({ isDeleted: false });
 
@@ -101,23 +105,29 @@ const getStatsFromDB = async () => {
   };
 };
 
-const getFocusTimeOverTime = async (year?: number, days?: number) => {
-  const currentYear = new Date().getFullYear();
+const getFocusTimeOverTime = async (
+  year?: number,
+  days?: number,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const currentYear = Number(dayjs().tz(userTimezone).format("YYYY"));
   const targetYear = year || currentYear;
   const targetDays = days || 7;
 
   const validDays = [7, 14, 30];
   const actualDays = validDays.includes(targetDays) ? targetDays : 7;
 
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const endDate = getZonedEndOfDay(now, userTimezone);
 
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - (actualDays - 1));
-  startDate.setHours(0, 0, 0, 0);
+  const startDate = dayjs(endDate)
+    .tz(userTimezone)
+    .subtract(actualDays - 1, "day")
+    .startOf("day")
+    .toDate();
 
-  const startOfYear = new Date(targetYear, 0, 1);
-  const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999);
+  const startOfYear = dayjs.tz(`${targetYear}-01-01 00:00:00`, userTimezone).toDate();
+  const endOfYear = dayjs.tz(`${targetYear}-12-31 23:59:59.999`, userTimezone).toDate();
 
   const sessions = await FocusSession.find({
     nudgeId: { $exists: false },
@@ -131,14 +141,13 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   const dateWiseData: Record<string, number> = {};
 
   for (let i = 0; i < actualDays; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    const dateKey = date.toLocaleDateString("en-CA"); // YYYY-MM-DD in local time
+    const d = dayjs(startDate).tz(userTimezone).add(i, "day").toDate();
+    const dateKey = formatZonedDateKey(d, userTimezone);
     dateWiseData[dateKey] = 0;
   }
 
   sessions.forEach((session) => {
-    const dateKey = session.startTime.toLocaleDateString("en-CA");
+    const dateKey = formatZonedDateKey(session.startTime, userTimezone);
     let minutes = 0;
     if (session.status === "completed") {
       minutes = session.durationMinutes || 0;
@@ -165,23 +174,29 @@ const getFocusTimeOverTime = async (year?: number, days?: number) => {
   };
 };
 
-const getFocusTimeTogetherOverTime = async (year?: number, days?: number) => {
-  const currentYear = new Date().getFullYear();
+const getFocusTimeTogetherOverTime = async (
+  year?: number,
+  days?: number,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const currentYear = Number(dayjs().tz(userTimezone).format("YYYY"));
   const targetYear = year || currentYear;
   const targetDays = days || 7;
 
   const validDays = [7, 14, 30];
   const actualDays = validDays.includes(targetDays) ? targetDays : 7;
 
-  const endDate = new Date();
-  endDate.setHours(23, 59, 59, 999);
+  const now = new Date();
+  const endDate = getZonedEndOfDay(now, userTimezone);
 
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - (actualDays - 1));
-  startDate.setHours(0, 0, 0, 0);
+  const startDate = dayjs(endDate)
+    .tz(userTimezone)
+    .subtract(actualDays - 1, "day")
+    .startOf("day")
+    .toDate();
 
-  const startOfYear = new Date(targetYear, 0, 1);
-  const endOfYear = new Date(targetYear, 11, 31, 23, 59, 59, 999);
+  const startOfYear = dayjs.tz(`${targetYear}-01-01 00:00:00`, userTimezone).toDate();
+  const endOfYear = dayjs.tz(`${targetYear}-12-31 23:59:59.999`, userTimezone).toDate();
 
   const sessions = await FocusSession.find({
     nudgeId: { $exists: true, $ne: null },
@@ -195,14 +210,13 @@ const getFocusTimeTogetherOverTime = async (year?: number, days?: number) => {
   const dateWiseData: Record<string, number> = {};
 
   for (let i = 0; i < actualDays; i++) {
-    const date = new Date(startDate);
-    date.setDate(date.getDate() + i);
-    const dateKey = date.toLocaleDateString("en-CA");
+    const d = dayjs(startDate).tz(userTimezone).add(i, "day").toDate();
+    const dateKey = formatZonedDateKey(d, userTimezone);
     dateWiseData[dateKey] = 0;
   }
 
   sessions.forEach((session) => {
-    const dateKey = session.startTime.toLocaleDateString("en-CA");
+    const dateKey = formatZonedDateKey(session.startTime, userTimezone);
     let minutes = 0;
     if (session.status === "completed") {
       minutes = session.durationMinutes || 0;

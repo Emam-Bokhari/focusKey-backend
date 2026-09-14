@@ -6,6 +6,7 @@ import { FriendsService } from "./friends.service";
 
 const getUsers = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
+  const userTimezone = (req.user as any).timezone;
   const { searchTerm, page, limit } = req.query;
 
   const result = await FriendsService.getUsersFromDB(
@@ -13,6 +14,7 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
     searchTerm as string,
     Number(page) || 1,
     Number(limit) || 10,
+    userTimezone,
   );
 
   sendResponse(res, {
@@ -41,11 +43,13 @@ const initiateNudge = catchAsync(async (req: Request, res: Response) => {
 const getNudgePreviewDetails = catchAsync(
   async (req: Request, res: Response) => {
     const userId = (req.user as any).id;
+    const userTimezone = (req.user as any).timezone;
     const { previewId } = req.params;
 
     const result = await FriendsService.getNudgePreviewDetailsFromDB(
       userId,
       previewId,
+      userTimezone,
     );
 
     sendResponse(res, {
@@ -333,8 +337,9 @@ const handleFriendRequestAction = catchAsync(
 
 const getFriends = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
+  const userTimezone = (req.user as any).timezone;
 
-  const result = await FriendsService.getFriendsFromDB(userId);
+  const result = await FriendsService.getFriendsFromDB(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

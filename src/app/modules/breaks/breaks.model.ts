@@ -62,6 +62,7 @@ breakSchema.index({ userId: 1, status: 1, endTime: 1 });
 breakSchema.index({ nudgeId: 1, status: 1, endTime: 1 });
 breakSchema.index({ userId: 1, nudgeId: 1, status: 1 });
 breakSchema.index({ userId: 1, isDeleted: 1 });
+breakSchema.index({ userId: 1, createdAt: -1 });
 
 export const Break = model<IBreak>("Break", breakSchema);
 
@@ -90,6 +91,8 @@ const breakConfigSchema = new Schema<IBreakConfig>(
 );
 
 breakConfigSchema.plugin(softDeletePlugin);
+
+breakConfigSchema.index({ userId: 1 });
 
 export const BreakConfig = model<IBreakConfig>(
   "BreakConfig",

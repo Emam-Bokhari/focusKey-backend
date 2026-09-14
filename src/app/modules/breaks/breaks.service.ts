@@ -12,17 +12,55 @@ import {
   getZonedStartOfWeek,
 } from "../../../helpers/timezoneHelper";
 
-const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZONE) => {
-  const activeMode = await Mode.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    isActive: true,
-    isDeleted: false,
-  });
+const startBreak = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const now = new Date();
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const startOfDay = getZonedStartOfDay(now, userTimezone);
+  const endOfDay = getZonedEndOfDay(now, userTimezone);
 
-  const activeSession = await FocusSession.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    status: "active",
-  });
+  const [activeMode, activeSession, existingBreak, breakConfigDoc, breaksToday] =
+    await Promise.all([
+      Mode.findOne({
+        userId: userObjectId,
+        isActive: true,
+        isDeleted: false,
+      })
+        .select("_id")
+        .lean(),
+
+      FocusSession.findOne({
+        userId: userObjectId,
+        status: "active",
+      })
+        .select("modeId")
+        .lean(),
+
+      Break.findOne({
+        userId: userObjectId,
+        status: { $in: ["active", "paused"] },
+        $or: [
+          { status: "active", endTime: { $gt: now } },
+          { status: "paused" },
+        ],
+      })
+        .select("_id")
+        .lean(),
+
+      BreakConfig.findOne({
+        userId: userObjectId,
+      })
+        .select("breaksPerDay breakDurationMinutes")
+        .lean(),
+
+      Break.countDocuments({
+        userId: userObjectId,
+        nudgeId: { $exists: false }, // Only count global breaks
+        createdAt: { $gte: startOfDay, $lte: endOfDay },
+      }),
+    ]);
 
   if (!activeMode && !activeSession) {
     throw new ApiError(
@@ -32,15 +70,6 @@ const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZON
   }
 
   const modeIdToUse = activeMode?._id || activeSession?.modeId;
-
-  const existingBreak = await Break.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    status: { $in: ["active", "paused"] },
-    $or: [
-      { status: "active", endTime: { $gt: new Date() } },
-      { status: "paused" },
-    ],
-  });
 
   if (existingBreak) {
     // if (existingBreak.status === "paused") {
@@ -55,13 +84,10 @@ const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZON
     );
   }
 
-  let breakConfig = await BreakConfig.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-  });
-
+  let breakConfig = breakConfigDoc;
   if (!breakConfig) {
     breakConfig = await BreakConfig.create({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userObjectId,
       breaksPerDay: 4,
       breakDurationMinutes: 15,
     });
@@ -73,15 +99,6 @@ const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZON
     throw new ApiError(StatusCodes.BAD_REQUEST, "Breaks are not allowed");
   }
 
-  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
-  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
-
-  const breaksToday = await Break.countDocuments({
-    userId: new mongoose.Types.ObjectId(userId),
-    nudgeId: { $exists: false }, // Only count global breaks
-    createdAt: { $gte: startOfDay, $lte: endOfDay },
-  });
-
   if (breaksToday >= breaksPerDay) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached");
   }
@@ -90,7 +107,7 @@ const startBreak = async (userId: string, userTimezone: string = DEFAULT_TIMEZON
   const endTime = new Date(startTime.getTime() + breakDurationMinutes * 60000);
 
   const result = await Break.create({
-    userId: new mongoose.Types.ObjectId(userId),
+    userId: userObjectId,
     modeId: modeIdToUse,
     startTime,
     endTime,
@@ -435,12 +452,15 @@ const getRemainingBreaks = async (
 
 const stopBreak = async (userId: string) => {
   const now = new Date();
+  const userObjectId = new mongoose.Types.ObjectId(userId);
 
   const currentBreakToStop = await Break.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
+    userId: userObjectId,
     status: { $in: ["active", "paused"] },
     $or: [{ status: "active", endTime: { $gt: now } }, { status: "paused" }],
-  });
+  })
+    .select("_id status remainingSeconds endTime startTime totalDurationMinutes")
+    .lean();
 
   if (!currentBreakToStop) {
     throw new ApiError(
@@ -455,7 +475,7 @@ const stopBreak = async (userId: string) => {
   } else {
     const remainingMs = Math.max(
       0,
-      currentBreakToStop.endTime.getTime() - now.getTime(),
+      new Date(currentBreakToStop.endTime).getTime() - now.getTime(),
     );
     remainingSeconds = Math.round(remainingMs / 1000);
   }
@@ -463,8 +483,8 @@ const stopBreak = async (userId: string) => {
   const totalAllocatedMinutes =
     currentBreakToStop.totalDurationMinutes ||
     Math.round(
-      (currentBreakToStop.endTime.getTime() -
-        currentBreakToStop.startTime.getTime()) /
+      (new Date(currentBreakToStop.endTime).getTime() -
+        new Date(currentBreakToStop.startTime).getTime()) /
         60000,
     ) ||
     15;
@@ -472,10 +492,8 @@ const stopBreak = async (userId: string) => {
   const spentSeconds = Math.max(0, totalAllocatedSeconds - remainingSeconds);
   const durationMinutes = Math.round(spentSeconds / 60);
 
-  const updatedBreak = await Break.findOneAndUpdate(
-    {
-      _id: currentBreakToStop._id,
-    },
+  const updatedBreak = await Break.findByIdAndUpdate(
+    currentBreakToStop._id,
     {
       status: "completed",
       endTime: now,

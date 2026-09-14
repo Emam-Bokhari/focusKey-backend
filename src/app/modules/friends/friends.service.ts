@@ -1223,7 +1223,7 @@ const takeNudgeBreakInDB = async (
       throw new ApiError(
         StatusCodes.BAD_REQUEST,
         `You are already on a break. Please wait ${remainingMinutes} more minute(s) for it to finish automatically.`,
-      );
+      ); 
     }
     throw new ApiError(
       StatusCodes.BAD_REQUEST,

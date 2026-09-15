@@ -19,6 +19,11 @@ const focusSessionSchema = new Schema<IFocusSession>(
       type: Schema.Types.ObjectId,
       ref: "Nudge",
     },
+    clientSessionId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
     startTime: {
       type: Date,
       required: true,
@@ -50,6 +55,8 @@ focusSessionSchema.index({ userId: 1, status: 1, endTime: -1 });
 focusSessionSchema.index({ userId: 1, status: 1, startTime: -1 });
 focusSessionSchema.index({ nudgeId: 1, status: 1 });
 focusSessionSchema.index({ userId: 1, isDeleted: 1 });
+focusSessionSchema.index({ userId: 1, clientSessionId: 1 }, { sparse: true });
+
 
 export const FocusSession = model<IFocusSession>(
   "FocusSession",

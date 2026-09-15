@@ -132,7 +132,8 @@ const getTotalFocusApps = catchAsync(async (req: Request, res: Response) => {
 
 const getLockStatus = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
-  const result = await ModeService.getLockStatusFromDB(userId);
+  const userTimezone = req.user.timezone;
+  const result = await ModeService.getLockStatusFromDB(userId, userTimezone);
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

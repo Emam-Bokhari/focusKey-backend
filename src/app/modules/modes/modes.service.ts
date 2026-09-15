@@ -11,6 +11,8 @@ import {
   NOTIFICATION_REFERENCE_MODEL,
   NOTIFICATION_TYPE,
 } from "../notification/notification.constant";
+import { DEFAULT_TIMEZONE } from "../../../helpers/timezoneHelper";
+
 
 const defaultModeCreationPromises = new Map<string, Promise<void>>();
 const knownUsersWithModes = new Set<string>();
@@ -498,15 +500,19 @@ const getTotalFocusApps = async (userId: string) => {
   return allLockedApps;
 };
 
-const getLockStatusFromDB = async (userId: string) => {
+const getLockStatusFromDB = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const [dashboardData, activeSession] = await Promise.all([
-    DashboardService.getDashboardData(userId),
+    DashboardService.getDashboardData(userId, userTimezone),
     FocusSession.findOne({
       userId: userObjectId,
       status: "active",
     }).lean(),
   ]);
+
 
   return {
     ...dashboardData,

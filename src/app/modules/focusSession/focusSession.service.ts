@@ -1,11 +1,15 @@
 import mongoose from "mongoose";
+import { StatusCodes } from "http-status-codes";
+import ApiError from "../../../errors/ApiErrors";
 import { FocusSession } from "./focusSession.model";
+import { IReconcileSessionPayload } from "./focusSession.interface";
 import { Break, BreakConfig } from "../breaks/breaks.model";
 import { Mode } from "../modes/modes.model";
 import { ModeService } from "../modes/modes.service";
 import dayjs from "dayjs";
 import {
   DEFAULT_TIMEZONE,
+  isValidTimezone,
   formatZonedDateKey,
   formatZonedSinceDate,
   formatZonedTimeRange,
@@ -14,6 +18,7 @@ import {
   getZonedStartOfDay,
   formatZonedIso,
 } from "../../../helpers/timezoneHelper";
+
 
 const formatDuration = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
@@ -678,10 +683,248 @@ const clearAllDataFromDB = async (userId: string) => {
   return { message: "All data cleared successfully" };
 };
 
+const parseClientDate = (
+  dateInput?: string | Date | number | null,
+  userTimezone: string = DEFAULT_TIMEZONE,
+): Date => {
+  if (!dateInput) return new Date();
+  if (dateInput instanceof Date) return dateInput;
+  if (typeof dateInput === "number") return new Date(dateInput);
+
+  const trimmed = dateInput.trim();
+  // Check if string contains explicit timezone offset or Z, e.g. "Z", "+06:00", "-0400"
+  const hasTimezoneOffset = /([Zz]|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  if (hasTimezoneOffset) {
+    return dayjs(trimmed).toDate();
+  } else {
+    // If no offset was provided, interpret it in the user's selected timezone
+    const tz = isValidTimezone(userTimezone) ? userTimezone : DEFAULT_TIMEZONE;
+    return dayjs.tz(trimmed, tz).toDate();
+  }
+};
+
+const formatReconcileSession = (
+  session: any,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const startTime = session.startTime ? new Date(session.startTime) : new Date();
+  const endTime = session.endTime ? new Date(session.endTime) : null;
+  return {
+    _id: session._id,
+    userId: session.userId,
+    modeId: session.modeId,
+    clientSessionId: session.clientSessionId || null,
+    startTime: formatZonedIso(startTime, userTimezone),
+    endTime: endTime ? formatZonedIso(endTime, userTimezone) : null,
+    startTimeRaw: startTime.toISOString(),
+    endTimeRaw: endTime ? endTime.toISOString() : null,
+    timeRange: formatZonedTimeRange(startTime, endTime, userTimezone),
+    durationMinutes: session.durationMinutes || 0,
+    status: session.status,
+    createdAt: session.createdAt,
+    updatedAt: session.updatedAt,
+  };
+};
+
+const reconcileSessionFromDB = async (
+  userId: string,
+  payload: IReconcileSessionPayload,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const { clientSessionId, modeId, startedAt, endedAt, status, timezone } =
+    payload;
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const activeTimezone = isValidTimezone(timezone)
+    ? timezone!
+    : userTimezone;
+
+  if (
+    !clientSessionId ||
+    typeof clientSessionId !== "string" ||
+    !clientSessionId.trim()
+  ) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "clientSessionId is required to reconcile session",
+    );
+  }
+
+  const trimmedClientSessionId = clientSessionId.trim();
+
+  // 1. Check if session already exists for this user and clientSessionId
+  const existingSession = await FocusSession.findOne({
+    userId: userObjectId,
+    clientSessionId: trimmedClientSessionId,
+    isDeleted: false,
+  }).populate("modeId");
+
+  if (existingSession) {
+    const lockStatus = await ModeService.getLockStatusFromDB(
+      userId,
+      activeTimezone,
+    );
+    return {
+      exists: true,
+      synced: true,
+      isAlreadySynced: true,
+      message: "Session is already synced",
+      session: formatReconcileSession(existingSession, activeTimezone),
+      lockStatus,
+    };
+  }
+
+  // 2. If it does not exist and no modeId is supplied (pure existence check)
+  if (!modeId) {
+    const lockStatus = await ModeService.getLockStatusFromDB(
+      userId,
+      activeTimezone,
+    );
+    return {
+      exists: false,
+      synced: false,
+      isAlreadySynced: false,
+      message: "Session does not exist on server",
+      session: null,
+      lockStatus,
+    };
+  }
+
+  // 3. Mode validation
+  const modeObjectId = new mongoose.Types.ObjectId(modeId);
+  const mode = await Mode.findOne({
+    _id: modeObjectId,
+    userId: userObjectId,
+    isDeleted: false,
+  });
+
+  if (!mode) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
+  }
+
+  const startTime = parseClientDate(startedAt, activeTimezone);
+  const isCompleted = status === "completed" || Boolean(endedAt);
+
+  let createdSession;
+
+  if (isCompleted) {
+    // Case A: Offline session that has already finished
+    const endTime = endedAt
+      ? parseClientDate(endedAt, activeTimezone)
+      : new Date();
+    const durationMs = Math.max(0, endTime.getTime() - startTime.getTime());
+    const durationMinutes = Math.round(durationMs / 60000);
+
+    createdSession = await FocusSession.create({
+      userId: userObjectId,
+      modeId: modeObjectId,
+      clientSessionId: trimmedClientSessionId,
+      startTime,
+      endTime,
+      durationMinutes,
+      status: "completed",
+    });
+
+    // Retroactively push lock and unlock events to mode
+    await Mode.findByIdAndUpdate(modeObjectId, {
+      $push: {
+        lockEvents: {
+          $each: [
+            { type: "lock", source: "mode", timestamp: startTime },
+            { type: "unlock", source: "mode", timestamp: endTime },
+          ],
+        },
+      },
+    });
+  } else {
+    // Case B: Offline session that is currently ACTIVE / LOCKED
+    // Close any previous active sessions
+    const activeSessions = await FocusSession.find({
+      userId: userObjectId,
+      status: "active",
+      isDeleted: false,
+    }).lean();
+
+    if (activeSessions.length > 0) {
+      const bulkOps = activeSessions.map((s) => {
+        const sEnd = startTime;
+        const durationMs = Math.max(
+          0,
+          sEnd.getTime() - new Date(s.startTime).getTime(),
+        );
+        const durationMinutes = Math.round(durationMs / 60000);
+        return {
+          updateOne: {
+            filter: { _id: s._id },
+            update: {
+              $set: {
+                status: "completed",
+                endTime: sEnd,
+                durationMinutes,
+              },
+            },
+          },
+        };
+      });
+      await FocusSession.bulkWrite(bulkOps);
+    }
+
+    // Deactivate all other modes for this user
+    await Mode.updateMany(
+      { userId: userObjectId, _id: { $ne: modeObjectId } },
+      { isActive: false },
+    );
+
+    // Activate the requested mode and log lockEvent
+    await Mode.findByIdAndUpdate(modeObjectId, {
+      isActive: true,
+      $push: {
+        lockEvents: {
+          type: "lock",
+          source: "mode",
+          timestamp: startTime,
+        },
+      },
+    });
+
+    createdSession = await FocusSession.create({
+      userId: userObjectId,
+      modeId: modeObjectId,
+      clientSessionId: trimmedClientSessionId,
+      startTime,
+      status: "active",
+    });
+  }
+
+  const populatedSession = await FocusSession.findById(
+    createdSession._id,
+  ).populate("modeId");
+  const lockStatus = await ModeService.getLockStatusFromDB(
+    userId,
+    activeTimezone,
+  );
+
+  return {
+    exists: false,
+    synced: true,
+    isAlreadySynced: false,
+    message: isCompleted
+      ? "Offline completed focus session synced successfully"
+      : "Offline active focus lock synced and activated successfully",
+    session: formatReconcileSession(
+      populatedSession || createdSession,
+      activeTimezone,
+    ),
+    lockStatus,
+  };
+};
+
 export const FocusSessionService = {
   getFocusHistoryFromDB,
   getFocusHistoryV2FromDB,
   getFocusStatsFromDB,
   exportFocusHistoryToCSVFromDB,
   clearAllDataFromDB,
+  reconcileSessionFromDB,
 };
+
+

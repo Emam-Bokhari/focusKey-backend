@@ -87,10 +87,30 @@ const clearAllData = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const reconcileSession = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const userTimezone = req.user.timezone;
+  const result = await FocusSessionService.reconcileSessionFromDB(
+    userId,
+    req.body,
+    userTimezone,
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
 export const FocusSessionController = {
   getFocusHistory,
   getFocusHistoryV2,
   getFocusStats,
   exportHistoryToCSV,
   clearAllData,
+  reconcileSession,
 };
+
+

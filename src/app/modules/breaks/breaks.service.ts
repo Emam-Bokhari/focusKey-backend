@@ -4,13 +4,18 @@ import { Mode } from "../modes/modes.model";
 import { FocusSession } from "../focusSession/focusSession.model";
 import { Break, BreakConfig } from "./breaks.model";
 import mongoose from "mongoose";
-import { IBreakConfig } from "./breaks.interface";
+import { IBreakConfig, IReconcileBreakPayload } from "./breaks.interface";
 import {
   DEFAULT_TIMEZONE,
+  isValidTimezone,
+  formatZonedIso,
+  formatZonedTimeRange,
   getZonedEndOfDay,
   getZonedStartOfDay,
   getZonedStartOfWeek,
+  dayjs,
 } from "../../../helpers/timezoneHelper";
+
 
 const startBreak = async (
   userId: string,
@@ -589,6 +594,304 @@ const updateGlobalBreakConfig = async (
   return result;
 };
 
+const parseClientDate = (
+  dateInput?: string | Date | number | null,
+  userTimezone: string = DEFAULT_TIMEZONE,
+): Date => {
+  if (!dateInput) return new Date();
+  if (dateInput instanceof Date) return dateInput;
+  if (typeof dateInput === "number") return new Date(dateInput);
+
+  const trimmed = dateInput.trim();
+  const hasTimezoneOffset = /([Zz]|[+-]\d{2}:?\d{2})$/.test(trimmed);
+  if (hasTimezoneOffset) {
+    return dayjs(trimmed).toDate();
+  } else {
+    const tz = isValidTimezone(userTimezone) ? userTimezone : DEFAULT_TIMEZONE;
+    return dayjs.tz(trimmed, tz).toDate();
+  }
+};
+
+const formatReconcileBreak = (
+  breakDoc: any,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const startTime = breakDoc.startTime
+    ? new Date(breakDoc.startTime)
+    : new Date();
+  const endTime = breakDoc.endTime
+    ? new Date(breakDoc.endTime)
+    : new Date();
+  const now = new Date();
+
+  const isPaused = breakDoc.status === "paused";
+  const isCompleted = breakDoc.status === "completed";
+  const remainingSeconds = isCompleted
+    ? 0
+    : isPaused
+      ? breakDoc.remainingSeconds || 0
+      : Math.max(0, Math.ceil((endTime.getTime() - now.getTime()) / 1000));
+  const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
+
+  return {
+    _id: breakDoc._id,
+    userId: breakDoc.userId,
+    modeId: breakDoc.modeId,
+    clientBreakId: breakDoc.clientBreakId || null,
+    startTime: formatZonedIso(startTime, userTimezone),
+    endTime: formatZonedIso(endTime, userTimezone),
+    startTimeRaw: startTime.toISOString(),
+    endTimeRaw: endTime.toISOString(),
+    timeRange: formatZonedTimeRange(startTime, endTime, userTimezone),
+    durationMinutes: breakDoc.durationMinutes || 0,
+    totalDurationMinutes: breakDoc.totalDurationMinutes || 15,
+    remainingSeconds,
+    remainingMinutes,
+    status: breakDoc.status,
+    createdAt: breakDoc.createdAt,
+    updatedAt: breakDoc.updatedAt,
+  };
+};
+
+const reconcileBreakFromDB = async (
+  userId: string,
+  payload: IReconcileBreakPayload,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const { clientBreakId, modeId, startedAt, endedAt, status, timezone } =
+    payload;
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const activeTimezone = isValidTimezone(timezone)
+    ? timezone!
+    : userTimezone;
+
+  if (
+    !clientBreakId ||
+    typeof clientBreakId !== "string" ||
+    !clientBreakId.trim()
+  ) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "clientBreakId is required to reconcile break",
+    );
+  }
+
+  const trimmedClientBreakId = clientBreakId.trim();
+  const now = new Date();
+  const startOfDay = getZonedStartOfDay(now, activeTimezone);
+  const endOfDay = getZonedEndOfDay(now, activeTimezone);
+
+  // 1. Idempotency Check: if break with this clientBreakId already exists
+  const existingBreak = await Break.findOne({
+    userId: userObjectId,
+    clientBreakId: trimmedClientBreakId,
+    isDeleted: { $ne: true },
+  }).populate("modeId");
+
+  let breakConfig = await BreakConfig.findOne({
+    userId: userObjectId,
+    isDeleted: { $ne: true },
+  });
+
+  if (!breakConfig) {
+    breakConfig = await BreakConfig.create({
+      userId: userObjectId,
+      breaksPerDay: 4,
+      breakDurationMinutes: 15,
+    });
+  }
+
+  const breaksToday = await Break.countDocuments({
+    userId: userObjectId,
+    nudgeId: { $exists: false },
+    createdAt: { $gte: startOfDay, $lte: endOfDay },
+    isDeleted: { $ne: true },
+  });
+
+  const remainingBreaks = Math.max(
+    0,
+    breakConfig.breaksPerDay - breaksToday,
+  );
+
+  if (existingBreak) {
+    return {
+      isAccepted: true,
+      isAlreadySynced: true,
+      message: "Break is already synced",
+      break: formatReconcileBreak(existingBreak, activeTimezone),
+      breaksLeft: remainingBreaks,
+      totalAllowed: breakConfig.breaksPerDay,
+      durationMinutes: breakConfig.breakDurationMinutes,
+      takenToday: breaksToday,
+    };
+  }
+
+  // 2. Quota Check: verify if user is allowed to take a break
+  if (breakConfig.breaksPerDay <= 0) {
+    return {
+      isAccepted: false,
+      isAlreadySynced: false,
+      errorCode: "BREAKS_NOT_ALLOWED",
+      message: "Breaks are not allowed",
+      break: null,
+      breaksLeft: 0,
+      totalAllowed: breakConfig.breaksPerDay,
+      durationMinutes: breakConfig.breakDurationMinutes,
+      takenToday: breaksToday,
+    };
+  }
+
+  if (breaksToday >= breakConfig.breaksPerDay) {
+    return {
+      isAccepted: false,
+      isAlreadySynced: false,
+      errorCode: "BREAK_QUOTA_EXCEEDED",
+      message: "Daily break limit reached",
+      break: null,
+      breaksLeft: 0,
+      totalAllowed: breakConfig.breaksPerDay,
+      durationMinutes: breakConfig.breakDurationMinutes,
+      takenToday: breaksToday,
+    };
+  }
+
+  // 3. Determine Mode
+  let modeIdToUse: any = modeId;
+  if (!modeIdToUse) {
+    const [activeMode, activeSession] = await Promise.all([
+      Mode.findOne({
+        userId: userObjectId,
+        isActive: true,
+        isDeleted: false,
+      })
+        .select("_id")
+        .lean(),
+      FocusSession.findOne({
+        userId: userObjectId,
+        status: "active",
+        isDeleted: false,
+      })
+        .select("modeId")
+        .lean(),
+    ]);
+    modeIdToUse = activeMode?._id || activeSession?.modeId;
+  }
+
+  if (!modeIdToUse) {
+    const defaultMode = await Mode.findOne({
+      userId: userObjectId,
+      isDeleted: false,
+    })
+      .select("_id")
+      .lean();
+    modeIdToUse = defaultMode?._id;
+  }
+
+  if (!modeIdToUse) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "No focus mode found for this user",
+    );
+  }
+
+  const modeObjectId = new mongoose.Types.ObjectId(modeIdToUse);
+
+  // 4. Parse Dates & Status
+  const startTime = parseClientDate(startedAt, activeTimezone);
+  const breakDurationMinutes = breakConfig.breakDurationMinutes || 15;
+  const scheduledEndTime = new Date(
+    startTime.getTime() + breakDurationMinutes * 60000,
+  );
+
+  let finalStatus: "active" | "completed" = "active";
+  let finalEndTime: Date = scheduledEndTime;
+  let durationMinutes = 0;
+  let remainingSeconds = breakDurationMinutes * 60;
+
+  if (status === "completed" || endedAt) {
+    finalStatus = "completed";
+    finalEndTime = endedAt
+      ? parseClientDate(endedAt, activeTimezone)
+      : scheduledEndTime;
+    const durationMs = Math.max(
+      0,
+      finalEndTime.getTime() - startTime.getTime(),
+    );
+    durationMinutes = Math.round(durationMs / 60000);
+    remainingSeconds = 0;
+  } else {
+    // If client says active, but the break duration already elapsed in real-world time:
+    if (now.getTime() >= scheduledEndTime.getTime()) {
+      finalStatus = "completed";
+      finalEndTime = scheduledEndTime;
+      durationMinutes = breakDurationMinutes;
+      remainingSeconds = 0;
+    } else {
+      finalStatus = "active";
+      finalEndTime = scheduledEndTime;
+      remainingSeconds = Math.max(
+        0,
+        Math.ceil((scheduledEndTime.getTime() - now.getTime()) / 1000),
+      );
+      durationMinutes = 0;
+    }
+  }
+
+  // 5. Create Break Document with clientBreakId
+  const createdBreak = await Break.create({
+    userId: userObjectId,
+    modeId: modeObjectId,
+    clientBreakId: trimmedClientBreakId,
+    startTime,
+    endTime: finalEndTime,
+    totalDurationMinutes: breakDurationMinutes,
+    remainingSeconds,
+    durationMinutes,
+    status: finalStatus,
+    createdAt: startTime, // keep createdAt consistent with break start time
+  });
+
+  const newBreaksToday = breaksToday + 1;
+  const newBreaksLeft = Math.max(
+    0,
+    breakConfig.breaksPerDay - newBreaksToday,
+  );
+
+  // Socket notification if the break is currently active
+  if (finalStatus === "active") {
+    //@ts-ignore
+    const io = global.io;
+    if (io) {
+      io.emit(`breakStarted::${userId}`, {
+        message: "Break started. Apps are now unlocked.",
+        isLocked: false,
+        breakDetails: createdBreak,
+      });
+    }
+  }
+
+  const populatedBreak = await Break.findById(createdBreak._id).populate(
+    "modeId",
+  );
+
+  return {
+    isAccepted: true,
+    isAlreadySynced: false,
+    message:
+      finalStatus === "completed"
+        ? "Offline break synced and marked as completed"
+        : "Offline break synced and apps are now unlocked",
+    break: formatReconcileBreak(
+      populatedBreak || createdBreak,
+      activeTimezone,
+    ),
+    breaksLeft: newBreaksLeft,
+    totalAllowed: breakConfig.breaksPerDay,
+    durationMinutes: breakConfig.breakDurationMinutes,
+    takenToday: newBreaksToday,
+  };
+};
+
 export const BreakService = {
   startBreak,
   // pauseBreak,
@@ -599,4 +902,5 @@ export const BreakService = {
   updateExpiredBreaks,
   getGlobalBreakConfig,
   updateGlobalBreakConfig,
-};
+  reconcileBreakFromDB,
+};

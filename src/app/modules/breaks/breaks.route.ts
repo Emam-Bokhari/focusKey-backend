@@ -8,6 +8,7 @@ router.post("/start", isUser, BreakController.startBreak);
 // router.post("/pause", isUser, BreakController.pauseBreak);
 // router.post("/resume", isUser, BreakController.resumeBreak);
 router.post("/stop", isUser, BreakController.stopBreak);
+router.post("/reconcile", isUser, BreakController.reconcileBreak);
 router.get("/status", isUser, BreakController.getActiveBreakStatus);
 router.get("/remaining", isUser, BreakController.getRemainingBreaks);
 
@@ -15,3 +16,4 @@ router.get("/config", isUser, BreakController.getGlobalBreakConfig);
 router.patch("/config", isUser, BreakController.updateGlobalBreakConfig);
 
 export const BreakRoutes = router;
+

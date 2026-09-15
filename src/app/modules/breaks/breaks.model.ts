@@ -19,6 +19,11 @@ const breakSchema = new Schema<IBreak>(
       type: Schema.Types.ObjectId,
       ref: "Nudge",
     },
+    clientBreakId: {
+      type: String,
+      sparse: true,
+      index: true,
+    },
     startTime: {
       type: Date,
       required: true,
@@ -63,6 +68,8 @@ breakSchema.index({ nudgeId: 1, status: 1, endTime: 1 });
 breakSchema.index({ userId: 1, nudgeId: 1, status: 1 });
 breakSchema.index({ userId: 1, isDeleted: 1 });
 breakSchema.index({ userId: 1, createdAt: -1 });
+breakSchema.index({ userId: 1, clientBreakId: 1 }, { sparse: true });
+
 
 export const Break = model<IBreak>("Break", breakSchema);
 

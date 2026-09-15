@@ -108,6 +108,23 @@ const updateGlobalBreakConfig = catchAsync(
   },
 );
 
+const reconcileBreak = catchAsync(async (req: Request, res: Response) => {
+  const userId = req.user.id;
+  const userTimezone = req.user.timezone;
+  const result = await BreakService.reconcileBreakFromDB(
+    userId,
+    req.body,
+    userTimezone,
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
 export const BreakController = {
   startBreak,
   // pauseBreak,
@@ -117,4 +134,6 @@ export const BreakController = {
   stopBreak,
   getGlobalBreakConfig,
   updateGlobalBreakConfig,
+  reconcileBreak,
 };
+

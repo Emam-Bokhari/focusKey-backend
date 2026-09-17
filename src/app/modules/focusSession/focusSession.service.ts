@@ -316,7 +316,10 @@ const getFocusHistoryFromDB = async (
     if (session.status === "completed") {
       sessionMinutes = session.durationMinutes || 0;
     } else {
-      sessionMinutes = Math.round((nowMs - sStartTime.getTime()) / 60000);
+      sessionMinutes = Math.max(
+        0,
+        Math.round((nowMs - sStartTime.getTime()) / 60000),
+      );
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -495,7 +498,10 @@ const getFocusHistoryV2FromDB = async (
     if (session.status === "completed") {
       sessionMinutes = session.durationMinutes || 0;
     } else {
-      sessionMinutes = Math.round((nowMs - sStartTime.getTime()) / 60000);
+      sessionMinutes = Math.max(
+        0,
+        Math.round((nowMs - sStartTime.getTime()) / 60000),
+      );
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -627,7 +633,10 @@ const exportFocusHistoryToCSVFromDB = async (
     if (session.status === "completed") {
       sessionMinutes = session.durationMinutes || 0;
     } else {
-      sessionMinutes = Math.round((nowMs - sStartTime.getTime()) / 60000);
+      sessionMinutes = Math.max(
+        0,
+        Math.round((nowMs - sStartTime.getTime()) / 60000),
+      );
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -692,6 +701,10 @@ const parseClientDate = (
   if (typeof dateInput === "number") return new Date(dateInput);
 
   const trimmed = dateInput.trim();
+  if (/^\d+$/.test(trimmed)) {
+    const num = Number(trimmed);
+    return new Date(trimmed.length === 10 ? num * 1000 : num);
+  }
   // Check if string contains explicit timezone offset or Z, e.g. "Z", "+06:00", "-0400"
   const hasTimezoneOffset = /([Zz]|[+-]\d{2}:?\d{2})$/.test(trimmed);
   if (hasTimezoneOffset) {
@@ -801,8 +814,13 @@ const reconcileSessionFromDB = async (
     throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
   }
 
-  const startTime = parseClientDate(startedAt, activeTimezone);
+  let startTime = parseClientDate(startedAt, activeTimezone);
   const isCompleted = status === "completed" || Boolean(endedAt);
+
+  // Guard against clock-skew or timezone mismatch where client's startedAt is in the future
+  if (!isCompleted && startTime.getTime() > Date.now()) {
+    startTime = new Date();
+  }
 
   let createdSession;
 

@@ -603,6 +603,10 @@ const parseClientDate = (
   if (typeof dateInput === "number") return new Date(dateInput);
 
   const trimmed = dateInput.trim();
+  if (/^\d+$/.test(trimmed)) {
+    const num = Number(trimmed);
+    return new Date(trimmed.length === 10 ? num * 1000 : num);
+  }
   const hasTimezoneOffset = /([Zz]|[+-]\d{2}:?\d{2})$/.test(trimmed);
   if (hasTimezoneOffset) {
     return dayjs(trimmed).toDate();
@@ -797,7 +801,10 @@ const reconcileBreakFromDB = async (
   const modeObjectId = new mongoose.Types.ObjectId(modeIdToUse);
 
   // 4. Parse Dates & Status
-  const startTime = parseClientDate(startedAt, activeTimezone);
+  let startTime = parseClientDate(startedAt, activeTimezone);
+  if (status !== "completed" && !endedAt && startTime.getTime() > Date.now()) {
+    startTime = new Date();
+  }
   const breakDurationMinutes = breakConfig.breakDurationMinutes || 15;
   const scheduledEndTime = new Date(
     startTime.getTime() + breakDurationMinutes * 60000,

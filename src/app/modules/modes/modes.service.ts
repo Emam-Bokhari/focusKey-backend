@@ -217,7 +217,10 @@ const deleteModeFromDB = async (modeId: string) => {
     if (activeSessions.length > 0) {
       const endTime = new Date();
       const bulkOps = activeSessions.map((session) => {
-        const durationMs = endTime.getTime() - session.startTime.getTime();
+        const durationMs = Math.max(
+          0,
+          endTime.getTime() - session.startTime.getTime(),
+        );
         const durationMinutes = Math.round(durationMs / 60000);
         return {
           updateOne: {
@@ -302,7 +305,10 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
     if (activeSessions.length > 0) {
       const endTime = new Date();
       const bulkOps = activeSessions.map((session) => {
-        const durationMs = endTime.getTime() - session.startTime.getTime();
+        const durationMs = Math.max(
+          0,
+          endTime.getTime() - session.startTime.getTime(),
+        );
         const durationMinutes = Math.round(durationMs / 60000);
         return {
           updateOne: {
@@ -350,7 +356,10 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
     if (activeSessions.length > 0) {
       const endTime = new Date();
       const bulkOps = activeSessions.map((session) => {
-        const durationMs = endTime.getTime() - session.startTime.getTime();
+        const durationMs = Math.max(
+          0,
+          endTime.getTime() - session.startTime.getTime(),
+        );
         const durationMinutes = Math.round(durationMs / 60000);
         return {
           updateOne: {
@@ -520,8 +529,11 @@ const getLockStatusFromDB = async (
     activeSession: activeSession
       ? {
           ...activeSession,
-          elapsedMinutes: Math.round(
-            (new Date().getTime() - new Date(activeSession.startTime).getTime()) / 60000,
+          elapsedMinutes: Math.max(
+            0,
+            Math.round(
+              (new Date().getTime() - new Date(activeSession.startTime).getTime()) / 60000,
+            ),
           ),
         }
       : null,

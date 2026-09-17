@@ -1118,8 +1118,9 @@ const unlockNudgeInDB = async (userId: string, nudgeId: string) => {
   }
 
   const endTime = new Date();
-  const durationMinutes = Math.round(
-    (endTime.getTime() - session.startTime.getTime()) / 60000,
+  const durationMinutes = Math.max(
+    0,
+    Math.round((endTime.getTime() - session.startTime.getTime()) / 60000),
   );
 
   const [result] = await Promise.all([
@@ -1217,8 +1218,10 @@ const takeNudgeBreakInDB = async (
       activeBreak.nudgeId.toString() === nudgeObjectId.toString()
     ) {
       const now = new Date();
-      const elapsedMinutes =
-        (now.getTime() - new Date(activeBreak.startTime).getTime()) / 60000;
+      const elapsedMinutes = Math.max(
+        0,
+        (now.getTime() - new Date(activeBreak.startTime).getTime()) / 60000,
+      );
       const durationLimit = nudge.breakConfig?.breakDurationMinutes || 0;
       const remainingMinutes = Math.max(
         0,
@@ -2071,8 +2074,9 @@ const removeNudgeParticipantFromDB = async (
       });
 
       if (session) {
-        const durationMinutes = Math.round(
-          (endTime.getTime() - session.startTime.getTime()) / 60000,
+        const durationMinutes = Math.max(
+          0,
+          Math.round((endTime.getTime() - session.startTime.getTime()) / 60000),
         );
 
         await FocusSession.findByIdAndUpdate(
@@ -2162,8 +2166,11 @@ const leaveNudgeInDB = async (userId: string, nudgeId: string) => {
   const endTime = new Date();
 
   if (activeSession) {
-    const durationMinutes = Math.round(
-      (endTime.getTime() - activeSession.startTime.getTime()) / 60000,
+    const durationMinutes = Math.max(
+      0,
+      Math.round(
+        (endTime.getTime() - activeSession.startTime.getTime()) / 60000,
+      ),
     );
     await FocusSession.findByIdAndUpdate(
       activeSession._id,

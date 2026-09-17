@@ -88,7 +88,10 @@ const getDashboardData = async (
     if (session.status === "completed") {
       todayFocusMinutes += session.durationMinutes || 0;
     } else {
-      const durationMs = new Date().getTime() - session.startTime.getTime();
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - session.startTime.getTime(),
+      );
       todayFocusMinutes += Math.round(durationMs / 60000);
     }
   });
@@ -105,7 +108,10 @@ const getDashboardData = async (
       );
       todayFocusMinutes -= Math.round(spentSec / 60);
     } else {
-      const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - breakItem.startTime.getTime(),
+      );
       todayFocusMinutes -= Math.round(durationMs / 60000);
     }
   });
@@ -131,7 +137,10 @@ const getDashboardData = async (
     if (session.status === "completed") {
       weekFocusMinutes += session.durationMinutes || 0;
     } else {
-      const durationMs = new Date().getTime() - session.startTime.getTime();
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - session.startTime.getTime(),
+      );
       weekFocusMinutes += Math.round(durationMs / 60000);
     }
   });
@@ -147,7 +156,10 @@ const getDashboardData = async (
       );
       weekFocusMinutes -= Math.round(spentSec / 60);
     } else {
-      const durationMs = new Date().getTime() - breakItem.startTime.getTime();
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - breakItem.startTime.getTime(),
+      );
       weekFocusMinutes -= Math.round(durationMs / 60000);
     }
   });
@@ -326,7 +338,7 @@ const getHistoryData = async (
             )
           : 0);
     } else {
-      const diff = nowMs - new Date(s.startTime).getTime();
+      const diff = Math.max(0, nowMs - new Date(s.startTime).getTime());
       totalMinutes += Math.round(diff / 60000);
     }
   }
@@ -342,7 +354,7 @@ const getHistoryData = async (
             )
           : 0);
     } else {
-      const diff = nowMs - new Date(b.startTime).getTime();
+      const diff = Math.max(0, nowMs - new Date(b.startTime).getTime());
       totalMinutes += Math.round(diff / 60000);
     }
   }
@@ -395,7 +407,10 @@ const getHistoryData = async (
                       60000,
                   )
                 : 0)
-            : Math.round((nowMs - new Date(b.startTime).getTime()) / 60000);
+            : Math.max(
+                0,
+                Math.round((nowMs - new Date(b.startTime).getTime()) / 60000),
+              );
         modeWiseToday[modeName] = Math.max(
           0,
           modeWiseToday[modeName] - breakMin,

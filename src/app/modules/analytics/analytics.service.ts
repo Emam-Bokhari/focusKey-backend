@@ -152,7 +152,10 @@ const getFocusTimeOverTime = async (
     if (session.status === "completed") {
       minutes = session.durationMinutes || 0;
     } else {
-      const durationMs = new Date().getTime() - session.startTime.getTime();
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - session.startTime.getTime(),
+      );
       minutes = Math.round(durationMs / 60000);
     }
     if (dateWiseData[dateKey] !== undefined) {
@@ -221,7 +224,10 @@ const getFocusTimeTogetherOverTime = async (
     if (session.status === "completed") {
       minutes = session.durationMinutes || 0;
     } else {
-      const durationMs = new Date().getTime() - session.startTime.getTime();
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - session.startTime.getTime(),
+      );
       minutes = Math.round(durationMs / 60000);
     }
     if (dateWiseData[dateKey] !== undefined) {

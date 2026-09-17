@@ -1525,8 +1525,12 @@ const getCurrentNudgeStatusInDB = async (
     const duration =
       session.status === "completed"
         ? session.durationMinutes || 0
-        : Math.round(
-            (new Date().getTime() - new Date(session.startTime).getTime()) / 60000,
+        : Math.max(
+            0,
+            Math.round(
+              (new Date().getTime() - new Date(session.startTime).getTime()) /
+                60000,
+            ),
           );
     weekFocusMinutes += duration;
     if (new Date(session.startTime) >= startOfDay) todayFocusMinutes += duration;
@@ -1536,8 +1540,12 @@ const getCurrentNudgeStatusInDB = async (
     const duration =
       breakItem.status === "completed"
         ? breakItem.durationMinutes || 0
-        : Math.round(
-            (new Date().getTime() - new Date(breakItem.startTime).getTime()) / 60000,
+        : Math.max(
+            0,
+            Math.round(
+              (new Date().getTime() - new Date(breakItem.startTime).getTime()) /
+                60000,
+            ),
           );
     weekFocusMinutes -= duration;
     if (new Date(breakItem.startTime) >= startOfDay) todayFocusMinutes -= duration;

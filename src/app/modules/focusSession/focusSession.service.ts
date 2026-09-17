@@ -40,7 +40,7 @@ const calculateBreakMinutes = (b: any, nowMs: number) => {
     return Math.round(spentSec / 60);
   } else {
     const bStartMs = new Date(b.startTime).getTime();
-    return Math.round((nowMs - bStartMs) / 60000);
+    return Math.max(0, Math.round((nowMs - bStartMs) / 60000));
   }
 };
 
@@ -54,7 +54,7 @@ const calculateTotalMinutes = (
     if (s.status === "completed") {
       totalMinutes += s.durationMinutes || 0;
     } else {
-      const diff = nowMs - new Date(s.startTime).getTime();
+      const diff = Math.max(0, nowMs - new Date(s.startTime).getTime());
       totalMinutes += Math.round(diff / 60000);
     }
   }
@@ -272,7 +272,7 @@ const getFocusHistoryFromDB = async (
       if (s.status === "completed") {
         modeWiseToday[modeName] += s.durationMinutes || 0;
       } else {
-        const diff = nowMs - sStartMs;
+        const diff = Math.max(0, nowMs - sStartMs);
         modeWiseToday[modeName] += Math.round(diff / 60000);
       }
     }
@@ -817,8 +817,10 @@ const reconcileSessionFromDB = async (
   let startTime = parseClientDate(startedAt, activeTimezone);
   const isCompleted = status === "completed" || Boolean(endedAt);
 
-  // Guard against clock-skew or timezone mismatch where client's startedAt is in the future
-  if (!isCompleted && startTime.getTime() > Date.now()) {
+  // Guard against extreme clock-skew or invalid future timestamp.
+  // Allow slight client clock drift (up to 5 minutes into the future) to preserve offline progress.
+  const MAX_FUTURE_DRIFT_MS = 5 * 60 * 1000;
+  if (!isCompleted && startTime.getTime() - Date.now() > MAX_FUTURE_DRIFT_MS) {
     startTime = new Date();
   }
 

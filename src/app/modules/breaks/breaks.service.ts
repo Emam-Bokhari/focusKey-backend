@@ -361,11 +361,16 @@ const getActiveBreakStatus = async (
   }
 
   const isPaused = currentBreak.status === "paused";
+  const totalBreakSeconds =
+    (currentBreak.totalDurationMinutes || breakConfig.breakDurationMinutes || 15) * 60;
   const remainingSeconds = isPaused
-    ? currentBreak.remainingSeconds || 0
-    : Math.max(
-        0,
-        Math.ceil((currentBreak.endTime.getTime() - now.getTime()) / 1000),
+    ? Math.min(totalBreakSeconds, Math.max(0, currentBreak.remainingSeconds || 0))
+    : Math.min(
+        totalBreakSeconds,
+        Math.max(
+          0,
+          Math.ceil((currentBreak.endTime.getTime() - now.getTime()) / 1000),
+        ),
       );
   const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
 
@@ -628,13 +633,18 @@ const formatReconcileBreak = (
     : new Date();
   const now = new Date();
 
+  const totalDurationMinutes = breakDoc.totalDurationMinutes || 15;
+  const maxAllowedSeconds = totalDurationMinutes * 60;
   const isPaused = breakDoc.status === "paused";
   const isCompleted = breakDoc.status === "completed";
   const remainingSeconds = isCompleted
     ? 0
     : isPaused
-      ? breakDoc.remainingSeconds || 0
-      : Math.max(0, Math.ceil((endTime.getTime() - now.getTime()) / 1000));
+      ? Math.min(maxAllowedSeconds, Math.max(0, breakDoc.remainingSeconds || 0))
+      : Math.min(
+          maxAllowedSeconds,
+          Math.max(0, Math.ceil((endTime.getTime() - now.getTime()) / 1000)),
+        );
   const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
 
   return {
@@ -802,10 +812,18 @@ const reconcileBreakFromDB = async (
 
   // 4. Parse Dates & Status
   let startTime = parseClientDate(startedAt, activeTimezone);
-  if (status !== "completed" && !endedAt && startTime.getTime() > Date.now()) {
+  // Guard against extreme clock-skew or invalid future timestamp.
+  // Allow slight client clock drift (up to 5 minutes into the future) to preserve offline progress.
+  const MAX_FUTURE_DRIFT_MS = 5 * 60 * 1000;
+  if (
+    status !== "completed" &&
+    !endedAt &&
+    startTime.getTime() - Date.now() > MAX_FUTURE_DRIFT_MS
+  ) {
     startTime = new Date();
   }
   const breakDurationMinutes = breakConfig.breakDurationMinutes || 15;
+  const totalBreakSeconds = breakDurationMinutes * 60;
   const scheduledEndTime = new Date(
     startTime.getTime() + breakDurationMinutes * 60000,
   );
@@ -813,7 +831,7 @@ const reconcileBreakFromDB = async (
   let finalStatus: "active" | "completed" = "active";
   let finalEndTime: Date = scheduledEndTime;
   let durationMinutes = 0;
-  let remainingSeconds = breakDurationMinutes * 60;
+  let remainingSeconds = totalBreakSeconds;
 
   if (status === "completed" || endedAt) {
     finalStatus = "completed";
@@ -836,9 +854,12 @@ const reconcileBreakFromDB = async (
     } else {
       finalStatus = "active";
       finalEndTime = scheduledEndTime;
-      remainingSeconds = Math.max(
-        0,
-        Math.ceil((scheduledEndTime.getTime() - now.getTime()) / 1000),
+      remainingSeconds = Math.min(
+        totalBreakSeconds,
+        Math.max(
+          0,
+          Math.ceil((scheduledEndTime.getTime() - now.getTime()) / 1000),
+        ),
       );
       durationMinutes = 0;
     }

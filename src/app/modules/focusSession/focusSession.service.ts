@@ -772,6 +772,72 @@ const reconcileSessionFromDB = async (
   }).populate("modeId");
 
   if (existingSession) {
+    const isCompleted = status === "completed" || Boolean(endedAt);
+
+    // If session is currently active in DB, but client reports it as completed
+    if (isCompleted && existingSession.status === "active") {
+      const endTime = endedAt
+        ? parseClientDate(endedAt, activeTimezone)
+        : new Date();
+      const durationMs = Math.max(
+        0,
+        endTime.getTime() - new Date(existingSession.startTime).getTime(),
+      );
+      const durationMinutes = Math.round(durationMs / 60000);
+
+      existingSession.status = "completed";
+      existingSession.endTime = endTime;
+      existingSession.durationMinutes = durationMinutes;
+      await existingSession.save();
+
+      const modeObjectIdToDeactivate =
+        (existingSession.modeId as any)?._id || existingSession.modeId;
+
+      if (modeObjectIdToDeactivate) {
+        await Mode.findByIdAndUpdate(modeObjectIdToDeactivate, {
+          isActive: false,
+          $push: {
+            lockEvents: {
+              type: "unlock",
+              source: "mode",
+              timestamp: endTime,
+            },
+          },
+        });
+      }
+
+      // Close any other lingering active sessions for this user
+      const otherActiveSessions = await FocusSession.find({
+        userId: userObjectId,
+        _id: { $ne: existingSession._id },
+        status: "active",
+        isDeleted: false,
+      }).lean();
+
+      if (otherActiveSessions.length > 0) {
+        const bulkOps = otherActiveSessions.map((s) => {
+          const sEnd = endTime;
+          const dMs = Math.max(
+            0,
+            sEnd.getTime() - new Date(s.startTime).getTime(),
+          );
+          return {
+            updateOne: {
+              filter: { _id: s._id },
+              update: {
+                $set: {
+                  status: "completed",
+                  endTime: sEnd,
+                  durationMinutes: Math.round(dMs / 60000),
+                },
+              },
+            },
+          };
+        });
+        await FocusSession.bulkWrite(bulkOps);
+      }
+    }
+
     const lockStatus = await ModeService.getLockStatusFromDB(
       userId,
       activeTimezone,
@@ -844,8 +910,39 @@ const reconcileSessionFromDB = async (
       status: "completed",
     });
 
-    // Retroactively push lock and unlock events to mode
+    // Close any previous active sessions for this user so no dangling session remains active
+    const activeSessions = await FocusSession.find({
+      userId: userObjectId,
+      status: "active",
+      isDeleted: false,
+    }).lean();
+
+    if (activeSessions.length > 0) {
+      const bulkOps = activeSessions.map((s) => {
+        const sEnd = endTime;
+        const dMs = Math.max(
+          0,
+          sEnd.getTime() - new Date(s.startTime).getTime(),
+        );
+        return {
+          updateOne: {
+            filter: { _id: s._id },
+            update: {
+              $set: {
+                status: "completed",
+                endTime: sEnd,
+                durationMinutes: Math.round(dMs / 60000),
+              },
+            },
+          },
+        };
+      });
+      await FocusSession.bulkWrite(bulkOps);
+    }
+
+    // Retroactively push lock and unlock events to mode AND deactivate mode (isActive: false)
     await Mode.findByIdAndUpdate(modeObjectId, {
+      isActive: false,
       $push: {
         lockEvents: {
           $each: [

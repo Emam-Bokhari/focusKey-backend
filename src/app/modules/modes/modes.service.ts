@@ -333,20 +333,6 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
       status: "active",
     });
   } else {
-    const activeNudgeSession = await FocusSession.findOne({
-      userId: userObjectId,
-      modeId: modeId,
-      status: "active",
-      nudgeId: { $exists: true },
-    }).lean();
-
-    if (activeNudgeSession) {
-      throw new ApiError(
-        StatusCodes.FORBIDDEN,
-        "This mode is active because of a Nudge session. To deactivate, please use the 'Unlock Nudge' option.",
-      );
-    }
-
     const activeSessions = await FocusSession.find({
       userId: userObjectId,
       modeId: modeId,

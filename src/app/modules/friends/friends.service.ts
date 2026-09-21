@@ -23,6 +23,13 @@ import {
   getZonedStartOfWeek,
 } from "../../../helpers/timezoneHelper";
 
+import { Notification } from "../notification/notification.model";
+import { logger } from "../../../shared/logger";
+import {
+  IFriendDetails,
+  IFriendsFocusingStatus,
+} from "./friends.interface";
+
 const NUDGE_PREVIEW_TTL_MINUTES = 10;
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -977,39 +984,277 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 
 const getNudgeHistoryFromDB = async (
   userId: string,
-  page: number,
-  limit: number,
+  page: number = 1,
+  limit: number = 10,
 ) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
   const skip = (page - 1) * limit;
 
   const query = {
-    $or: [
-      { creatorId: userObjectId },
+    $or: [{ receiver: userObjectId }, { sender: userObjectId }],
+    $and: [
       {
-        "participants.userId": userObjectId,
-        "participants.isDeleted": { $ne: true },
+        $or: [
+          { title: "Nudge" },
+          { text: { $regex: /nudge|focusing/i } },
+        ],
       },
     ],
-    isDeleted: { $ne: true },
   };
 
-  const [nudges, total] = await Promise.all([
-    Nudge.find(query)
-      .populate("creatorId", "name profileImage")
-      .populate("participants.userId", "name profileImage")
-      .populate("joinedParticipants.userId", "name profileImage")
-      .populate("modeId", "name")
-      .sort({ startTime: -1 })
+  const [notifications, total] = await Promise.all([
+    Notification.find(query)
+      .populate("sender", "name userName profileImage email")
+      .populate("receiver", "name userName profileImage email")
+      .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)
       .lean(),
-    Nudge.countDocuments(query),
+    Notification.countDocuments(query),
   ]);
 
   return {
     meta: { page, limit, total },
-    data: nudges,
+    data: notifications,
+  };
+};
+
+const sendNudgeInDB = async (senderId: string, friendId: string) => {
+  if (senderId === friendId) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "You cannot send a nudge to yourself",
+    );
+  }
+
+  const senderObjectId = new mongoose.Types.ObjectId(senderId);
+  const friendObjectId = new mongoose.Types.ObjectId(friendId);
+
+  const [sender, friendUser, friendship] = await Promise.all([
+    User.findById(senderId).select("name userName profileImage").lean(),
+    User.findById(friendId).select("name userName profileImage").lean(),
+    Friend.findOne({
+      $or: [
+        { userId: senderObjectId, friendId: friendObjectId },
+        { userId: friendObjectId, friendId: senderObjectId },
+      ],
+      status: "accepted",
+      isDeleted: { $ne: true },
+    }).lean(),
+  ]);
+
+  if (!sender) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Sender not found");
+  }
+
+  if (!friendUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Friend user not found");
+  }
+
+  if (!friendship) {
+    throw new ApiError(
+      StatusCodes.FORBIDDEN,
+      "You can only send a nudge to an accepted friend",
+    );
+  }
+
+  const now = new Date();
+  const [senderActiveSession, senderActiveBreak] = await Promise.all([
+    FocusSession.findOne({ userId: senderObjectId, status: "active" })
+      .select("_id")
+      .lean(),
+    Break.findOne({
+      userId: senderObjectId,
+      status: "active",
+      endTime: { $gt: now },
+    })
+      .select("_id")
+      .lean(),
+  ]);
+
+  const isSenderFocusing = !!senderActiveSession && !senderActiveBreak;
+  const senderDisplayName = sender.name || sender.userName || "A friend";
+
+  const notificationText = isSenderFocusing
+    ? `${senderDisplayName} is focusing now, focus with them?`
+    : `${senderDisplayName} sent you a nudge to focus!`;
+
+  await sendNotifications({
+    title: "Nudge",
+    text: notificationText,
+    receiver: friendObjectId,
+    sender: senderObjectId,
+    type: NOTIFICATION_TYPE.USER,
+    referenceId: senderObjectId,
+    referenceModel: NOTIFICATION_REFERENCE_MODEL.USER,
+  }).catch((err) => {
+    logger.error("Error sending nudge notification:", err);
+  });
+
+  return {
+    senderId,
+    friendId,
+    notificationText,
+    sentAt: now,
+  };
+};
+
+const getFriendDetailsFromDB = async (
+  userId: string,
+  friendId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+): Promise<IFriendDetails> => {
+  if (userId === friendId) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid friend ID");
+  }
+
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  const friendObjectId = new mongoose.Types.ObjectId(friendId);
+
+  const [friendship, friendUser] = await Promise.all([
+    Friend.findOne({
+      $or: [
+        { userId: userObjectId, friendId: friendObjectId },
+        { userId: friendObjectId, friendId: userObjectId },
+      ],
+      status: "accepted",
+      isDeleted: { $ne: true },
+    }).lean(),
+    User.findById(friendId)
+      .select("name userName profileImage email")
+      .lean(),
+  ]);
+
+  if (!friendUser) {
+    throw new ApiError(StatusCodes.NOT_FOUND, "Friend user not found");
+  }
+
+  if (!friendship) {
+    throw new ApiError(
+      StatusCodes.NOT_FOUND,
+      "Friend relationship not found or not accepted",
+    );
+  }
+
+  const now = new Date();
+  const [activeSession, activeBreak, lastSessionMap] = await Promise.all([
+    FocusSession.findOne({
+      userId: friendObjectId,
+      status: "active",
+    })
+      .select("userId")
+      .lean(),
+    Break.findOne({
+      userId: friendObjectId,
+      status: "active",
+      endTime: { $gt: now },
+    })
+      .select("userId")
+      .lean(),
+    batchGetLastFocusSessions([friendObjectId]),
+  ]);
+
+  const isFocusing = !!activeSession && !activeBreak;
+  const lastFocusInfo = isFocusing
+    ? "Focusing now"
+    : formatLastFocusString(
+        lastSessionMap.get(friendId),
+        now,
+        userTimezone,
+      );
+
+  return {
+    _id: friendUser._id,
+    name: friendUser.name,
+    userName:
+      friendUser.userName || friendUser.email?.split("@")[0] || "user",
+    email: friendUser.email || "",
+    profileImage: friendUser.profileImage || "",
+    isFocusing,
+    lastFocusInfo,
+  };
+};
+
+const getFriendsFocusingStatusInDB = async (
+  userId: string,
+  userTimezone: string = DEFAULT_TIMEZONE,
+): Promise<IFriendsFocusingStatus> => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  const friends = await Friend.find({
+    $or: [{ userId: userObjectId }, { friendId: userObjectId }],
+    status: "accepted",
+    isDeleted: { $ne: true },
+  })
+    .populate("userId friendId", "name userName profileImage email")
+    .lean();
+
+  const friendsData = friends
+    .filter((f) => f.userId && f.friendId)
+    .map((f) => {
+      const otherUser: any =
+        (f.userId as any)._id.toString() === userId ? f.friendId : f.userId;
+      return otherUser;
+    });
+
+  if (friendsData.length === 0) {
+    return {
+      activeCount: 0,
+      displayMessage: null,
+      activeFriends: [],
+    };
+  }
+
+  const friendIds = friendsData.map(
+    (friend: any) => new mongoose.Types.ObjectId(friend._id.toString()),
+  );
+  const now = new Date();
+
+  const [activeSessions, activeBreaks] = await Promise.all([
+    FocusSession.find({
+      userId: { $in: friendIds },
+      status: "active",
+    })
+      .select("userId")
+      .lean(),
+    Break.find({
+      userId: { $in: friendIds },
+      status: "active",
+      endTime: { $gt: now },
+    })
+      .select("userId")
+      .lean(),
+  ]);
+
+  const activeBreakSet = new Set(
+    activeBreaks.map((b) => b.userId.toString()),
+  );
+  const activeSessionUserIds = new Set(
+    activeSessions
+      .map((s) => s.userId.toString())
+      .filter((id) => !activeBreakSet.has(id)),
+  );
+
+  const activeFriends = friendsData
+    .filter((f: any) => activeSessionUserIds.has(f._id.toString()))
+    .map((f: any) => ({
+      _id: f._id,
+      name: f.name,
+      profileImage: f.profileImage || "",
+    }));
+
+  const activeCount = activeFriends.length;
+  let displayMessage: string | null = null;
+  if (activeCount === 1) {
+    displayMessage = `${activeFriends[0].name} is focusing now`;
+  } else if (activeCount > 1) {
+    displayMessage = `${activeCount} friends are focusing`;
+  }
+
+  return {
+    activeCount,
+    displayMessage,
+    activeFriends,
   };
 };
 
@@ -2276,6 +2521,9 @@ const getPendingNudgePreviewInDB = async (userId: string) => {
 
 export const FriendsService = {
   getUsersFromDB,
+  sendNudgeInDB,
+  getFriendDetailsFromDB,
+  getFriendsFocusingStatusInDB,
   initiateNudgePreviewInDB,
   getNudgePreviewDetailsFromDB,
   confirmNudgeFromPreviewInDB,

@@ -4,6 +4,7 @@ import { Mode } from "../modes/modes.model";
 import { Break, BreakConfig } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
 import { Friend, Nudge, NudgePreview } from "../friends/friends.model";
+import { FriendsService } from "../friends/friends.service";
 import {
   DEFAULT_TIMEZONE,
   formatZonedDateKey,
@@ -38,21 +39,16 @@ const getDashboardData = async (
         isDeleted: false,
       });
 
-  const activeBreak = await Break.findOne({
-    userId: userObjectId,
-    nudgeId: { $exists: false },
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
+  const [activeBreak, friendsFocusStatus] = await Promise.all([
+    Break.findOne({
+      userId: userObjectId,
+      status: "active",
+      endTime: { $gt: new Date() },
+    }),
+    FriendsService.getFriendsFocusingStatusInDB(userId, userTimezone),
+  ]);
 
-  const activeNudgeBreak = await Break.findOne({
-    userId: userObjectId,
-    nudgeId: { $exists: true },
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
-
-  const isLocked = activeMode ? !(activeBreak || activeNudgeBreak) : false;
+  const isLocked = activeMode ? !activeBreak : false;
 
   const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
   const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
@@ -65,18 +61,8 @@ const getDashboardData = async (
     ],
   });
 
-  const todayGlobalBreaks = await Break.find({
+  const todayBreaks = await Break.find({
     userId: userObjectId,
-    nudgeId: { $exists: false },
-    $or: [
-      { createdAt: { $gte: startOfDay, $lte: endOfDay } },
-      { status: { $in: ["active", "paused"] } },
-    ],
-  });
-
-  const todayNudgeBreaks = await Break.find({
-    userId: userObjectId,
-    nudgeId: { $exists: true },
     $or: [
       { createdAt: { $gte: startOfDay, $lte: endOfDay } },
       { status: { $in: ["active", "paused"] } },
@@ -96,7 +82,7 @@ const getDashboardData = async (
     }
   });
 
-  const allTodayBreaks = [...todayGlobalBreaks, ...todayNudgeBreaks];
+  const allTodayBreaks = todayBreaks;
   allTodayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       todayFocusMinutes -= breakItem.durationMinutes || 0;
@@ -279,19 +265,9 @@ const getDashboardData = async (
                   ),
           }
         : null,
-      activeNudgeBreak: activeNudgeBreak
-        ? {
-            ...activeNudgeBreak.toObject(),
-            remainingMinutes: Math.max(
-              0,
-              Math.ceil(
-                (activeNudgeBreak.endTime.getTime() - new Date().getTime()) /
-                  60000,
-              ),
-            ),
-          }
-        : null,
+      activeNudgeBreak: null,
     },
+    friendsFocusStatus,
     totalBlockedApps:
       activeMode?.totalLockedApps ?? activeMode?.lockedApps?.length ?? 0,
     totalBlockedAppsAcrossModes,

@@ -26,6 +26,67 @@ const getUsers = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const sendNudge = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const friendId = req.params.friendId || req.body.friendId;
+
+  if (!friendId) {
+    sendResponse(res, {
+      statusCode: StatusCodes.BAD_REQUEST,
+      success: false,
+      message: "friendId is required (as route parameter or in request body)",
+    });
+    return;
+  }
+
+  const result = await FriendsService.sendNudgeInDB(userId, friendId);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Nudge notification sent successfully",
+    data: result,
+  });
+});
+
+const getFriendDetails = catchAsync(async (req: Request, res: Response) => {
+  const userId = (req.user as any).id;
+  const userTimezone = (req.user as any).timezone;
+  const { friendId } = req.params;
+
+  const result = await FriendsService.getFriendDetailsFromDB(
+    userId,
+    friendId,
+    userTimezone,
+  );
+
+  sendResponse(res, {
+    statusCode: StatusCodes.OK,
+    success: true,
+    message: "Friend details retrieved successfully",
+    data: result,
+  });
+});
+
+const getFriendsFocusingStatus = catchAsync(
+  async (req: Request, res: Response) => {
+    const userId = (req.user as any).id;
+    const userTimezone = (req.user as any).timezone;
+
+    const result = await FriendsService.getFriendsFocusingStatusInDB(
+      userId,
+      userTimezone,
+    );
+
+    sendResponse(res, {
+      statusCode: StatusCodes.OK,
+      success: true,
+      message: "Friends focusing status retrieved successfully",
+      data: result,
+    });
+  },
+);
+
 const initiateNudge = catchAsync(async (req: Request, res: Response) => {
   const userId = (req.user as any).id;
   const payload = req.body;
@@ -394,6 +455,9 @@ const removeNudgeParticipant = catchAsync(
 
 export const FriendsController = {
   getUsers,
+  sendNudge,
+  getFriendDetails,
+  getFriendsFocusingStatus,
   sendFriendRequest,
   oldAddFriend,
   getReceivedFriendRequests,

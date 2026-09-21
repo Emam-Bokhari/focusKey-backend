@@ -56,3 +56,25 @@ export interface IFriendStats {
     highlightedDays: string[];
   };
 }
+
+export interface IFriendDetails {
+  _id: Types.ObjectId | string;
+  name: string;
+  userName: string;
+  email: string;
+  profileImage: string;
+  isFocusing: boolean;
+  lastFocusInfo: string;
+}
+
+export interface IFriendFocusingItem {
+  _id: Types.ObjectId | string;
+  name: string;
+  profileImage: string;
+}
+
+export interface IFriendsFocusingStatus {
+  activeCount: number;
+  displayMessage: string | null;
+  activeFriends: IFriendFocusingItem[];
+}

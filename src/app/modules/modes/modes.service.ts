@@ -260,7 +260,11 @@ const deleteModeFromDB = async (modeId: string) => {
   return result;
 };
 
-const toggleModeActivation = async (modeId: string, userId: string) => {
+const toggleModeActivation = async (
+  modeId: string,
+  userId: string,
+  clientSessionId?: string,
+) => {
   await ensureDefaultModesExist(userId);
   const mode = await Mode.findById(modeId);
 
@@ -329,6 +333,11 @@ const toggleModeActivation = async (modeId: string, userId: string) => {
     await FocusSession.create({
       userId: userObjectId,
       modeId: modeId,
+      ...(clientSessionId &&
+      typeof clientSessionId === "string" &&
+      clientSessionId.trim()
+        ? { clientSessionId: clientSessionId.trim() }
+        : {}),
       startTime: new Date(),
       status: "active",
     });

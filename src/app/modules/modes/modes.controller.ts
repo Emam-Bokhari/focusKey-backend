@@ -69,7 +69,12 @@ const deleteMode = catchAsync(async (req: Request, res: Response) => {
 const toggleModeActivation = catchAsync(async (req: Request, res: Response) => {
   const modeId = req.params.modeId;
   const userId = req.user.id;
-  const result = await ModeService.toggleModeActivation(modeId, userId);
+  const clientSessionId = req.body?.clientSessionId;
+  const result = await ModeService.toggleModeActivation(
+    modeId,
+    userId,
+    clientSessionId,
+  );
 
   sendResponse(res, {
     statusCode: StatusCodes.OK,

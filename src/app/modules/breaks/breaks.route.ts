@@ -5,8 +5,6 @@ import { BreakController } from "./breaks.controller";
 const router = express.Router();
 
 router.post("/start", isUser, BreakController.startBreak);
-// router.post("/pause", isUser, BreakController.pauseBreak);
-// router.post("/resume", isUser, BreakController.resumeBreak);
 router.post("/stop", isUser, BreakController.stopBreak);
 router.post("/reconcile", isUser, BreakController.reconcileBreak);
 router.get("/status", isUser, BreakController.getActiveBreakStatus);

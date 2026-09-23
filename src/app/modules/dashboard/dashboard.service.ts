@@ -42,6 +42,7 @@ const getDashboardData = async (
   const [activeBreak, friendsFocusStatus] = await Promise.all([
     Break.findOne({
       userId: userObjectId,
+      nudgeId: { $exists: false },
       status: "active",
       endTime: { $gt: new Date() },
     }),
@@ -65,7 +66,7 @@ const getDashboardData = async (
     userId: userObjectId,
     $or: [
       { createdAt: { $gte: startOfDay, $lte: endOfDay } },
-      { status: { $in: ["active", "paused"] } },
+      { status: "active" },
     ],
   });
 
@@ -86,13 +87,6 @@ const getDashboardData = async (
   allTodayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       todayFocusMinutes -= breakItem.durationMinutes || 0;
-    } else if (breakItem.status === "paused") {
-      const totalSec = (breakItem.totalDurationMinutes || 15) * 60;
-      const spentSec = Math.max(
-        0,
-        totalSec - (breakItem.remainingSeconds || 0),
-      );
-      todayFocusMinutes -= Math.round(spentSec / 60);
     } else {
       const durationMs = Math.max(
         0,
@@ -114,7 +108,7 @@ const getDashboardData = async (
     userId: userObjectId,
     $or: [
       { createdAt: { $gte: startOfWeek } },
-      { status: { $in: ["active", "paused"] } },
+      { status: "active" },
     ],
   });
 
@@ -134,13 +128,6 @@ const getDashboardData = async (
   weekBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
       weekFocusMinutes -= breakItem.durationMinutes || 0;
-    } else if (breakItem.status === "paused") {
-      const totalSec = (breakItem.totalDurationMinutes || 15) * 60;
-      const spentSec = Math.max(
-        0,
-        totalSec - (breakItem.remainingSeconds || 0),
-      );
-      weekFocusMinutes -= Math.round(spentSec / 60);
     } else {
       const durationMs = Math.max(
         0,
@@ -186,27 +173,17 @@ const getDashboardData = async (
   const currentGlobalBreak = await Break.findOne({
     userId: userObjectId,
     nudgeId: { $exists: false },
-    status: { $in: ["active", "paused"] },
-    $or: [
-      { status: "active", endTime: { $gt: new Date() } },
-      { status: "paused" },
-    ],
+    status: "active",
+    endTime: { $gt: new Date() },
   });
 
   if (currentGlobalBreak) {
-    if (currentGlobalBreak.status === "paused") {
-      activeBreakRemainingMinutes = Math.max(
-        0,
-        Math.ceil((currentGlobalBreak.remainingSeconds || 0) / 60),
-      );
-    } else {
-      const remainingTimeMs =
-        currentGlobalBreak.endTime.getTime() - new Date().getTime();
-      activeBreakRemainingMinutes = Math.max(
-        0,
-        Math.ceil(remainingTimeMs / 60000),
-      );
-    }
+    const remainingTimeMs =
+      currentGlobalBreak.endTime.getTime() - new Date().getTime();
+    activeBreakRemainingMinutes = Math.max(
+      0,
+      Math.ceil(remainingTimeMs / 60000),
+    );
   }
 
   const allModes = await Mode.find({ userId: userObjectId, isDeleted: false });
@@ -250,19 +227,16 @@ const getDashboardData = async (
       activeBreak: currentGlobalBreak
         ? {
             ...currentGlobalBreak.toObject(),
-            isPaused: currentGlobalBreak.status === "paused",
+            isPaused: false,
             remainingMinutes: activeBreakRemainingMinutes,
-            remainingSeconds:
-              currentGlobalBreak.status === "paused"
-                ? currentGlobalBreak.remainingSeconds || 0
-                : Math.max(
-                    0,
-                    Math.ceil(
-                      (currentGlobalBreak.endTime.getTime() -
-                        new Date().getTime()) /
-                        1000,
-                    ),
-                  ),
+            remainingSeconds: Math.max(
+              0,
+              Math.ceil(
+                (currentGlobalBreak.endTime.getTime() -
+                  new Date().getTime()) /
+                  1000,
+              ),
+            ),
           }
         : null,
       activeNudgeBreak: null,

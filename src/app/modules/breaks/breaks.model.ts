@@ -44,12 +44,9 @@ const breakSchema = new Schema<IBreak>(
       type: Number,
       default: 0,
     },
-    pausedAt: {
-      type: Date,
-    },
     status: {
       type: String,
-      enum: ["active", "paused", "completed"],
+      enum: ["active", "completed"],
       default: "active",
     },
   },

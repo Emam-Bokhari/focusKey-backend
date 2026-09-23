@@ -1432,11 +1432,8 @@ const takeNudgeBreakInDB = async (
     }).lean(),
     Break.findOne({
       userId: userObjectId,
-      status: { $in: ["active", "paused"] },
-      $or: [
-        { status: "active", endTime: { $gt: new Date() } },
-        { status: "paused" },
-      ],
+      status: "active",
+      endTime: { $gt: new Date() },
     }).lean(),
   ]);
 
@@ -1452,12 +1449,6 @@ const takeNudgeBreakInDB = async (
   }
 
   if (activeBreak) {
-    // if (activeBreak.status === "paused") {
-    //   throw new ApiError(
-    //     StatusCodes.BAD_REQUEST,
-    //     "You have a paused break. Please resume or stop it first.",
-    //   );
-    // }
     if (
       activeBreak.nudgeId &&
       activeBreak.nudgeId.toString() === nudgeObjectId.toString()
@@ -1548,27 +1539,22 @@ const stopNudgeBreakInDB = async (
   const currentBreakToStop = await Break.findOne({
     userId: userObjectId,
     nudgeId: nudgeObjectId,
-    status: { $in: ["active", "paused"] },
-    $or: [{ status: "active", endTime: { $gt: now } }, { status: "paused" }],
+    status: "active",
+    endTime: { $gt: now },
   });
 
   if (!currentBreakToStop) {
     throw new ApiError(
       StatusCodes.BAD_REQUEST,
-      "No active or paused nudge break found to stop",
+      "No active nudge break found to stop",
     );
   }
 
-  let remainingSeconds = 0;
-  if (currentBreakToStop.status === "paused") {
-    remainingSeconds = currentBreakToStop.remainingSeconds || 0;
-  } else {
-    const remainingMs = Math.max(
-      0,
-      currentBreakToStop.endTime.getTime() - now.getTime(),
-    );
-    remainingSeconds = Math.round(remainingMs / 1000);
-  }
+  const remainingMs = Math.max(
+    0,
+    currentBreakToStop.endTime.getTime() - now.getTime(),
+  );
+  const remainingSeconds = Math.round(remainingMs / 1000);
 
   const totalAllocatedMinutes =
     currentBreakToStop.totalDurationMinutes ||
@@ -1591,7 +1577,6 @@ const stopNudgeBreakInDB = async (
       endTime: now,
       durationMinutes,
       remainingSeconds: 0,
-      $unset: { pausedAt: 1 },
     },
     { new: true },
   );

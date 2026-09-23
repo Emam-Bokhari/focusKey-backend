@@ -330,6 +330,20 @@ const toggleModeActivation = async (
       await FocusSession.bulkWrite(bulkOps);
     }
 
+    await Break.updateMany(
+      {
+        userId: userObjectId,
+        status: "active",
+      },
+      {
+        $set: {
+          status: "completed",
+          endTime: new Date(),
+          remainingSeconds: 0,
+        },
+      },
+    );
+
     await FocusSession.create({
       userId: userObjectId,
       modeId: modeId,
@@ -371,6 +385,20 @@ const toggleModeActivation = async (
       });
       await FocusSession.bulkWrite(bulkOps);
     }
+
+    await Break.updateMany(
+      {
+        userId: userObjectId,
+        status: "active",
+      },
+      {
+        $set: {
+          status: "completed",
+          endTime: new Date(),
+          remainingSeconds: 0,
+        },
+      },
+    );
   }
 
   const now = new Date();

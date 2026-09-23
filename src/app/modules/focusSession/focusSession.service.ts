@@ -34,10 +34,6 @@ const formatDuration = (totalMinutes: number) => {
 const calculateBreakMinutes = (b: any, nowMs: number) => {
   if (b.status === "completed") {
     return b.durationMinutes || 0;
-  } else if (b.status === "paused") {
-    const totalSec = (b.totalDurationMinutes || 15) * 60;
-    const spentSec = Math.max(0, totalSec - (b.remainingSeconds || 0));
-    return Math.round(spentSec / 60);
   } else {
     const bStartMs = new Date(b.startTime).getTime();
     return Math.max(0, Math.round((nowMs - bStartMs) / 60000));
@@ -115,7 +111,6 @@ const calculateSevenDaysStats = (
 
     for (const b of allBreaks) {
       const bStartMs = new Date(b.startTime).getTime();
-      const isPaused = b.status === "paused";
       const isActive = b.status === "active";
       const bEndMs = isActive
         ? nowMs
@@ -129,16 +124,10 @@ const calculateSevenDaysStats = (
         (isActive && bStartMs <= endOfDayMs);
 
       if (overlaps) {
-        if (isPaused) {
-          const totalSec = (b.totalDurationMinutes || 15) * 60;
-          const spentSec = Math.max(0, totalSec - (b.remainingSeconds || 0));
-          dayMinutes -= Math.round(spentSec / 60);
-        } else {
-          const segStart = bStartMs > startOfDayMs ? bStartMs : startOfDayMs;
-          const segEnd = bEndMs > endOfDayMs ? endOfDayMs : bEndMs;
-          if (segEnd > segStart) {
-            dayMinutes -= Math.round((segEnd - segStart) / 60000);
-          }
+        const segStart = bStartMs > startOfDayMs ? bStartMs : startOfDayMs;
+        const segEnd = bEndMs > endOfDayMs ? endOfDayMs : bEndMs;
+        if (segEnd > segStart) {
+          dayMinutes -= Math.round((segEnd - segStart) / 60000);
         }
       }
     }

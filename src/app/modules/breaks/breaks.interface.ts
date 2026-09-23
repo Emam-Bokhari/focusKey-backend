@@ -10,8 +10,7 @@ export interface IBreak {
   durationMinutes?: number;
   totalDurationMinutes?: number;
   remainingSeconds?: number;
-  pausedAt?: Date;
-  status: "active" | "paused" | "completed";
+  status: "active" | "completed";
   isDeleted?: boolean;
   deletedAt?: Date;
   createdAt: Date;

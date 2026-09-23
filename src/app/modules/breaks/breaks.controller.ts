@@ -43,31 +43,6 @@ const getRemainingBreaks = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-/*
-const pauseBreak = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.id;
-  const result = await BreakService.pauseBreak(userId);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Break paused successfully. Apps are now locked.",
-    data: result,
-  });
-});
-
-const resumeBreak = catchAsync(async (req: Request, res: Response) => {
-  const userId = req.user.id;
-  const result = await BreakService.resumeBreak(userId);
-
-  sendResponse(res, {
-    statusCode: StatusCodes.OK,
-    success: true,
-    message: "Break resumed successfully. Apps are now unlocked.",
-    data: result,
-  });
-});
-*/
 
 const stopBreak = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
@@ -127,8 +102,6 @@ const reconcileBreak = catchAsync(async (req: Request, res: Response) => {
 
 export const BreakController = {
   startBreak,
-  // pauseBreak,
-  // resumeBreak,
   getActiveBreakStatus,
   getRemainingBreaks,
   stopBreak,

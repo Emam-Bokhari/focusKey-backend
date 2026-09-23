@@ -3,7 +3,7 @@ import ApiError from "../../../errors/ApiErrors";
 import { IMode } from "./modes.interface";
 import { Mode } from "./modes.model";
 import mongoose from "mongoose";
-import { Break } from "../breaks/breaks.model";
+import { Break, BreakConfig } from "../breaks/breaks.model";
 import { FocusSession } from "../focusSession/focusSession.model";
 import { DashboardService } from "../dashboard/dashboard.service";
 import { sendNotifications } from "../../../helpers/notificationsHelper";
@@ -344,6 +344,14 @@ const toggleModeActivation = async (
       },
     );
 
+    const breakConfig = await BreakConfig.findOne({
+      userId: userObjectId,
+      isDeleted: { $ne: true },
+    }).lean();
+
+    const maxBreaks = breakConfig?.breaksPerDay ?? 4;
+    const breakDurationMinutes = breakConfig?.breakDurationMinutes ?? 15;
+
     await FocusSession.create({
       userId: userObjectId,
       modeId: modeId,
@@ -354,6 +362,9 @@ const toggleModeActivation = async (
         : {}),
       startTime: new Date(),
       status: "active",
+      maxBreaks,
+      breakDurationMinutes,
+      usedBreaksCount: 0,
     });
   } else {
     const activeSessions = await FocusSession.find({
@@ -546,12 +557,32 @@ const getLockStatusFromDB = async (
   ]);
 
 
+  let remainingBreaks = dashboardData.breakStats?.remainingToday;
+
+  if (activeSession) {
+    const sessionMaxBreaks =
+      typeof activeSession.maxBreaks === "number"
+        ? activeSession.maxBreaks
+        : 4;
+    const sessionUsedBreaks =
+      typeof activeSession.usedBreaksCount === "number"
+        ? activeSession.usedBreaksCount
+        : 0;
+    remainingBreaks = Math.max(0, sessionMaxBreaks - sessionUsedBreaks);
+
+    if (dashboardData.breakStats) {
+      dashboardData.breakStats.remainingToday = remainingBreaks;
+      (dashboardData.breakStats as any).remainingBreaks = remainingBreaks;
+    }
+  }
+
   return {
     ...dashboardData,
     isLocked: dashboardData.lockStatus.isLocked,
     activeSession: activeSession
       ? {
           ...activeSession,
+          remainingBreaks,
           elapsedMinutes: Math.max(
             0,
             Math.round(

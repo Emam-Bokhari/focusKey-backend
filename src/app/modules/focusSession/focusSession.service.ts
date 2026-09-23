@@ -881,6 +881,13 @@ const reconcileSessionFromDB = async (
 
   let createdSession;
 
+  const breakConfig = await BreakConfig.findOne({
+    userId: userObjectId,
+    isDeleted: { $ne: true },
+  }).lean();
+  const snapshotMaxBreaks = breakConfig?.breaksPerDay ?? 4;
+  const snapshotBreakDurationMinutes = breakConfig?.breakDurationMinutes ?? 15;
+
   if (isCompleted) {
     // Case A: Offline session that has already finished
     const endTime = endedAt
@@ -897,6 +904,9 @@ const reconcileSessionFromDB = async (
       endTime,
       durationMinutes,
       status: "completed",
+      maxBreaks: snapshotMaxBreaks,
+      breakDurationMinutes: snapshotBreakDurationMinutes,
+      usedBreaksCount: 0,
     });
 
     // Close any previous active sessions for this user so no dangling session remains active
@@ -998,6 +1008,9 @@ const reconcileSessionFromDB = async (
       clientSessionId: trimmedClientSessionId,
       startTime,
       status: "active",
+      maxBreaks: snapshotMaxBreaks,
+      breakDurationMinutes: snapshotBreakDurationMinutes,
+      usedBreaksCount: 0,
     });
   }
 

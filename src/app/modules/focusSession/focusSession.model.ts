@@ -40,6 +40,18 @@ const focusSessionSchema = new Schema<IFocusSession>(
       enum: ["active", "completed"],
       default: "active",
     },
+    maxBreaks: {
+      type: Number,
+      default: 4,
+    },
+    breakDurationMinutes: {
+      type: Number,
+      default: 15,
+    },
+    usedBreaksCount: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

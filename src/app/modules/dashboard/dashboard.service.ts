@@ -56,6 +56,7 @@ const getDashboardData = async (
 
   const todaySessions = await FocusSession.find({
     userId: userObjectId,
+    isDeleted: false,
     $or: [
       { startTime: { $gte: startOfDay, $lte: endOfDay } },
       { status: "active" }, // Include currently active session
@@ -64,8 +65,10 @@ const getDashboardData = async (
 
   const todayBreaks = await Break.find({
     userId: userObjectId,
+    isDeleted: false,
     $or: [
       { createdAt: { $gte: startOfDay, $lte: endOfDay } },
+      { startTime: { $gte: startOfDay, $lte: endOfDay } },
       { status: "active" },
     ],
   });
@@ -88,7 +91,16 @@ const getDashboardData = async (
   const allTodayBreaks = todayBreaks;
   allTodayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
-      todayFocusMinutes -= breakItem.durationMinutes || 0;
+      const dur =
+        breakItem.durationMinutes ||
+        (breakItem.endTime
+          ? Math.round(
+              (new Date(breakItem.endTime).getTime() -
+                new Date(breakItem.startTime).getTime()) /
+                60000,
+            )
+          : 0);
+      todayFocusMinutes -= dur;
     } else {
       const durationMs = Math.max(
         0,
@@ -105,13 +117,16 @@ const getDashboardData = async (
 
   const weekSessions = await FocusSession.find({
     userId: userObjectId,
+    isDeleted: false,
     startTime: { $gte: startOfWeek },
   });
 
   const weekBreaks = await Break.find({
     userId: userObjectId,
+    isDeleted: false,
     $or: [
       { createdAt: { $gte: startOfWeek } },
+      { startTime: { $gte: startOfWeek } },
       { status: "active" },
     ],
   });
@@ -133,7 +148,16 @@ const getDashboardData = async (
 
   weekBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
-      weekFocusMinutes -= breakItem.durationMinutes || 0;
+      const dur =
+        breakItem.durationMinutes ||
+        (breakItem.endTime
+          ? Math.round(
+              (new Date(breakItem.endTime).getTime() -
+                new Date(breakItem.startTime).getTime()) /
+                60000,
+            )
+          : 0);
+      weekFocusMinutes -= dur;
     } else {
       const durationMs = Math.max(
         0,

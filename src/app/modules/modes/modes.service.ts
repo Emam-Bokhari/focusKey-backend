@@ -561,6 +561,7 @@ const getLockStatusFromDB = async (
 
 
   let remainingBreaks = dashboardData.breakStats?.remainingToday;
+  let netElapsedMinutes = 0;
 
   if (activeSession) {
     const sessionMaxBreaks =
@@ -577,6 +578,43 @@ const getLockStatusFromDB = async (
       dashboardData.breakStats.remainingToday = remainingBreaks;
       (dashboardData.breakStats as any).remainingBreaks = remainingBreaks;
     }
+
+    const nowMs = Date.now();
+    const sessionStartMs = new Date(activeSession.startTime).getTime();
+    const rawElapsedMinutes = Math.max(
+      0,
+      Math.round((nowMs - sessionStartMs) / 60000),
+    );
+
+    // Calculate breaks that occurred during this active session
+    const sessionBreaks = await Break.find({
+      userId: userObjectId,
+      modeId: activeSession.modeId,
+      startTime: { $gte: activeSession.startTime },
+      isDeleted: false,
+    }).lean();
+
+    let totalBreakMinutes = 0;
+    for (const b of sessionBreaks) {
+      if (b.status === "completed") {
+        totalBreakMinutes +=
+          b.durationMinutes ||
+          (b.endTime
+            ? Math.round(
+                (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
+                  60000,
+              )
+            : 0);
+      } else {
+        const bStartMs = new Date(b.startTime).getTime();
+        const diff = nowMs - bStartMs;
+        if (diff <= 24 * 60 * 60 * 1000) {
+          totalBreakMinutes += Math.max(0, Math.round(diff / 60000));
+        }
+      }
+    }
+
+    netElapsedMinutes = Math.max(0, rawElapsedMinutes - totalBreakMinutes);
   }
 
   return {
@@ -586,12 +624,7 @@ const getLockStatusFromDB = async (
       ? {
           ...activeSession,
           remainingBreaks,
-          elapsedMinutes: Math.max(
-            0,
-            Math.round(
-              (new Date().getTime() - new Date(activeSession.startTime).getTime()) / 60000,
-            ),
-          ),
+          elapsedMinutes: netElapsedMinutes,
         }
       : null,
   };

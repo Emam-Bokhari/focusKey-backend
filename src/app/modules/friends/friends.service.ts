@@ -1783,7 +1783,7 @@ const getCurrentNudgeStatusInDB = async (
 
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
   weekFocusMinutes = Math.max(0, weekFocusMinutes);
-
+        
   const activeParticipants = nudge.participants.filter(
     (p) => !p.isDeleted && p.userId != null,
   );

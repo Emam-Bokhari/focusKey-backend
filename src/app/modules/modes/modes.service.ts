@@ -221,7 +221,8 @@ const deleteModeFromDB = async (modeId: string) => {
           0,
           endTime.getTime() - session.startTime.getTime(),
         );
-        const durationMinutes = Math.round(durationMs / 60000);
+        const durationMinutes =
+          durationMs > 24 * 60 * 60 * 1000 ? 0 : Math.round(durationMs / 60000);
         return {
           updateOne: {
             filter: { _id: session._id },
@@ -313,7 +314,8 @@ const toggleModeActivation = async (
           0,
           endTime.getTime() - session.startTime.getTime(),
         );
-        const durationMinutes = Math.round(durationMs / 60000);
+        const durationMinutes =
+          durationMs > 24 * 60 * 60 * 1000 ? 0 : Math.round(durationMs / 60000);
         return {
           updateOne: {
             filter: { _id: session._id },
@@ -380,7 +382,8 @@ const toggleModeActivation = async (
           0,
           endTime.getTime() - session.startTime.getTime(),
         );
-        const durationMinutes = Math.round(durationMs / 60000);
+        const durationMinutes =
+          durationMs > 24 * 60 * 60 * 1000 ? 0 : Math.round(durationMs / 60000);
         return {
           updateOne: {
             filter: { _id: session._id },

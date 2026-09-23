@@ -79,7 +79,9 @@ const getDashboardData = async (
         0,
         new Date().getTime() - session.startTime.getTime(),
       );
-      todayFocusMinutes += Math.round(durationMs / 60000);
+      if (durationMs <= 24 * 60 * 60 * 1000) {
+        todayFocusMinutes += Math.round(durationMs / 60000);
+      }
     }
   });
 
@@ -92,7 +94,9 @@ const getDashboardData = async (
         0,
         new Date().getTime() - breakItem.startTime.getTime(),
       );
-      todayFocusMinutes -= Math.round(durationMs / 60000);
+      if (durationMs <= 24 * 60 * 60 * 1000) {
+        todayFocusMinutes -= Math.round(durationMs / 60000);
+      }
     }
   });
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
@@ -121,7 +125,9 @@ const getDashboardData = async (
         0,
         new Date().getTime() - session.startTime.getTime(),
       );
-      weekFocusMinutes += Math.round(durationMs / 60000);
+      if (durationMs <= 24 * 60 * 60 * 1000) {
+        weekFocusMinutes += Math.round(durationMs / 60000);
+      }
     }
   });
 
@@ -133,7 +139,9 @@ const getDashboardData = async (
         0,
         new Date().getTime() - breakItem.startTime.getTime(),
       );
-      weekFocusMinutes -= Math.round(durationMs / 60000);
+      if (durationMs <= 24 * 60 * 60 * 1000) {
+        weekFocusMinutes -= Math.round(durationMs / 60000);
+      }
     }
   });
   weekFocusMinutes = Math.max(0, weekFocusMinutes);
@@ -289,38 +297,6 @@ const getHistoryData = async (
   const nowMs = now.getTime();
 
   let totalMinutes = 0;
-  for (const s of allSessions) {
-    if (s.status === "completed") {
-      totalMinutes +=
-        s.durationMinutes ||
-        (s.endTime
-          ? Math.round(
-              (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) /
-                60000,
-            )
-          : 0);
-    } else {
-      const diff = Math.max(0, nowMs - new Date(s.startTime).getTime());
-      totalMinutes += Math.round(diff / 60000);
-    }
-  }
-
-  for (const b of allBreaks) {
-    if (b.status === "completed") {
-      totalMinutes -=
-        b.durationMinutes ||
-        (b.endTime
-          ? Math.round(
-              (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
-                60000,
-            )
-          : 0);
-    } else {
-      const diff = Math.max(0, nowMs - new Date(b.startTime).getTime());
-      totalMinutes += Math.round(diff / 60000);
-    }
-  }
-  totalMinutes = Math.max(0, totalMinutes);
 
   const startOfDay = getZonedStartOfDay(now, userTimezone);
   const startOfDayMs = startOfDay.getTime();
@@ -450,6 +426,9 @@ const getHistoryData = async (
     }
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
+    if (isCompleted) {
+      totalMinutes += netSessionMinutes;
+    }
     const duration = formatDuration(netSessionMinutes);
     const timeRange = formatZonedTimeRange(
       sStartTime,
@@ -502,38 +481,6 @@ const getHistoryV2 = async (
   const nowMs = now.getTime();
 
   let totalMinutes = 0;
-  for (const s of allSessions) {
-    if (s.status === "completed") {
-      totalMinutes +=
-        s.durationMinutes ||
-        (s.endTime
-          ? Math.round(
-              (new Date(s.endTime).getTime() - new Date(s.startTime).getTime()) /
-                60000,
-            )
-          : 0);
-    } else {
-      const diff = nowMs - new Date(s.startTime).getTime();
-      totalMinutes += Math.round(diff / 60000);
-    }
-  }
-
-  for (const b of allBreaks) {
-    if (b.status === "completed") {
-      totalMinutes -=
-        b.durationMinutes ||
-        (b.endTime
-          ? Math.round(
-              (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
-                60000,
-            )
-          : 0);
-    } else {
-      const diff = nowMs - new Date(b.startTime).getTime();
-      totalMinutes += Math.round(diff / 60000);
-    }
-  }
-  totalMinutes = Math.max(0, totalMinutes);
 
   const sinceDate = formatZonedSinceDate(
     user?.createdAt || now,
@@ -568,7 +515,7 @@ const getHistoryV2 = async (
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      sessionMinutes =
+      const rawMin =
         session.durationMinutes ||
         (session.endTime
           ? Math.round(
@@ -576,8 +523,11 @@ const getHistoryV2 = async (
                 60000,
             )
           : 0);
+      sessionMinutes = rawMin > 1440 ? 0 : rawMin;
     } else {
-      sessionMinutes = Math.round((nowMs - sStartTime.getTime()) / 60000);
+      const diff = nowMs - sStartTime.getTime();
+      sessionMinutes =
+        diff > 24 * 60 * 60 * 1000 ? 0 : Math.max(0, Math.round(diff / 60000));
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -602,13 +552,23 @@ const getHistoryV2 = async (
       }
 
       if (b.status === "completed") {
-        sessionBreakMinutes += b.durationMinutes || 0;
+        sessionBreakMinutes +=
+          b.durationMinutes ||
+          (b.endTime
+            ? Math.round((new Date(b.endTime).getTime() - bStartMs) / 60000)
+            : 0);
       } else {
-        sessionBreakMinutes += Math.round((nowMs - bStartMs) / 60000);
+        const bDiff = nowMs - bStartMs;
+        if (bDiff <= 24 * 60 * 60 * 1000) {
+          sessionBreakMinutes += Math.max(0, Math.round(bDiff / 60000));
+        }
       }
     }
 
     const netSessionMinutes = Math.max(0, sessionMinutes - sessionBreakMinutes);
+    if (isCompleted) {
+      totalMinutes += netSessionMinutes;
+    }
     const durationObj = formatDuration(netSessionMinutes);
     const duration = `${durationObj.hours}h ${durationObj.minutes}m`;
     const timeRange = formatZonedTimeRange(

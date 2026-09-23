@@ -14,6 +14,7 @@
     "generate:diagram": "ts-node scripts/generate-erd.ts && ts-node scripts/render-erd.ts && ts-node scripts/export-erd.ts",
     "build": "tsc",
     "format": "prettier . --write",
+    "heal:sessions": "ts-node scripts/healDanglingSessions.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Moshfiqur Rahman & Tahsif Ahmed",

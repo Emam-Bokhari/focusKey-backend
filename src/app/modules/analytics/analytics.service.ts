@@ -131,6 +131,7 @@ const getFocusTimeOverTime = async (
 
   const sessions = await FocusSession.find({
     nudgeId: { $exists: false },
+    status: "completed",
     startTime: {
       $gte: startDate > startOfYear ? startDate : startOfYear,
       $lte: endDate < endOfYear ? endDate : endOfYear,
@@ -148,16 +149,14 @@ const getFocusTimeOverTime = async (
 
   sessions.forEach((session) => {
     const dateKey = formatZonedDateKey(session.startTime, userTimezone);
-    let minutes = 0;
-    if (session.status === "completed") {
-      minutes = session.durationMinutes || 0;
-    } else {
-      const durationMs = Math.max(
-        0,
-        new Date().getTime() - session.startTime.getTime(),
-      );
-      minutes = Math.round(durationMs / 60000);
-    }
+    const minutes =
+      session.durationMinutes ??
+      (session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() - session.startTime.getTime()) /
+              60000,
+          )
+        : 0);
     if (dateWiseData[dateKey] !== undefined) {
       dateWiseData[dateKey] += minutes;
     }
@@ -203,6 +202,7 @@ const getFocusTimeTogetherOverTime = async (
 
   const sessions = await FocusSession.find({
     nudgeId: { $exists: true, $ne: null },
+    status: "completed",
     startTime: {
       $gte: startDate > startOfYear ? startDate : startOfYear,
       $lte: endDate < endOfYear ? endDate : endOfYear,
@@ -220,16 +220,14 @@ const getFocusTimeTogetherOverTime = async (
 
   sessions.forEach((session) => {
     const dateKey = formatZonedDateKey(session.startTime, userTimezone);
-    let minutes = 0;
-    if (session.status === "completed") {
-      minutes = session.durationMinutes || 0;
-    } else {
-      const durationMs = Math.max(
-        0,
-        new Date().getTime() - session.startTime.getTime(),
-      );
-      minutes = Math.round(durationMs / 60000);
-    }
+    const minutes =
+      session.durationMinutes ??
+      (session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() - session.startTime.getTime()) /
+              60000,
+          )
+        : 0);
     if (dateWiseData[dateKey] !== undefined) {
       dateWiseData[dateKey] += minutes;
     }

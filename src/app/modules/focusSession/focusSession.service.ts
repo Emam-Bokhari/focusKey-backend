@@ -33,124 +33,21 @@ const formatDuration = (totalMinutes: number) => {
 
 const calculateBreakMinutes = (b: any, nowMs: number) => {
   if (b.status === "completed") {
-    return b.durationMinutes || 0;
+    return (
+      b.durationMinutes ??
+      (b.endTime
+        ? Math.round(
+            (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
+              60000,
+          )
+        : 0)
+    );
   } else {
     const bStartMs = new Date(b.startTime).getTime();
-    return Math.max(0, Math.round((nowMs - bStartMs) / 60000));
+    const diff = nowMs - bStartMs;
+    if (diff > 24 * 60 * 60 * 1000) return 0;
+    return Math.max(0, Math.round(diff / 60000));
   }
-};
-
-const calculateTotalMinutes = (
-  allSessions: any[],
-  allBreaks: any[],
-  nowMs: number,
-) => {
-  let totalMinutes = 0;
-  for (const s of allSessions) {
-    if (s.status === "completed") {
-      totalMinutes += s.durationMinutes || 0;
-    } else {
-      const diff = Math.max(0, nowMs - new Date(s.startTime).getTime());
-      totalMinutes += Math.round(diff / 60000);
-    }
-  }
-
-  for (const b of allBreaks) {
-    totalMinutes -= calculateBreakMinutes(b, nowMs);
-  }
-
-  return Math.max(0, totalMinutes);
-};
-
-const calculateSevenDaysStats = (
-  allSessions: any[],
-  allBreaks: any[],
-  now: Date,
-  nowMs: number,
-  isV2 = false,
-  userTimezone: string = DEFAULT_TIMEZONE,
-) => {
-  const stats = [];
-  for (let i = 6; i >= 0; i--) {
-    const zonedTargetDate = dayjs().tz(userTimezone).subtract(i, "day");
-    const startOfDay = zonedTargetDate.startOf("day").toDate();
-    const startOfDayMs = startOfDay.getTime();
-    const endOfDay = zonedTargetDate.endOf("day").toDate();
-    const endOfDayMs = endOfDay.getTime();
-
-    const dayName = isV2
-      ? zonedTargetDate.format("dddd")
-      : zonedTargetDate.format("ddd");
-    const dayLabel = dayName[0];
-    const dateStr = zonedTargetDate.format("YYYY-MM-DD");
-
-    let dayMinutes = 0;
-
-    for (const s of allSessions) {
-      const sStartMs = new Date(s.startTime).getTime();
-      const isActive = s.status === "active";
-      const sEndMs = isActive
-        ? nowMs
-        : s.endTime
-          ? new Date(s.endTime).getTime()
-          : nowMs;
-
-      const overlaps =
-        (sStartMs >= startOfDayMs && sStartMs <= endOfDayMs) ||
-        (!isActive && sEndMs >= startOfDayMs && sEndMs <= endOfDayMs) ||
-        (isActive && sStartMs <= endOfDayMs);
-
-      if (overlaps) {
-        const segStart = sStartMs > startOfDayMs ? sStartMs : startOfDayMs;
-        const segEnd = sEndMs > endOfDayMs ? endOfDayMs : sEndMs;
-        if (segEnd > segStart) {
-          dayMinutes += Math.round((segEnd - segStart) / 60000);
-        }
-      }
-    }
-
-    for (const b of allBreaks) {
-      const bStartMs = new Date(b.startTime).getTime();
-      const isActive = b.status === "active";
-      const bEndMs = isActive
-        ? nowMs
-        : b.endTime
-          ? new Date(b.endTime).getTime()
-          : nowMs;
-
-      const overlaps =
-        (bStartMs >= startOfDayMs && bStartMs <= endOfDayMs) ||
-        (!isActive && bEndMs >= startOfDayMs && bEndMs <= endOfDayMs) ||
-        (isActive && bStartMs <= endOfDayMs);
-
-      if (overlaps) {
-        const segStart = bStartMs > startOfDayMs ? bStartMs : startOfDayMs;
-        const segEnd = bEndMs > endOfDayMs ? endOfDayMs : bEndMs;
-        if (segEnd > segStart) {
-          dayMinutes -= Math.round((segEnd - segStart) / 60000);
-        }
-      }
-    }
-
-    const maxDayMinutes = Math.max(0, dayMinutes);
-    if (isV2) {
-      stats.push({
-        day: dayName,
-        dayLabel,
-        date: dateStr,
-        totalMinutes: maxDayMinutes,
-        formatted: formatDuration(maxDayMinutes).formatted,
-      });
-    } else {
-      stats.push({
-        day: dayName,
-        date: dateStr,
-        totalMinutes: maxDayMinutes,
-        formatted: formatDuration(maxDayMinutes).formatted,
-      });
-    }
-  }
-  return stats;
 };
 
 const indexBreaksByMode = (allBreaks: any[]) => {
@@ -195,6 +92,145 @@ const calculateSessionBreakMinutes = (
   return sessionBreakMinutes;
 };
 
+const calculateTotalMinutes = (
+  allSessions: any[],
+  allBreaks: any[],
+  nowMs: number,
+) => {
+  const breaksByMode = indexBreaksByMode(allBreaks);
+  let totalMinutes = 0;
+
+  for (const session of allSessions) {
+    if (session.status !== "completed") continue;
+    const sStartTime = new Date(session.startTime);
+    const rawMin =
+      session.durationMinutes ??
+      (session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+              60000,
+          )
+        : 0);
+    if (rawMin > 1440) continue;
+
+    const sModeId = (session.modeId as any)?._id
+      ? (session.modeId as any)._id.toString()
+      : session.modeId?.toString();
+    const candidateBreaks = sModeId ? breaksByMode.get(sModeId) || [] : [];
+    const sessionBreakMinutes = calculateSessionBreakMinutes(
+      candidateBreaks,
+      session,
+      nowMs,
+    );
+
+    const netSessionMinutes = Math.max(0, rawMin - sessionBreakMinutes);
+    totalMinutes += netSessionMinutes;
+  }
+
+  return Math.max(0, totalMinutes);
+};
+
+const calculateSevenDaysStats = (
+  allSessions: any[],
+  allBreaks: any[],
+  now: Date,
+  nowMs: number,
+  isV2 = false,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const stats = [];
+  for (let i = 6; i >= 0; i--) {
+    const zonedTargetDate = dayjs().tz(userTimezone).subtract(i, "day");
+    const startOfDay = zonedTargetDate.startOf("day").toDate();
+    const startOfDayMs = startOfDay.getTime();
+    const endOfDay = zonedTargetDate.endOf("day").toDate();
+    const endOfDayMs = endOfDay.getTime();
+
+    const dayName = isV2
+      ? zonedTargetDate.format("dddd")
+      : zonedTargetDate.format("ddd");
+    const dayLabel = dayName[0];
+    const dateStr = zonedTargetDate.format("YYYY-MM-DD");
+
+    let dayMinutes = 0;
+
+    for (const s of allSessions) {
+      const sStartMs = new Date(s.startTime).getTime();
+      const isActive = s.status === "active";
+      if (isActive && nowMs - sStartMs > 24 * 60 * 60 * 1000) {
+        continue;
+      }
+
+      const sEndMs = isActive
+        ? nowMs
+        : s.endTime
+          ? new Date(s.endTime).getTime()
+          : sStartMs + ((s.durationMinutes || 0) * 60000);
+
+      const overlaps =
+        (sStartMs >= startOfDayMs && sStartMs <= endOfDayMs) ||
+        (!isActive && sEndMs >= startOfDayMs && sEndMs <= endOfDayMs) ||
+        (isActive && sStartMs <= endOfDayMs);
+
+      if (overlaps) {
+        const segStart = sStartMs > startOfDayMs ? sStartMs : startOfDayMs;
+        const segEnd = sEndMs > endOfDayMs ? endOfDayMs : sEndMs;
+        if (segEnd > segStart) {
+          dayMinutes += Math.round((segEnd - segStart) / 60000);
+        }
+      }
+    }
+
+    for (const b of allBreaks) {
+      const bStartMs = new Date(b.startTime).getTime();
+      const isActive = b.status === "active";
+      if (isActive && nowMs - bStartMs > 24 * 60 * 60 * 1000) {
+        continue;
+      }
+
+      const bEndMs = isActive
+        ? nowMs
+        : b.endTime
+          ? new Date(b.endTime).getTime()
+          : bStartMs + ((b.durationMinutes || 0) * 60000);
+
+      const overlaps =
+        (bStartMs >= startOfDayMs && bStartMs <= endOfDayMs) ||
+        (!isActive && bEndMs >= startOfDayMs && bEndMs <= endOfDayMs) ||
+        (isActive && bStartMs <= endOfDayMs);
+
+      if (overlaps) {
+        const segStart = bStartMs > startOfDayMs ? bStartMs : startOfDayMs;
+        const segEnd = bEndMs > endOfDayMs ? endOfDayMs : bEndMs;
+        if (segEnd > segStart) {
+          dayMinutes -= Math.round((segEnd - segStart) / 60000);
+        }
+      }
+    }
+
+    const maxDayMinutes = Math.max(0, dayMinutes);
+    if (isV2) {
+      stats.push({
+        day: dayName,
+        dayLabel,
+        date: dateStr,
+        totalMinutes: maxDayMinutes,
+        formatted: formatDuration(maxDayMinutes).formatted,
+      });
+    } else {
+      stats.push({
+        day: dayName,
+        date: dateStr,
+        totalMinutes: maxDayMinutes,
+        formatted: formatDuration(maxDayMinutes).formatted,
+      });
+    }
+  }
+  return stats;
+};
+
+
+
 const getFocusHistoryFromDB = async (
   userId: string,
   modeId?: string,
@@ -225,7 +261,7 @@ const getFocusHistoryFromDB = async (
   const now = new Date();
   const nowMs = now.getTime();
 
-  const totalMinutes = calculateTotalMinutes(allSessions, allBreaks, nowMs);
+  let totalMinutes = calculateTotalMinutes(allSessions, allBreaks, nowMs);
 
   const firstSession =
     firstSessionResult ||
@@ -251,7 +287,8 @@ const getFocusHistoryFromDB = async (
     const sStartMs = new Date(s.startTime).getTime();
     const isActive = s.status === "active";
     const isToday =
-      (sStartMs >= startOfTodayMs && sStartMs <= endOfTodayMs) || isActive;
+      (sStartMs >= startOfTodayMs && sStartMs <= endOfTodayMs) ||
+      (isActive && nowMs - sStartMs <= 24 * 60 * 60 * 1000);
 
     if (isToday) {
       const modeName = (s.modeId as any)?.name || "Unknown Mode";
@@ -259,10 +296,18 @@ const getFocusHistoryFromDB = async (
         modeWiseToday[modeName] = 0;
       }
       if (s.status === "completed") {
-        modeWiseToday[modeName] += s.durationMinutes || 0;
+        modeWiseToday[modeName] +=
+          s.durationMinutes ??
+          (s.endTime
+            ? Math.round(
+                (new Date(s.endTime).getTime() - sStartMs) / 60000,
+              )
+            : 0);
       } else {
-        const diff = Math.max(0, nowMs - sStartMs);
-        modeWiseToday[modeName] += Math.round(diff / 60000);
+        const diff = nowMs - sStartMs;
+        if (diff <= 24 * 60 * 60 * 1000) {
+          modeWiseToday[modeName] += Math.max(0, Math.round(diff / 60000));
+        }
       }
     }
   }
@@ -303,12 +348,19 @@ const getFocusHistoryFromDB = async (
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      sessionMinutes = session.durationMinutes || 0;
+      const rawMin =
+        session.durationMinutes ??
+        (session.endTime
+          ? Math.round(
+              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+                60000,
+            )
+          : 0);
+      sessionMinutes = rawMin > 1440 ? 0 : rawMin;
     } else {
-      sessionMinutes = Math.max(
-        0,
-        Math.round((nowMs - sStartTime.getTime()) / 60000),
-      );
+      const diff = nowMs - sStartTime.getTime();
+      sessionMinutes =
+        diff > 24 * 60 * 60 * 1000 ? 0 : Math.max(0, Math.round(diff / 60000));
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -359,6 +411,11 @@ const getFocusHistoryFromDB = async (
       totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
     };
   });
+
+  totalMinutes = Object.values(groupedHistory).reduce(
+    (sum: number, day: any) => sum + (day.totalFocusMinutes || 0),
+    0,
+  );
 
   return {
     summary: {
@@ -422,7 +479,7 @@ const getFocusHistoryV2FromDB = async (
   const now = new Date();
   const nowMs = now.getTime();
 
-  const totalMinutes = calculateTotalMinutes(allSessions, allBreaks, nowMs);
+  let totalMinutes = calculateTotalMinutes(allSessions, allBreaks, nowMs);
 
   const firstSession =
     firstSessionResult ||
@@ -485,12 +542,19 @@ const getFocusHistoryV2FromDB = async (
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      sessionMinutes = session.durationMinutes || 0;
+      const rawMin =
+        session.durationMinutes ??
+        (session.endTime
+          ? Math.round(
+              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+                60000,
+            )
+          : 0);
+      sessionMinutes = rawMin > 1440 ? 0 : rawMin;
     } else {
-      sessionMinutes = Math.max(
-        0,
-        Math.round((nowMs - sStartTime.getTime()) / 60000),
-      );
+      const diff = nowMs - sStartTime.getTime();
+      sessionMinutes =
+        diff > 24 * 60 * 60 * 1000 ? 0 : Math.max(0, Math.round(diff / 60000));
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -541,6 +605,11 @@ const getFocusHistoryV2FromDB = async (
       totalFocusTimeFormatted: formatDuration(day.totalFocusMinutes).formatted,
     };
   });
+
+  totalMinutes = Object.values(groupedHistory).reduce(
+    (sum: number, day: any) => sum + (day.totalFocusMinutes || 0),
+    0,
+  );
 
   return {
     modes,
@@ -1037,6 +1106,70 @@ const reconcileSessionFromDB = async (
   };
 };
 
+const healDanglingSessions = async () => {
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+
+  const danglingSessions = await FocusSession.find({
+    status: "active",
+    startTime: { $lt: twentyFourHoursAgo },
+  });
+
+  let healedSessionsCount = 0;
+  if (danglingSessions.length > 0) {
+    for (const session of danglingSessions) {
+      await FocusSession.findByIdAndUpdate(session._id, {
+        $set: {
+          status: "completed",
+          durationMinutes: 0,
+          endTime: session.startTime,
+        },
+      });
+      healedSessionsCount++;
+    }
+  }
+
+  // Also heal corrupt sessions with durationMinutes > 1440 (abandoned sessions closed weeks later)
+  const overlongSessions = await FocusSession.find({
+    durationMinutes: { $gt: 1440 },
+  });
+  if (overlongSessions.length > 0) {
+    for (const session of overlongSessions) {
+      await FocusSession.findByIdAndUpdate(session._id, {
+        $set: {
+          durationMinutes: 0,
+          endTime: session.startTime,
+        },
+      });
+      healedSessionsCount++;
+    }
+  }
+
+  const danglingBreaks = await Break.find({
+    status: "active",
+    startTime: { $lt: twentyFourHoursAgo },
+  });
+
+  let healedBreaksCount = 0;
+  if (danglingBreaks.length > 0) {
+    for (const b of danglingBreaks) {
+      await Break.findByIdAndUpdate(b._id, {
+        $set: {
+          status: "completed",
+          durationMinutes: 0,
+          endTime: b.startTime,
+          remainingSeconds: 0,
+        },
+      });
+      healedBreaksCount++;
+    }
+  }
+
+  return {
+    healedSessionsCount,
+    healedBreaksCount,
+  };
+};
+
 export const FocusSessionService = {
   getFocusHistoryFromDB,
   getFocusHistoryV2FromDB,
@@ -1044,6 +1177,8 @@ export const FocusSessionService = {
   exportFocusHistoryToCSVFromDB,
   clearAllDataFromDB,
   reconcileSessionFromDB,
+  healDanglingSessions,
 };
+
 
 

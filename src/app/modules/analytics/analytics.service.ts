@@ -35,6 +35,12 @@ const getStatsFromDB = async (userTimezone: string = DEFAULT_TIMEZONE) => {
     isDeleted: false,
   });
 
+  const totalFocusTimeAggregation = await FocusSession.aggregate([
+    { $match: { status: "completed", isDeleted: false } },
+    { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } },
+  ]);
+  const totalTimeFocused = totalFocusTimeAggregation[0]?.totalMinutes || 0;
+
   const totalBreaksTaken = await Break.countDocuments({ isDeleted: false });
 
   const cooldownCompleted = await Break.countDocuments({
@@ -96,6 +102,7 @@ const getStatsFromDB = async (userTimezone: string = DEFAULT_TIMEZONE) => {
     activatedUsers,
     sevenDayActiveUsers,
     totalFocusSessionsThisWeek,
+    totalTimeFocused,
     totalBreaksTaken,
     cooldownCompleted,
     usersWithPartners: uniqueUsersWithPartners,

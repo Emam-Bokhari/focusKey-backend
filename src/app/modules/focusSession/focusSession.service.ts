@@ -1128,12 +1128,12 @@ const healDanglingSessions = async () => {
     }
   }
 
-  // Also heal corrupt sessions with durationMinutes > 1440 (abandoned sessions closed weeks later)
-  const overlongSessions = await FocusSession.find({
-    durationMinutes: { $gt: 1440 },
+  // Also heal corrupt sessions with durationMinutes > 1440 or < 0
+  const corruptSessions = await FocusSession.find({
+    $or: [{ durationMinutes: { $gt: 1440 } }, { durationMinutes: { $lt: 0 } }],
   });
-  if (overlongSessions.length > 0) {
-    for (const session of overlongSessions) {
+  if (corruptSessions.length > 0) {
+    for (const session of corruptSessions) {
       await FocusSession.findByIdAndUpdate(session._id, {
         $set: {
           durationMinutes: 0,

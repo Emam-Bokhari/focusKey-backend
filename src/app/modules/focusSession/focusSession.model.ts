@@ -34,6 +34,7 @@ const focusSessionSchema = new Schema<IFocusSession>(
     durationMinutes: {
       type: Number,
       default: 0,
+      min: 0,
     },
     status: {
       type: String,

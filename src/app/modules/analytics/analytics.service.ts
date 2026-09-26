@@ -156,7 +156,7 @@ const getFocusTimeOverTime = async (
 
   sessions.forEach((session) => {
     const dateKey = formatZonedDateKey(session.startTime, userTimezone);
-    const minutes =
+    const rawMinutes =
       session.durationMinutes ??
       (session.endTime
         ? Math.round(
@@ -164,6 +164,7 @@ const getFocusTimeOverTime = async (
               60000,
           )
         : 0);
+    const minutes = Math.max(0, rawMinutes);
     if (dateWiseData[dateKey] !== undefined) {
       dateWiseData[dateKey] += minutes;
     }
@@ -227,7 +228,7 @@ const getFocusTimeTogetherOverTime = async (
 
   sessions.forEach((session) => {
     const dateKey = formatZonedDateKey(session.startTime, userTimezone);
-    const minutes =
+    const rawMinutes =
       session.durationMinutes ??
       (session.endTime
         ? Math.round(
@@ -235,6 +236,7 @@ const getFocusTimeTogetherOverTime = async (
               60000,
           )
         : 0);
+    const minutes = Math.max(0, rawMinutes);
     if (dateWiseData[dateKey] !== undefined) {
       dateWiseData[dateKey] += minutes;
     }

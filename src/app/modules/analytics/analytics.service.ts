@@ -121,7 +121,7 @@ const getFocusTimeOverTime = async (
   const targetYear = year || currentYear;
   const targetDays = days || 7;
 
-  const validDays = [7, 14, 30];
+  const validDays = [7, 14, 15, 30];
   const actualDays = validDays.includes(targetDays) ? targetDays : 7;
 
   const now = new Date();
@@ -192,7 +192,7 @@ const getFocusTimeTogetherOverTime = async (
   const targetYear = year || currentYear;
   const targetDays = days || 7;
 
-  const validDays = [7, 14, 30];
+  const validDays = [7, 14, 15, 30];
   const actualDays = validDays.includes(targetDays) ? targetDays : 7;
 
   const now = new Date();

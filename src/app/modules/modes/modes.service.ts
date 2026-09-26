@@ -13,7 +13,6 @@ import {
 } from "../notification/notification.constant";
 import { DEFAULT_TIMEZONE } from "../../../helpers/timezoneHelper";
 
-
 const defaultModeCreationPromises = new Map<string, Promise<void>>();
 const knownUsersWithModes = new Set<string>();
 
@@ -559,15 +558,12 @@ const getLockStatusFromDB = async (
     }).lean(),
   ]);
 
-
   let remainingBreaks = dashboardData.breakStats?.remainingToday;
   let netElapsedMinutes = 0;
 
   if (activeSession) {
     const sessionMaxBreaks =
-      typeof activeSession.maxBreaks === "number"
-        ? activeSession.maxBreaks
-        : 4;
+      typeof activeSession.maxBreaks === "number" ? activeSession.maxBreaks : 4;
     const sessionUsedBreaks =
       typeof activeSession.usedBreaksCount === "number"
         ? activeSession.usedBreaksCount
@@ -601,7 +597,8 @@ const getLockStatusFromDB = async (
           b.durationMinutes ||
           (b.endTime
             ? Math.round(
-                (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
+                (new Date(b.endTime).getTime() -
+                  new Date(b.startTime).getTime()) /
                   60000,
               )
             : 0);

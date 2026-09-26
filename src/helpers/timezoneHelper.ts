@@ -44,7 +44,10 @@ export const resolveTimezone = (
   }
 
   // If user explicitly configured a timezone (not default UTC), prioritize it over device header
-  if (isValidTimezone(userTimezone) && userTimezone!.trim() !== DEFAULT_TIMEZONE) {
+  if (
+    isValidTimezone(userTimezone) &&
+    userTimezone!.trim() !== DEFAULT_TIMEZONE
+  ) {
     return userTimezone!.trim();
   }
 

@@ -14,4 +14,3 @@ router.get("/config", isUser, BreakController.getGlobalBreakConfig);
 router.patch("/config", isUser, BreakController.updateGlobalBreakConfig);
 
 export const BreakRoutes = router;
-

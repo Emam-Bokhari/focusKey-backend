@@ -65,11 +65,7 @@ const auth =
 
         req.user = {
           ...verifyUser,
-          timezone: resolveTimezone(
-            user?.timezone,
-            headerTz,
-            queryTz,
-          ),
+          timezone: resolveTimezone(user?.timezone, headerTz, queryTz),
         };
         next();
       }

@@ -43,7 +43,6 @@ const getRemainingBreaks = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const stopBreak = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const result = await BreakService.stopBreak(userId);
@@ -109,4 +108,3 @@ export const BreakController = {
   updateGlobalBreakConfig,
   reconcileBreak,
 };
-

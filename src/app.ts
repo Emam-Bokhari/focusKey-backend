@@ -54,7 +54,6 @@
 
 // export default app;
 
-
 import express, { Application, Request, Response } from "express";
 import cors from "cors";
 import { StatusCodes } from "http-status-codes";
@@ -127,4 +126,3 @@ app.use((req: Request, res: Response) => {
 app.use(globalErrorHandler);
 
 export default app;
-

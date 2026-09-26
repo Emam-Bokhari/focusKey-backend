@@ -36,4 +36,3 @@ export interface IBulkCreateDeviceResult {
   insertedCount: number;
   inserted: IRegisteredDevice[];
 }
-

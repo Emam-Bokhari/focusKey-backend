@@ -70,7 +70,6 @@ focusSessionSchema.index({ nudgeId: 1, status: 1 });
 focusSessionSchema.index({ userId: 1, isDeleted: 1 });
 focusSessionSchema.index({ userId: 1, clientSessionId: 1 }, { sparse: true });
 
-
 export const FocusSession = model<IFocusSession>(
   "FocusSession",
   focusSessionSchema,

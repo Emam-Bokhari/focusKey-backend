@@ -16,7 +16,6 @@ import {
   dayjs,
 } from "../../../helpers/timezoneHelper";
 
-
 const startBreak = async (
   userId: string,
   userTimezone: string = DEFAULT_TIMEZONE,
@@ -26,42 +25,47 @@ const startBreak = async (
   const startOfDay = getZonedStartOfDay(now, userTimezone);
   const endOfDay = getZonedEndOfDay(now, userTimezone);
 
-  const [activeMode, activeSession, existingBreak, breakConfigDoc, breaksToday] =
-    await Promise.all([
-      Mode.findOne({
-        userId: userObjectId,
-        isActive: true,
-        isDeleted: false,
-      })
-        .select("_id")
-        .lean(),
+  const [
+    activeMode,
+    activeSession,
+    existingBreak,
+    breakConfigDoc,
+    breaksToday,
+  ] = await Promise.all([
+    Mode.findOne({
+      userId: userObjectId,
+      isActive: true,
+      isDeleted: false,
+    })
+      .select("_id")
+      .lean(),
 
-      FocusSession.findOne({
-        userId: userObjectId,
-        status: "active",
-      }).lean(),
+    FocusSession.findOne({
+      userId: userObjectId,
+      status: "active",
+    }).lean(),
 
-      Break.findOne({
-        userId: userObjectId,
-        nudgeId: { $exists: false },
-        status: "active",
-        endTime: { $gt: now },
-      })
-        .select("_id startTime createdAt")
-        .lean(),
+    Break.findOne({
+      userId: userObjectId,
+      nudgeId: { $exists: false },
+      status: "active",
+      endTime: { $gt: now },
+    })
+      .select("_id startTime createdAt")
+      .lean(),
 
-      BreakConfig.findOne({
-        userId: userObjectId,
-      })
-        .select("breaksPerDay breakDurationMinutes")
-        .lean(),
+    BreakConfig.findOne({
+      userId: userObjectId,
+    })
+      .select("breaksPerDay breakDurationMinutes")
+      .lean(),
 
-      Break.countDocuments({
-        userId: userObjectId,
-        nudgeId: { $exists: false }, // Only count global breaks
-        createdAt: { $gte: startOfDay, $lte: endOfDay },
-      }),
-    ]);
+    Break.countDocuments({
+      userId: userObjectId,
+      nudgeId: { $exists: false }, // Only count global breaks
+      createdAt: { $gte: startOfDay, $lte: endOfDay },
+    }),
+  ]);
 
   if (!activeMode && !activeSession) {
     throw new ApiError(
@@ -163,7 +167,6 @@ const startBreak = async (
   return result;
 };
 
-
 const getActiveBreakStatus = async (
   userId: string,
   userTimezone: string = DEFAULT_TIMEZONE,
@@ -208,10 +211,7 @@ const getActiveBreakStatus = async (
 
   const weekBreaks = await Break.find({
     userId: new mongoose.Types.ObjectId(userId),
-    $or: [
-      { createdAt: { $gte: startOfWeek } },
-      { status: "active" },
-    ],
+    $or: [{ createdAt: { $gte: startOfWeek } }, { status: "active" }],
   });
 
   let todayMinutes = 0;
@@ -219,7 +219,10 @@ const getActiveBreakStatus = async (
     if (breakItem.status === "completed") {
       todayMinutes += breakItem.durationMinutes || 0;
     } else {
-      const durationMs = Math.max(0, new Date().getTime() - breakItem.startTime.getTime());
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - breakItem.startTime.getTime(),
+      );
       todayMinutes += Math.round(durationMs / 60000);
     }
   });
@@ -230,7 +233,10 @@ const getActiveBreakStatus = async (
     if (breakItem.status === "completed") {
       weekMinutes += breakItem.durationMinutes || 0;
     } else {
-      const durationMs = Math.max(0, new Date().getTime() - breakItem.startTime.getTime());
+      const durationMs = Math.max(
+        0,
+        new Date().getTime() - breakItem.startTime.getTime(),
+      );
       weekMinutes += Math.round(durationMs / 60000);
     }
   });
@@ -247,7 +253,10 @@ const getActiveBreakStatus = async (
     weekMinutes,
   };
 
-  let remainingBreaksToday = Math.max(0, breakConfig.breaksPerDay - breaksToday);
+  let remainingBreaksToday = Math.max(
+    0,
+    breakConfig.breaksPerDay - breaksToday,
+  );
   if (activeSession) {
     const sessionMax =
       typeof activeSession.maxBreaks === "number"
@@ -270,7 +279,9 @@ const getActiveBreakStatus = async (
   }
 
   const totalBreakSeconds =
-    (currentBreak.totalDurationMinutes || breakConfig.breakDurationMinutes || 15) * 60;
+    (currentBreak.totalDurationMinutes ||
+      breakConfig.breakDurationMinutes ||
+      15) * 60;
   const remainingSeconds = Math.min(
     totalBreakSeconds,
     Math.max(
@@ -343,9 +354,7 @@ const getRemainingBreaks = async (
   if (currentBreak) {
     const remainingSeconds = Math.max(
       0,
-      Math.ceil(
-        (currentBreak.endTime.getTime() - new Date().getTime()) / 1000,
-      ),
+      Math.ceil((currentBreak.endTime.getTime() - new Date().getTime()) / 1000),
     );
     const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
 
@@ -398,7 +407,9 @@ const stopBreak = async (userId: string) => {
     status: "active",
     endTime: { $gt: now },
   })
-    .select("_id status remainingSeconds endTime startTime totalDurationMinutes")
+    .select(
+      "_id status remainingSeconds endTime startTime totalDurationMinutes",
+    )
     .lean();
 
   if (!currentBreakToStop) {
@@ -551,9 +562,7 @@ const formatReconcileBreak = (
   const startTime = breakDoc.startTime
     ? new Date(breakDoc.startTime)
     : new Date();
-  const endTime = breakDoc.endTime
-    ? new Date(breakDoc.endTime)
-    : new Date();
+  const endTime = breakDoc.endTime ? new Date(breakDoc.endTime) : new Date();
   const now = new Date();
 
   const totalDurationMinutes = breakDoc.totalDurationMinutes || 15;
@@ -595,9 +604,7 @@ const reconcileBreakFromDB = async (
   const { clientBreakId, modeId, startedAt, endedAt, status, timezone } =
     payload;
   const userObjectId = new mongoose.Types.ObjectId(userId);
-  const activeTimezone = isValidTimezone(timezone)
-    ? timezone!
-    : userTimezone;
+  const activeTimezone = isValidTimezone(timezone) ? timezone! : userTimezone;
 
   if (
     !clientBreakId ||
@@ -844,10 +851,7 @@ const reconcileBreakFromDB = async (
       finalStatus === "completed"
         ? "Offline break synced and marked as completed"
         : "Offline break synced and apps are now unlocked",
-    break: formatReconcileBreak(
-      populatedBreak || createdBreak,
-      activeTimezone,
-    ),
+    break: formatReconcileBreak(populatedBreak || createdBreak, activeTimezone),
     breaksLeft: newBreaksLeft,
     totalAllowed: allowedBreaks,
     durationMinutes: effectiveDurationMinutes,
@@ -864,4 +868,4 @@ export const BreakService = {
   getGlobalBreakConfig,
   updateGlobalBreakConfig,
   reconcileBreakFromDB,
-};
+};

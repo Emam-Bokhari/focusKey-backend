@@ -16,7 +16,11 @@ const getStatsFromDB = async (userTimezone: string = DEFAULT_TIMEZONE) => {
   const now = new Date();
   const startOfWeek = getZonedStartOfWeek(now, userTimezone);
 
-  const sevenDaysAgo = dayjs().tz(userTimezone).subtract(7, "day").startOf("day").toDate();
+  const sevenDaysAgo = dayjs()
+    .tz(userTimezone)
+    .subtract(7, "day")
+    .startOf("day")
+    .toDate();
 
   const totalUsers = await User.countDocuments({ isDeleted: false });
 
@@ -133,8 +137,12 @@ const getFocusTimeOverTime = async (
     .startOf("day")
     .toDate();
 
-  const startOfYear = dayjs.tz(`${targetYear}-01-01 00:00:00`, userTimezone).toDate();
-  const endOfYear = dayjs.tz(`${targetYear}-12-31 23:59:59.999`, userTimezone).toDate();
+  const startOfYear = dayjs
+    .tz(`${targetYear}-01-01 00:00:00`, userTimezone)
+    .toDate();
+  const endOfYear = dayjs
+    .tz(`${targetYear}-12-31 23:59:59.999`, userTimezone)
+    .toDate();
 
   const sessions = await FocusSession.find({
     nudgeId: { $exists: false },
@@ -160,7 +168,8 @@ const getFocusTimeOverTime = async (
       session.durationMinutes ??
       (session.endTime
         ? Math.round(
-            (new Date(session.endTime).getTime() - session.startTime.getTime()) /
+            (new Date(session.endTime).getTime() -
+              session.startTime.getTime()) /
               60000,
           )
         : 0);
@@ -205,8 +214,12 @@ const getFocusTimeTogetherOverTime = async (
     .startOf("day")
     .toDate();
 
-  const startOfYear = dayjs.tz(`${targetYear}-01-01 00:00:00`, userTimezone).toDate();
-  const endOfYear = dayjs.tz(`${targetYear}-12-31 23:59:59.999`, userTimezone).toDate();
+  const startOfYear = dayjs
+    .tz(`${targetYear}-01-01 00:00:00`, userTimezone)
+    .toDate();
+  const endOfYear = dayjs
+    .tz(`${targetYear}-12-31 23:59:59.999`, userTimezone)
+    .toDate();
 
   const sessions = await FocusSession.find({
     nudgeId: { $exists: true, $ne: null },
@@ -232,7 +245,8 @@ const getFocusTimeTogetherOverTime = async (
       session.durationMinutes ??
       (session.endTime
         ? Math.round(
-            (new Date(session.endTime).getTime() - session.startTime.getTime()) /
+            (new Date(session.endTime).getTime() -
+              session.startTime.getTime()) /
               60000,
           )
         : 0);

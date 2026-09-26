@@ -16,5 +16,3 @@ router.delete("/clear-all", isUser, FocusSessionController.clearAllData);
 router.post("/reconcile", isUser, FocusSessionController.reconcileSession);
 
 export const FocusSessionRoutes = router;
-
-

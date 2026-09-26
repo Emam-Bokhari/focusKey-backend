@@ -276,8 +276,7 @@ const getDashboardData = async (
             remainingSeconds: Math.max(
               0,
               Math.ceil(
-                (currentGlobalBreak.endTime.getTime() -
-                  new Date().getTime()) /
+                (currentGlobalBreak.endTime.getTime() - new Date().getTime()) /
                   1000,
               ),
             ),
@@ -301,7 +300,6 @@ const formatDuration = (totalMinutes: number) => {
     formatted: `${hours}h ${minutes}m`,
   };
 };
-
 
 const getHistoryData = async (
   userId: string,
@@ -343,9 +341,7 @@ const getHistoryData = async (
         modeWiseToday[modeName] +=
           s.durationMinutes ||
           (s.endTime
-            ? Math.round(
-                (new Date(s.endTime).getTime() - sStartMs) / 60000,
-              )
+            ? Math.round((new Date(s.endTime).getTime() - sStartMs) / 60000)
             : 0);
       } else {
         const diff = nowMs - sStartMs;
@@ -485,7 +481,6 @@ const getHistoryData = async (
   };
 };
 
-
 const getHistoryV2 = async (
   userId: string,
   userTimezone: string = DEFAULT_TIMEZONE,
@@ -506,10 +501,7 @@ const getHistoryV2 = async (
 
   let totalMinutes = 0;
 
-  const sinceDate = formatZonedSinceDate(
-    user?.createdAt || now,
-    userTimezone,
-  );
+  const sinceDate = formatZonedSinceDate(user?.createdAt || now, userTimezone);
 
   const breaksByMode = new Map<string, any[]>();
   for (const b of allBreaks) {

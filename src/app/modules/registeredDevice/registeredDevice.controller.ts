@@ -50,7 +50,6 @@ const bulkUploadDevicesCsv = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const getAllDevices = catchAsync(async (req: Request, res: Response) => {
   const result = await RegisteredDeviceService.getAllDevicesFromDB(req.query);
 
@@ -120,4 +119,3 @@ export const RegisteredDeviceController = {
   deleteDevice,
   resetDevice,
 };
-

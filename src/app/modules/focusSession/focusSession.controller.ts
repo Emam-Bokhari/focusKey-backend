@@ -62,8 +62,10 @@ const getFocusStats = catchAsync(async (req: Request, res: Response) => {
 const exportHistoryToCSV = catchAsync(async (req: Request, res: Response) => {
   const userId = req.user.id;
   const userTimezone = req.user.timezone;
-  const result =
-    await FocusSessionService.exportFocusHistoryToCSVFromDB(userId, userTimezone);
+  const result = await FocusSessionService.exportFocusHistoryToCSVFromDB(
+    userId,
+    userTimezone,
+  );
 
   const fileName = `focus_history_${formatZonedDateKey(new Date(), userTimezone)}.csv`;
 
@@ -112,5 +114,3 @@ export const FocusSessionController = {
   clearAllData,
   reconcileSession,
 };
-
-

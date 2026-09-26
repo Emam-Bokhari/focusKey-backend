@@ -11,7 +11,7 @@ const memoryUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 5 * 1024 * 1024 },
 });
- 
+
 router
   .route("/")
   .post(
@@ -36,7 +36,6 @@ router.post(
 );
 
 router.post("/:id/reset", isAdmin, RegisteredDeviceController.resetDevice);
-
 
 router
   .route("/:id")

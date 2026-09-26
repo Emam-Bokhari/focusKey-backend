@@ -12,7 +12,6 @@ import {
 import { RegisteredDevice } from "./registeredDevice.model";
 import { User } from "../user/user.model";
 
-
 const createDeviceToDB = async (
   payload: Partial<IRegisteredDevice>,
 ): Promise<IRegisteredDevice> => {
@@ -284,7 +283,8 @@ const bulkCreateDevicesToDB = async (
 
   for (const d of existingDevices) {
     if (d.uid && seenBatchUids.has(d.uid)) existingUids.push(d.uid);
-    if (d.serialNo && seenBatchSerials.has(d.serialNo)) existingSerials.push(d.serialNo);
+    if (d.serialNo && seenBatchSerials.has(d.serialNo))
+      existingSerials.push(d.serialNo);
   }
 
   if (existingUids.length > 0) {
@@ -356,9 +356,12 @@ const parseDevicesFromCsv = (csvText: string): IBulkDeviceItem[] => {
 
   if (lines.length === 0) return [];
 
-  const firstLineCols = lines[0]
-    .split(",")
-    .map((h) => h.trim().replace(/^["']|["']$/g, "").toLowerCase());
+  const firstLineCols = lines[0].split(",").map((h) =>
+    h
+      .trim()
+      .replace(/^["']|["']$/g, "")
+      .toLowerCase(),
+  );
 
   const uidHeaderIdx = firstLineCols.findIndex(
     (h) =>
@@ -404,7 +407,8 @@ const parseDevicesFromCsv = (csvText: string): IBulkDeviceItem[] => {
       if (!uid) continue;
 
       const device: IBulkDeviceItem = { uid };
-      if (notesIdx !== -1 && cols[notesIdx]) device.notes = cols[notesIdx].trim();
+      if (notesIdx !== -1 && cols[notesIdx])
+        device.notes = cols[notesIdx].trim();
       if (serialIdx !== -1 && cols[serialIdx])
         device.serialNo = cols[serialIdx].trim();
       if (statusIdx !== -1 && cols[statusIdx]) {
@@ -440,4 +444,3 @@ export const RegisteredDeviceService = {
   deleteDeviceFromDB,
   resetDeviceToDB,
 };
-

@@ -67,7 +67,6 @@ breakSchema.index({ userId: 1, isDeleted: 1 });
 breakSchema.index({ userId: 1, createdAt: -1 });
 breakSchema.index({ userId: 1, clientBreakId: 1 }, { sparse: true });
 
-
 export const Break = model<IBreak>("Break", breakSchema);
 
 const breakConfigSchema = new Schema<IBreakConfig>(

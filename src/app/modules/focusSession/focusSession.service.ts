@@ -19,7 +19,6 @@ import {
   formatZonedIso,
 } from "../../../helpers/timezoneHelper";
 
-
 const formatDuration = (totalMinutes: number) => {
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -29,7 +28,6 @@ const formatDuration = (totalMinutes: number) => {
     formatted: `${hours}h ${minutes}m`,
   };
 };
-
 
 const calculateBreakMinutes = (b: any, nowMs: number) => {
   if (b.status === "completed") {
@@ -165,7 +163,7 @@ const calculateSevenDaysStats = (
         ? nowMs
         : s.endTime
           ? new Date(s.endTime).getTime()
-          : sStartMs + ((s.durationMinutes || 0) * 60000);
+          : sStartMs + (s.durationMinutes || 0) * 60000;
 
       const overlaps =
         (sStartMs >= startOfDayMs && sStartMs <= endOfDayMs) ||
@@ -192,7 +190,7 @@ const calculateSevenDaysStats = (
         ? nowMs
         : b.endTime
           ? new Date(b.endTime).getTime()
-          : bStartMs + ((b.durationMinutes || 0) * 60000);
+          : bStartMs + (b.durationMinutes || 0) * 60000;
 
       const overlaps =
         (bStartMs >= startOfDayMs && bStartMs <= endOfDayMs) ||
@@ -228,8 +226,6 @@ const calculateSevenDaysStats = (
   }
   return stats;
 };
-
-
 
 const getFocusHistoryFromDB = async (
   userId: string,
@@ -299,9 +295,7 @@ const getFocusHistoryFromDB = async (
         modeWiseToday[modeName] +=
           s.durationMinutes ??
           (s.endTime
-            ? Math.round(
-                (new Date(s.endTime).getTime() - sStartMs) / 60000,
-              )
+            ? Math.round((new Date(s.endTime).getTime() - sStartMs) / 60000)
             : 0);
       } else {
         const diff = nowMs - sStartMs;
@@ -778,7 +772,9 @@ const formatReconcileSession = (
   session: any,
   userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
-  const startTime = session.startTime ? new Date(session.startTime) : new Date();
+  const startTime = session.startTime
+    ? new Date(session.startTime)
+    : new Date();
   const endTime = session.endTime ? new Date(session.endTime) : null;
   return {
     _id: session._id,
@@ -805,9 +801,7 @@ const reconcileSessionFromDB = async (
   const { clientSessionId, modeId, startedAt, endedAt, status, timezone } =
     payload;
   const userObjectId = new mongoose.Types.ObjectId(userId);
-  const activeTimezone = isValidTimezone(timezone)
-    ? timezone!
-    : userTimezone;
+  const activeTimezone = isValidTimezone(timezone) ? timezone! : userTimezone;
 
   if (
     !clientSessionId ||
@@ -1179,6 +1173,3 @@ export const FocusSessionService = {
   reconcileSessionFromDB,
   healDanglingSessions,
 };
-
-
-

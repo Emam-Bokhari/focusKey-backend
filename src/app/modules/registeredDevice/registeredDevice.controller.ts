@@ -15,6 +15,42 @@ const createDevice = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const bulkCreateDevices = catchAsync(async (req: Request, res: Response) => {
+  const result = await RegisteredDeviceService.bulkCreateDevicesToDB(req.body);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+const bulkUploadDevicesCsv = catchAsync(async (req: Request, res: Response) => {
+  let devices: any[] = [];
+
+  if (req.file) {
+    const csvContent = req.file.buffer.toString("utf-8");
+    devices = RegisteredDeviceService.parseDevicesFromCsv(csvContent);
+  } else if (req.body) {
+    if (Array.isArray(req.body)) {
+      devices = req.body;
+    } else if (Array.isArray(req.body.devices)) {
+      devices = req.body.devices;
+    }
+  }
+
+  const result = await RegisteredDeviceService.bulkCreateDevicesToDB(devices);
+
+  sendResponse(res, {
+    statusCode: StatusCodes.CREATED,
+    success: true,
+    message: result.message,
+    data: result,
+  });
+});
+
+
 const getAllDevices = catchAsync(async (req: Request, res: Response) => {
   const result = await RegisteredDeviceService.getAllDevicesFromDB(req.query);
 
@@ -76,9 +112,12 @@ const resetDevice = catchAsync(async (req: Request, res: Response) => {
 
 export const RegisteredDeviceController = {
   createDevice,
+  bulkCreateDevices,
+  bulkUploadDevicesCsv,
   getAllDevices,
   getDeviceById,
   updateDevice,
   deleteDevice,
   resetDevice,
 };
+

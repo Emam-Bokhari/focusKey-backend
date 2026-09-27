@@ -1,9 +1,11 @@
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import isoWeek from "dayjs/plugin/isoWeek";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
+dayjs.extend(isoWeek);
 
 export { dayjs };
 export const DEFAULT_TIMEZONE = "UTC";
@@ -89,14 +91,25 @@ export const getZonedEndOfDay = (
 };
 
 /**
- * Returns UTC Date object representing the start of week (Sunday 00:00:00) in the specified timezone.
+ * Returns UTC Date object representing the start of week (Monday 00:00:00, ISO 8601 standard) in the specified timezone.
  */
 export const getZonedStartOfWeek = (
   date: Date | number | string = new Date(),
   tz: string = DEFAULT_TIMEZONE,
 ): Date => {
   const targetTz = isValidTimezone(tz) ? tz : DEFAULT_TIMEZONE;
-  return dayjs(date).tz(targetTz).day(0).startOf("day").toDate();
+  return dayjs(date).tz(targetTz).startOf("isoWeek").toDate();
+};
+
+/**
+ * Returns UTC Date object representing the end of week (Sunday 23:59:59.999, ISO 8601 standard) in the specified timezone.
+ */
+export const getZonedEndOfWeek = (
+  date: Date | number | string = new Date(),
+  tz: string = DEFAULT_TIMEZONE,
+): Date => {
+  const targetTz = isValidTimezone(tz) ? tz : DEFAULT_TIMEZONE;
+  return dayjs(date).tz(targetTz).endOf("isoWeek").toDate();
 };
 
 /**

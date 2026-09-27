@@ -29,6 +29,7 @@ const registeredDeviceSchema = new Schema<
       type: String,
       enum: ["android", "ios", "web"],
       default: null,
+      
     },
     deviceModel: {
       type: String,

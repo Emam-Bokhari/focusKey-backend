@@ -33,6 +33,8 @@ const friendSchema = new Schema<IFriend>(
 
 friendSchema.index({ userId: 1, friendId: 1 });
 friendSchema.index({ friendId: 1, userId: 1 });
+friendSchema.index({ userId: 1, friendId: 1, isDeleted: 1 });
+friendSchema.index({ friendId: 1, userId: 1, isDeleted: 1 });
 friendSchema.index({ friendId: 1, status: 1 });
 friendSchema.index({ userId: 1, status: 1 });
 friendSchema.index({ status: 1 });

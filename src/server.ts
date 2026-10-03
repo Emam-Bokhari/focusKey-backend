@@ -15,6 +15,7 @@ import {
 import "./queues";
 import "dotenv/config";
 import { CronJobs } from "./app/cronJobs/breakCron";
+import { UserSearchEngine } from "./app/modules/friends/userSearchEngine";
 
 let server: any;
 
@@ -47,8 +48,14 @@ process.on("uncaughtException", (error) => {
 
 async function main() {
   try {
-    await mongoose.connect(config.database_url as string);
+    await mongoose.connect(config.database_url as string, {
+      maxPoolSize: 50,
+      minPoolSize: 10,
+    });
     seedSuperAdmin();
+    UserSearchEngine.init().catch((err) => {
+      logger.error("Failed to initialize UserSearchEngine:", err);
+    });
 
     logger.info(colors.green("Database connected successfully"));
 

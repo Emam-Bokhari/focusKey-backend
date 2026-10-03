@@ -76,7 +76,13 @@ const getDashboardData = async (
   let todayFocusMinutes = 0;
   todaySessions.forEach((session) => {
     if (session.status === "completed") {
-      todayFocusMinutes += session.durationMinutes || 0;
+      todayFocusMinutes += session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() -
+              session.startTime.getTime()) /
+              60000,
+          )
+        : (session.durationMinutes ?? 0);
     } else {
       const durationMs = Math.max(
         0,
@@ -91,15 +97,13 @@ const getDashboardData = async (
   const allTodayBreaks = todayBreaks;
   allTodayBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
-      const dur =
-        breakItem.durationMinutes ||
-        (breakItem.endTime
-          ? Math.round(
-              (new Date(breakItem.endTime).getTime() -
-                new Date(breakItem.startTime).getTime()) /
-                60000,
-            )
-          : 0);
+      const dur = breakItem.endTime
+        ? Math.round(
+            (new Date(breakItem.endTime).getTime() -
+              new Date(breakItem.startTime).getTime()) /
+              60000,
+          )
+        : (breakItem.durationMinutes ?? 0);
       todayFocusMinutes -= dur;
     } else {
       const durationMs = Math.max(
@@ -134,7 +138,13 @@ const getDashboardData = async (
   let weekFocusMinutes = 0;
   weekSessions.forEach((session) => {
     if (session.status === "completed") {
-      weekFocusMinutes += session.durationMinutes || 0;
+      weekFocusMinutes += session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() -
+              session.startTime.getTime()) /
+              60000,
+          )
+        : (session.durationMinutes ?? 0);
     } else {
       const durationMs = Math.max(
         0,
@@ -148,15 +158,13 @@ const getDashboardData = async (
 
   weekBreaks.forEach((breakItem) => {
     if (breakItem.status === "completed") {
-      const dur =
-        breakItem.durationMinutes ||
-        (breakItem.endTime
-          ? Math.round(
-              (new Date(breakItem.endTime).getTime() -
-                new Date(breakItem.startTime).getTime()) /
-                60000,
-            )
-          : 0);
+      const dur = breakItem.endTime
+        ? Math.round(
+            (new Date(breakItem.endTime).getTime() -
+              new Date(breakItem.startTime).getTime()) /
+              60000,
+          )
+        : (breakItem.durationMinutes ?? 0);
       weekFocusMinutes -= dur;
     } else {
       const durationMs = Math.max(
@@ -338,11 +346,9 @@ const getHistoryData = async (
         modeWiseToday[modeName] = 0;
       }
       if (s.status === "completed") {
-        modeWiseToday[modeName] +=
-          s.durationMinutes ||
-          (s.endTime
-            ? Math.round((new Date(s.endTime).getTime() - sStartMs) / 60000)
-            : 0);
+        modeWiseToday[modeName] += s.endTime
+          ? Math.round((new Date(s.endTime).getTime() - sStartMs) / 60000)
+          : (s.durationMinutes ?? 0);
       } else {
         const diff = nowMs - sStartMs;
         modeWiseToday[modeName] += Math.round(diff / 60000);
@@ -357,14 +363,13 @@ const getHistoryData = async (
       if (modeWiseToday[modeName]) {
         const breakMin =
           b.status === "completed"
-            ? b.durationMinutes ||
-              (b.endTime
-                ? Math.round(
-                    (new Date(b.endTime).getTime() -
-                      new Date(b.startTime).getTime()) /
-                      60000,
-                  )
-                : 0)
+            ? b.endTime
+              ? Math.round(
+                  (new Date(b.endTime).getTime() -
+                    new Date(b.startTime).getTime()) /
+                    60000,
+                )
+              : (b.durationMinutes ?? 0)
             : Math.max(
                 0,
                 Math.round((nowMs - new Date(b.startTime).getTime()) / 60000),
@@ -405,14 +410,12 @@ const getHistoryData = async (
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      sessionMinutes =
-        session.durationMinutes ||
-        (session.endTime
-          ? Math.round(
-              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
-                60000,
-            )
-          : 0);
+      sessionMinutes = session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+              60000,
+          )
+        : (session.durationMinutes ?? 0);
     } else {
       sessionMinutes = Math.round((nowMs - sStartTime.getTime()) / 60000);
     }
@@ -439,7 +442,9 @@ const getHistoryData = async (
       }
 
       if (b.status === "completed") {
-        sessionBreakMinutes += b.durationMinutes || 0;
+        sessionBreakMinutes += b.endTime
+          ? Math.round((new Date(b.endTime).getTime() - bStartMs) / 60000)
+          : (b.durationMinutes ?? 0);
       } else {
         sessionBreakMinutes += Math.round((nowMs - bStartMs) / 60000);
       }
@@ -457,7 +462,6 @@ const getHistoryData = async (
       false,
     );
 
-    groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
       modeName: (session.modeId as any)?.name,
       startTime: session.startTime,
@@ -466,6 +470,10 @@ const getHistoryData = async (
       duration,
       status: session.status,
     });
+
+    if (isCompleted) {
+      groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
+    }
   }
 
   const history = Object.values(groupedHistory).map((day: any) => ({
@@ -487,13 +495,16 @@ const getHistoryV2 = async (
 ) => {
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  const [allSessions, allBreaks, user] = await Promise.all([
+  const [allSessions, allBreaks, firstSessionResult] = await Promise.all([
     FocusSession.find({ userId: userObjectId, isDeleted: false })
       .populate("modeId")
       .sort({ startTime: -1 })
       .lean(),
     Break.find({ userId: userObjectId, isDeleted: false }).lean(),
-    User.findById(userId).select("createdAt").lean(),
+    FocusSession.findOne({ userId: userObjectId, isDeleted: false })
+      .select("startTime")
+      .sort({ startTime: 1 })
+      .lean(),
   ]);
 
   const now = new Date();
@@ -501,7 +512,11 @@ const getHistoryV2 = async (
 
   let totalMinutes = 0;
 
-  const sinceDate = formatZonedSinceDate(user?.createdAt || now, userTimezone);
+  const firstSession =
+    firstSessionResult ||
+    (allSessions.length > 0 ? allSessions[allSessions.length - 1] : null);
+  const firstFocusDate = firstSession ? firstSession.startTime : null;
+  const sinceDate = formatZonedSinceDate(firstFocusDate || now, userTimezone);
 
   const breaksByMode = new Map<string, any[]>();
   for (const b of allBreaks) {
@@ -531,14 +546,12 @@ const getHistoryV2 = async (
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      const rawMin =
-        session.durationMinutes ||
-        (session.endTime
-          ? Math.round(
-              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
-                60000,
-            )
-          : 0);
+      const rawMin = session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+              60000,
+          )
+        : (session.durationMinutes ?? 0);
       sessionMinutes = rawMin > 1440 ? 0 : rawMin;
     } else {
       const diff = nowMs - sStartTime.getTime();
@@ -568,11 +581,11 @@ const getHistoryV2 = async (
       }
 
       if (b.status === "completed") {
-        sessionBreakMinutes +=
-          b.durationMinutes ||
-          (b.endTime
-            ? Math.round((new Date(b.endTime).getTime() - bStartMs) / 60000)
-            : 0);
+        sessionBreakMinutes += b.endTime
+          ? Math.round(
+              (new Date(b.endTime).getTime() - bStartMs) / 60000,
+            )
+          : (b.durationMinutes ?? 0);
       } else {
         const bDiff = nowMs - bStartMs;
         if (bDiff <= 24 * 60 * 60 * 1000) {

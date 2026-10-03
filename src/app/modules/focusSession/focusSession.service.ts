@@ -32,15 +32,12 @@ const formatDuration = (totalMinutes: number) => {
 
 const calculateBreakMinutes = (b: any, nowMs: number) => {
   if (b.status === "completed") {
-    return (
-      b.durationMinutes ??
-      (b.endTime
-        ? Math.round(
-            (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
-              60000,
-          )
-        : 0)
-    );
+    return b.endTime
+      ? Math.round(
+          (new Date(b.endTime).getTime() - new Date(b.startTime).getTime()) /
+            60000,
+        )
+      : (b.durationMinutes ?? 0);
   } else {
     const bStartMs = new Date(b.startTime).getTime();
     const diff = nowMs - bStartMs;
@@ -102,14 +99,12 @@ const calculateTotalMinutes = (
   for (const session of allSessions) {
     if (session.status !== "completed") continue;
     const sStartTime = new Date(session.startTime);
-    const rawMin =
-      session.durationMinutes ??
-      (session.endTime
-        ? Math.round(
-            (new Date(session.endTime).getTime() - sStartTime.getTime()) /
-              60000,
-          )
-        : 0);
+    const rawMin = session.endTime
+      ? Math.round(
+          (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+            60000,
+        )
+      : (session.durationMinutes ?? 0);
     if (rawMin > 1440) continue;
 
     const sModeId = (session.modeId as any)?._id
@@ -325,11 +320,9 @@ const getFocusHistoryFromDB = async (
         modeWiseToday[modeName] = 0;
       }
       if (s.status === "completed") {
-        modeWiseToday[modeName] +=
-          s.durationMinutes ??
-          (s.endTime
-            ? Math.round((new Date(s.endTime).getTime() - sStartMs) / 60000)
-            : 0);
+        modeWiseToday[modeName] += s.endTime
+          ? Math.round((new Date(s.endTime).getTime() - sStartMs) / 60000)
+          : (s.durationMinutes ?? 0);
       } else {
         const diff = nowMs - sStartMs;
         if (diff <= 24 * 60 * 60 * 1000) {
@@ -375,14 +368,12 @@ const getFocusHistoryFromDB = async (
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      const rawMin =
-        session.durationMinutes ??
-        (session.endTime
-          ? Math.round(
-              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
-                60000,
-            )
-          : 0);
+      const rawMin = session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+              60000,
+          )
+        : (session.durationMinutes ?? 0);
       sessionMinutes = rawMin > 1440 ? 0 : rawMin;
     } else {
       const diff = nowMs - sStartTime.getTime();
@@ -410,7 +401,6 @@ const getFocusHistoryFromDB = async (
       false,
     );
 
-    groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
       modeName: (session.modeId as any)?.name,
       startTime: formatZonedIso(session.startTime, userTimezone),
@@ -421,6 +411,10 @@ const getFocusHistoryFromDB = async (
       duration,
       status: session.status,
     });
+
+    if (session.status === "completed") {
+      groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
+    }
   }
 
   const sortedDates = Object.keys(groupedHistory).sort((a, b) =>
@@ -579,14 +573,12 @@ const getFocusHistoryV2FromDB = async (
 
     let sessionMinutes = 0;
     if (session.status === "completed") {
-      const rawMin =
-        session.durationMinutes ??
-        (session.endTime
-          ? Math.round(
-              (new Date(session.endTime).getTime() - sStartTime.getTime()) /
-                60000,
-            )
-          : 0);
+      const rawMin = session.endTime
+        ? Math.round(
+            (new Date(session.endTime).getTime() - sStartTime.getTime()) /
+              60000,
+          )
+        : (session.durationMinutes ?? 0);
       sessionMinutes = rawMin > 1440 ? 0 : rawMin;
     } else {
       const diff = nowMs - sStartTime.getTime();
@@ -614,7 +606,6 @@ const getFocusHistoryV2FromDB = async (
       true,
     );
 
-    groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
     groupedHistory[dateKey].sessions.push({
       modeName: (session.modeId as any)?.name,
       startTime: formatZonedIso(session.startTime, userTimezone),
@@ -625,6 +616,10 @@ const getFocusHistoryV2FromDB = async (
       duration,
       status: session.status,
     });
+
+    if (session.status === "completed") {
+      groupedHistory[dateKey].totalFocusMinutes += netSessionMinutes;
+    }
   }
 
   const sortedDates = Object.keys(groupedHistory).sort((a, b) =>

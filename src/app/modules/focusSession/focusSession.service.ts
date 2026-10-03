@@ -16,6 +16,7 @@ import {
   getZonedDateGroupHeader,
   getZonedEndOfDay,
   getZonedStartOfDay,
+  getZonedStartOfWeek,
   formatZonedIso,
 } from "../../../helpers/timezoneHelper";
 
@@ -227,6 +228,38 @@ const calculateSevenDaysStats = (
   return stats;
 };
 
+const calculateDailyAndWeeklyMinutes = (
+  sevenDaysStats: any[],
+  now: Date,
+  userTimezone: string = DEFAULT_TIMEZONE,
+) => {
+  const todayKey = formatZonedDateKey(now, userTimezone);
+  const startOfWeekKey = formatZonedDateKey(
+    getZonedStartOfWeek(now, userTimezone),
+    userTimezone,
+  );
+
+  const todayStat =
+    sevenDaysStats.find((s) => s.date === todayKey) ||
+    (sevenDaysStats.length > 0
+      ? sevenDaysStats[sevenDaysStats.length - 1]
+      : null);
+  const dailyMinutes = todayStat ? todayStat.totalMinutes : 0;
+
+  const weeklyMinutes = sevenDaysStats
+    .filter((s) => s.date >= startOfWeekKey)
+    .reduce((sum, s) => sum + (s.totalMinutes || 0), 0);
+
+  return {
+    dailyMinutes,
+    weeklyMinutes,
+    dailyFocusTime: formatDuration(dailyMinutes),
+    weeklyFocusTime: formatDuration(weeklyMinutes),
+    dailyTimeFocused: formatDuration(dailyMinutes).formatted,
+    weeklyTimeFocused: formatDuration(weeklyMinutes).formatted,
+  };
+};
+
 const getFocusHistoryFromDB = async (
   userId: string,
   modeId?: string,
@@ -411,9 +444,19 @@ const getFocusHistoryFromDB = async (
     0,
   );
 
+  const timeSummary = calculateDailyAndWeeklyMinutes(
+    sevenDaysStats,
+    now,
+    userTimezone,
+  );
+
   return {
     summary: {
       totalFocusTime: formatDuration(totalMinutes),
+      dailyFocusTime: timeSummary.dailyFocusTime,
+      weeklyFocusTime: timeSummary.weeklyFocusTime,
+      dailyTimeFocused: timeSummary.dailyTimeFocused,
+      weeklyTimeFocused: timeSummary.weeklyTimeFocused,
       firstFocusDate: firstFocusDate
         ? formatZonedIso(firstFocusDate, userTimezone)
         : null,
@@ -605,10 +648,20 @@ const getFocusHistoryV2FromDB = async (
     0,
   );
 
+  const timeSummary = calculateDailyAndWeeklyMinutes(
+    sevenDaysStats,
+    now,
+    userTimezone,
+  );
+
   return {
     modes,
     summary: {
       totalFocusTime: formatDuration(totalMinutes),
+      dailyFocusTime: timeSummary.dailyFocusTime,
+      weeklyFocusTime: timeSummary.weeklyFocusTime,
+      dailyTimeFocused: timeSummary.dailyTimeFocused,
+      weeklyTimeFocused: timeSummary.weeklyTimeFocused,
       firstFocusDate: firstFocusDate
         ? formatZonedIso(firstFocusDate, userTimezone)
         : null,
@@ -632,9 +685,25 @@ const getFocusStatsFromDB = async (
     Break.find({ userId: userObjectId, isDeleted: false }).lean(),
   ]);
 
-  const nowMs = Date.now();
+  const now = new Date();
+  const nowMs = now.getTime();
   const totalSessions = allSessions.length;
   const totalMinutes = calculateTotalMinutes(allSessions, allBreaks, nowMs);
+
+  const sevenDaysStats = calculateSevenDaysStats(
+    allSessions,
+    allBreaks,
+    now,
+    nowMs,
+    false,
+    userTimezone,
+  );
+
+  const timeSummary = calculateDailyAndWeeklyMinutes(
+    sevenDaysStats,
+    now,
+    userTimezone,
+  );
 
   const firstSession =
     allSessions.length > 0 ? allSessions[allSessions.length - 1] : null;
@@ -650,6 +719,10 @@ const getFocusStatsFromDB = async (
   return {
     totalSessions,
     totalFocusTime: formatDuration(totalMinutes),
+    dailyFocusTime: timeSummary.dailyFocusTime,
+    weeklyFocusTime: timeSummary.weeklyFocusTime,
+    dailyTimeFocused: timeSummary.dailyTimeFocused,
+    weeklyTimeFocused: timeSummary.weeklyTimeFocused,
     dateRange: {
       startDate,
       endDate,

@@ -302,22 +302,30 @@ const getUsersFromDB = async (
   limit: number = 10,
   userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
+  // If no search term is provided, do not show any users by default
+  if (!searchTerm || !searchTerm.trim()) {
+    return {
+      meta: { page, limit, total: 0 },
+      data: [],
+    };
+  }
+
   const skip = (page - 1) * limit;
   const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  const cleanSearch = searchTerm.trim();
+  const escapedSearch = cleanSearch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
   const query: any = {
     _id: { $ne: userObjectId },
     isDeleted: { $ne: true },
     role: USER_ROLES.USER,
+    $or: [
+      { name: { $regex: escapedSearch, $options: "i" } },
+      { userName: { $regex: escapedSearch, $options: "i" } },
+      { email: { $regex: escapedSearch, $options: "i" } },
+    ],
   };
-
-  if (searchTerm) {
-    query.$or = [
-      { name: { $regex: searchTerm, $options: "i" } },
-      { userName: { $regex: searchTerm, $options: "i" } },
-      { email: { $regex: searchTerm, $options: "i" } },
-    ];
-  }
 
   // Fetch paginated users and total count concurrently
   const [users, total] = await Promise.all([

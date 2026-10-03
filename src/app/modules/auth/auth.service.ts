@@ -422,7 +422,7 @@ const googleLoginService = async (payload: {
 
     const fullName = [firstName, lastName].filter(Boolean).join(" ");
 
-    const baseUsername = email.split("@")[0];
+    const baseUsername = email.split("@")[0].toLowerCase();
     let userName = baseUsername;
     let counter = 1;
 

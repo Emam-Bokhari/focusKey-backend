@@ -198,8 +198,19 @@ const createUserToDB = async (payload: any) => {
     throw new ApiError(StatusCodes.CONFLICT, "This Email already taken");
   }
 
-  if (!payload.userName && payload.email) {
-    const baseUsername = payload.email.split("@")[0];
+  if (
+    payload.userName &&
+    typeof payload.userName === "string" &&
+    payload.userName.trim().length > 0
+  ) {
+    const cleanUserName = payload.userName.trim().toLowerCase();
+    const isExistUserName = await User.findOne({ userName: cleanUserName });
+    if (isExistUserName) {
+      throw new ApiError(StatusCodes.CONFLICT, "This username is already taken");
+    }
+    payload.userName = cleanUserName;
+  } else if (payload.email) {
+    const baseUsername = payload.email.split("@")[0].toLowerCase();
     let userName = baseUsername;
     let counter = 1;
     while (await User.findOne({ userName })) {
@@ -207,6 +218,8 @@ const createUserToDB = async (payload: any) => {
       counter++;
     }
     payload.userName = userName;
+  } else {
+    delete payload.userName;
   }
 
   const createUser = await User.create(payload);
@@ -280,6 +293,28 @@ const updateProfileToDB = async (
 
   if (payload.profileImage && isExistUser.profileImage) {
     unlinkFile(isExistUser.profileImage);
+  }
+
+  if (payload.userName !== undefined) {
+    if (
+      typeof payload.userName === "string" &&
+      payload.userName.trim().length > 0
+    ) {
+      const cleanUserName = payload.userName.trim().toLowerCase();
+      const isExistUserName = await User.findOne({
+        userName: cleanUserName,
+        _id: { $ne: id },
+      });
+      if (isExistUserName) {
+        throw new ApiError(
+          StatusCodes.CONFLICT,
+          "This username is already taken",
+        );
+      }
+      payload.userName = cleanUserName;
+    } else {
+      throw new ApiError(StatusCodes.BAD_REQUEST, "Username cannot be empty");
+    }
   }
 
   const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {

@@ -49,6 +49,7 @@ export const calculateBreakMinutes = (b: any, nowMs: number) => {
 export const indexBreaksByMode = (allBreaks: any[]) => {
   const map = new Map<string, any[]>();
   for (const b of allBreaks) {
+    const uId = (b.userId?._id || b.userId)?.toString();
     const mId = (b.modeId?._id || b.modeId)?.toString();
     if (mId) {
       let list = map.get(mId);
@@ -57,6 +58,16 @@ export const indexBreaksByMode = (allBreaks: any[]) => {
         map.set(mId, list);
       }
       list.push(b);
+
+      if (uId) {
+        const uKey = `${uId}_${mId}`;
+        let uList = map.get(uKey);
+        if (!uList) {
+          uList = [];
+          map.set(uKey, uList);
+        }
+        uList.push(b);
+      }
     }
   }
   return map;
@@ -70,9 +81,13 @@ export const calculateSessionBreakMinutes = (
   const sStartMs = new Date(session.startTime).getTime();
   const isCompleted = session.status === "completed";
   const sEndMs = session.endTime ? new Date(session.endTime).getTime() : null;
+  const sUserId = (session.userId?._id || session.userId)?.toString();
 
   let sessionBreakMinutes = 0;
   for (const b of candidateBreaks) {
+    const bUserId = (b.userId?._id || b.userId)?.toString();
+    if (sUserId && bUserId && sUserId !== bUserId) continue;
+
     const bStartMs = new Date(b.startTime).getTime();
     if (bStartMs < sStartMs) continue;
 
@@ -107,10 +122,16 @@ export const calculateTotalMinutes = (
       : (session.durationMinutes ?? 0);
     if (rawMin > 1440) continue;
 
+    const uId = (session.userId?._id || session.userId)?.toString();
     const sModeId = (session.modeId as any)?._id
       ? (session.modeId as any)._id.toString()
       : session.modeId?.toString();
-    const candidateBreaks = sModeId ? breaksByMode.get(sModeId) || [] : [];
+    const candidateBreaks =
+      uId && sModeId && breaksByMode.has(`${uId}_${sModeId}`)
+        ? breaksByMode.get(`${uId}_${sModeId}`) || []
+        : sModeId
+          ? breaksByMode.get(sModeId) || []
+          : [];
     const sessionBreakMinutes = calculateSessionBreakMinutes(
       candidateBreaks,
       session,

@@ -30,7 +30,7 @@ const formatDuration = (totalMinutes: number) => {
   };
 };
 
-const calculateBreakMinutes = (b: any, nowMs: number) => {
+export const calculateBreakMinutes = (b: any, nowMs: number) => {
   if (b.status === "completed") {
     return b.endTime
       ? Math.round(
@@ -46,7 +46,7 @@ const calculateBreakMinutes = (b: any, nowMs: number) => {
   }
 };
 
-const indexBreaksByMode = (allBreaks: any[]) => {
+export const indexBreaksByMode = (allBreaks: any[]) => {
   const map = new Map<string, any[]>();
   for (const b of allBreaks) {
     const mId = (b.modeId?._id || b.modeId)?.toString();
@@ -62,7 +62,7 @@ const indexBreaksByMode = (allBreaks: any[]) => {
   return map;
 };
 
-const calculateSessionBreakMinutes = (
+export const calculateSessionBreakMinutes = (
   candidateBreaks: any[],
   session: any,
   nowMs: number,
@@ -88,10 +88,10 @@ const calculateSessionBreakMinutes = (
   return sessionBreakMinutes;
 };
 
-const calculateTotalMinutes = (
+export const calculateTotalMinutes = (
   allSessions: any[],
   allBreaks: any[],
-  nowMs: number,
+  nowMs: number = Date.now(),
 ) => {
   const breaksByMode = indexBreaksByMode(allBreaks);
   let totalMinutes = 0;
@@ -270,7 +270,11 @@ const getFocusHistoryFromDB = async (
 
   const [allSessions, allBreaks, firstSessionResult] = await Promise.all([
     FocusSession.find(query)
-      .populate("modeId", "_id name icon")
+      .populate({
+        path: "modeId",
+        select: "_id name icon",
+        match: { isDeleted: { $in: [true, false] } },
+      })
       .sort({ startTime: -1 })
       .lean(),
     Break.find(query).lean(),
@@ -484,7 +488,11 @@ const getFocusHistoryV2FromDB = async (
         .select("_id name icon")
         .lean(),
       FocusSession.find(query)
-        .populate("modeId", "_id name icon")
+        .populate({
+          path: "modeId",
+          select: "_id name icon",
+          match: { isDeleted: { $in: [true, false] } },
+        })
         .sort({ startTime: -1 })
         .lean(),
       Break.find(query).lean(),
@@ -675,6 +683,11 @@ const getFocusStatsFromDB = async (
 
   const [allSessions, allBreaks] = await Promise.all([
     FocusSession.find({ userId: userObjectId, isDeleted: false })
+      .populate({
+        path: "modeId",
+        select: "_id name icon",
+        match: { isDeleted: { $in: [true, false] } },
+      })
       .sort({ startTime: -1 })
       .lean(),
     Break.find({ userId: userObjectId, isDeleted: false }).lean(),
@@ -733,7 +746,10 @@ const exportFocusHistoryToCSVFromDB = async (
 
   const [sessions, allBreaks] = await Promise.all([
     FocusSession.find({ userId: userObjectId, isDeleted: false })
-      .populate("modeId")
+      .populate({
+        path: "modeId",
+        match: { isDeleted: { $in: [true, false] } },
+      })
       .sort({ startTime: -1 })
       .lean(),
     Break.find({ userId: userObjectId, isDeleted: false }).lean(),

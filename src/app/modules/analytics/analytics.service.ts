@@ -11,6 +11,12 @@ import {
   getZonedEndOfDay,
   getZonedStartOfWeek,
 } from "../../../helpers/timezoneHelper";
+import {
+  calculateBreakMinutes,
+  calculateSessionBreakMinutes,
+  calculateTotalMinutes,
+  indexBreaksByMode,
+} from "../focusSession/focusSession.service";
 
 const getStatsFromDB = async (userTimezone: string = DEFAULT_TIMEZONE) => {
   const now = new Date();
@@ -39,11 +45,20 @@ const getStatsFromDB = async (userTimezone: string = DEFAULT_TIMEZONE) => {
     isDeleted: false,
   });
 
-  const totalFocusTimeAggregation = await FocusSession.aggregate([
-    { $match: { status: "completed", isDeleted: false } },
-    { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } },
+  const [allCompletedSessions, allBreaks] = await Promise.all([
+    FocusSession.find({ status: "completed", isDeleted: false })
+      .populate({
+        path: "modeId",
+        match: { isDeleted: { $in: [true, false] } },
+      })
+      .lean(),
+    Break.find({ isDeleted: false }).lean(),
   ]);
-  const totalTimeFocused = totalFocusTimeAggregation[0]?.totalMinutes || 0;
+  const totalTimeFocused = calculateTotalMinutes(
+    allCompletedSessions,
+    allBreaks,
+    now.getTime(),
+  );
 
   const totalBreaksTaken = await Break.countDocuments({ isDeleted: false });
 
@@ -144,15 +159,35 @@ const getFocusTimeOverTime = async (
     .tz(`${targetYear}-12-31 23:59:59.999`, userTimezone)
     .toDate();
 
-  const sessions = await FocusSession.find({
-    nudgeId: { $exists: false },
-    status: "completed",
-    startTime: {
-      $gte: startDate > startOfYear ? startDate : startOfYear,
-      $lte: endDate < endOfYear ? endDate : endOfYear,
-    },
-    isDeleted: false,
-  });
+  const queryStart = startDate > startOfYear ? startDate : startOfYear;
+  const queryEnd = endDate < endOfYear ? endDate : endOfYear;
+
+  const [sessions, breaks] = await Promise.all([
+    FocusSession.find({
+      nudgeId: { $exists: false },
+      status: "completed",
+      startTime: {
+        $gte: queryStart,
+        $lte: queryEnd,
+      },
+      isDeleted: false,
+    })
+      .populate({
+        path: "modeId",
+        match: { isDeleted: { $in: [true, false] } },
+      })
+      .lean(),
+    Break.find({
+      isDeleted: false,
+      startTime: {
+        $gte: queryStart,
+        $lte: queryEnd,
+      },
+    }).lean(),
+  ]);
+
+  const breaksByMode = indexBreaksByMode(breaks);
+  const nowMs = Date.now();
 
   const dateWiseData: Record<string, number> = {};
 
@@ -163,17 +198,26 @@ const getFocusTimeOverTime = async (
   }
 
   sessions.forEach((session) => {
-    const dateKey = formatZonedDateKey(session.startTime, userTimezone);
-    const rawMinutes =
-      session.durationMinutes ??
-      (session.endTime
-        ? Math.round(
-            (new Date(session.endTime).getTime() -
-              session.startTime.getTime()) /
-              60000,
-          )
-        : 0);
-    const minutes = Math.max(0, rawMinutes);
+    const sStartTime = new Date(session.startTime);
+    const dateKey = formatZonedDateKey(sStartTime, userTimezone);
+    const rawMinutes = session.endTime
+      ? Math.round(
+          (new Date(session.endTime).getTime() - sStartTime.getTime()) / 60000,
+        )
+      : (session.durationMinutes ?? 0);
+    if (rawMinutes > 1440) return;
+
+    const sModeId = (session.modeId as any)?._id
+      ? (session.modeId as any)._id.toString()
+      : session.modeId?.toString();
+    const candidateBreaks = sModeId ? breaksByMode.get(sModeId) || [] : [];
+    const sessionBreakMinutes = calculateSessionBreakMinutes(
+      candidateBreaks,
+      session,
+      nowMs,
+    );
+
+    const minutes = Math.max(0, rawMinutes - sessionBreakMinutes);
     if (dateWiseData[dateKey] !== undefined) {
       dateWiseData[dateKey] += minutes;
     }
@@ -221,15 +265,35 @@ const getFocusTimeTogetherOverTime = async (
     .tz(`${targetYear}-12-31 23:59:59.999`, userTimezone)
     .toDate();
 
-  const sessions = await FocusSession.find({
-    nudgeId: { $exists: true, $ne: null },
-    status: "completed",
-    startTime: {
-      $gte: startDate > startOfYear ? startDate : startOfYear,
-      $lte: endDate < endOfYear ? endDate : endOfYear,
-    },
-    isDeleted: false,
-  });
+  const queryStart = startDate > startOfYear ? startDate : startOfYear;
+  const queryEnd = endDate < endOfYear ? endDate : endOfYear;
+
+  const [sessions, breaks] = await Promise.all([
+    FocusSession.find({
+      nudgeId: { $exists: true, $ne: null },
+      status: "completed",
+      startTime: {
+        $gte: queryStart,
+        $lte: queryEnd,
+      },
+      isDeleted: false,
+    })
+      .populate({
+        path: "modeId",
+        match: { isDeleted: { $in: [true, false] } },
+      })
+      .lean(),
+    Break.find({
+      isDeleted: false,
+      startTime: {
+        $gte: queryStart,
+        $lte: queryEnd,
+      },
+    }).lean(),
+  ]);
+
+  const breaksByMode = indexBreaksByMode(breaks);
+  const nowMs = Date.now();
 
   const dateWiseData: Record<string, number> = {};
 
@@ -240,17 +304,26 @@ const getFocusTimeTogetherOverTime = async (
   }
 
   sessions.forEach((session) => {
-    const dateKey = formatZonedDateKey(session.startTime, userTimezone);
-    const rawMinutes =
-      session.durationMinutes ??
-      (session.endTime
-        ? Math.round(
-            (new Date(session.endTime).getTime() -
-              session.startTime.getTime()) /
-              60000,
-          )
-        : 0);
-    const minutes = Math.max(0, rawMinutes);
+    const sStartTime = new Date(session.startTime);
+    const dateKey = formatZonedDateKey(sStartTime, userTimezone);
+    const rawMinutes = session.endTime
+      ? Math.round(
+          (new Date(session.endTime).getTime() - sStartTime.getTime()) / 60000,
+        )
+      : (session.durationMinutes ?? 0);
+    if (rawMinutes > 1440) return;
+
+    const sModeId = (session.modeId as any)?._id
+      ? (session.modeId as any)._id.toString()
+      : session.modeId?.toString();
+    const candidateBreaks = sModeId ? breaksByMode.get(sModeId) || [] : [];
+    const sessionBreakMinutes = calculateSessionBreakMinutes(
+      candidateBreaks,
+      session,
+      nowMs,
+    );
+
+    const minutes = Math.max(0, rawMinutes - sessionBreakMinutes);
     if (dateWiseData[dateKey] !== undefined) {
       dateWiseData[dateKey] += minutes;
     }
@@ -293,11 +366,24 @@ const getUsersAnalyticsFromDB = async (query: Record<string, unknown>) => {
         isDeleted: false,
       });
 
-      const totalFocusTimeResult = await FocusSession.aggregate([
-        { $match: { userId: user._id, status: "completed", isDeleted: false } },
-        { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } },
+      const [allSessions, allBreaks] = await Promise.all([
+        FocusSession.find({
+          userId: user._id,
+          status: "completed",
+          isDeleted: false,
+        })
+          .populate({
+            path: "modeId",
+            match: { isDeleted: { $in: [true, false] } },
+          })
+          .lean(),
+        Break.find({ userId: user._id, isDeleted: false }).lean(),
       ]);
-      const totalFocusTime = totalFocusTimeResult[0]?.totalMinutes || 0;
+      const totalFocusTime = calculateTotalMinutes(
+        allSessions,
+        allBreaks,
+        Date.now(),
+      );
 
       const breakCount = await Break.countDocuments({
         userId: user._id,
@@ -362,11 +448,24 @@ const getSingleUserAnalyticsFromDB = async (userId: string) => {
     isDeleted: false,
   });
 
-  const totalFocusTimeResult = await FocusSession.aggregate([
-    { $match: { userId: user._id, status: "completed", isDeleted: false } },
-    { $group: { _id: null, totalMinutes: { $sum: "$durationMinutes" } } },
+  const [allSessions, allBreaks] = await Promise.all([
+    FocusSession.find({
+      userId: user._id,
+      status: "completed",
+      isDeleted: false,
+    })
+      .populate({
+        path: "modeId",
+        match: { isDeleted: { $in: [true, false] } },
+      })
+      .lean(),
+    Break.find({ userId: user._id, isDeleted: false }).lean(),
   ]);
-  const totalFocusTime = totalFocusTimeResult[0]?.totalMinutes || 0;
+  const totalFocusTime = calculateTotalMinutes(
+    allSessions,
+    allBreaks,
+    Date.now(),
+  );
 
   const breakCount = await Break.countDocuments({
     userId: user._id,

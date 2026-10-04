@@ -1026,8 +1026,8 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 
   if (nudge.status === "completed") {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Nudge is already completed");
-  }
-
+  } 
+  
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   const isCreator = nudge.creatorId.equals(userObjectId);

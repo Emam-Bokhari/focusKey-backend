@@ -29,7 +29,10 @@ const getDashboardData = async (
   const activeSession = await FocusSession.findOne({
     userId: userObjectId,
     status: "active",
-  }).populate("modeId");
+  }).populate({
+    path: "modeId",
+    match: { isDeleted: { $in: [true, false] } },
+  });
 
   const activeMode = activeSession
     ? (activeSession.modeId as any)
@@ -317,7 +320,10 @@ const getHistoryData = async (
 
   const [allSessions, allBreaks] = await Promise.all([
     FocusSession.find({ userId: userObjectId, isDeleted: false })
-      .populate("modeId")
+      .populate({
+        path: "modeId",
+        match: { isDeleted: { $in: [true, false] } },
+      })
       .sort({ startTime: -1 })
       .lean(),
     Break.find({ userId: userObjectId, isDeleted: false }).lean(),
@@ -497,7 +503,10 @@ const getHistoryV2 = async (
 
   const [allSessions, allBreaks, firstSessionResult] = await Promise.all([
     FocusSession.find({ userId: userObjectId, isDeleted: false })
-      .populate("modeId")
+      .populate({
+        path: "modeId",
+        match: { isDeleted: { $in: [true, false] } },
+      })
       .sort({ startTime: -1 })
       .lean(),
     Break.find({ userId: userObjectId, isDeleted: false }).lean(),

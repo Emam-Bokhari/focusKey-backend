@@ -15,6 +15,7 @@ export interface INotificationPayload {
   sound?: string;
   badge?: number;
   sender?: string;
+  channelId?: string;
 }
 
 class NotificationHelper {
@@ -179,6 +180,19 @@ class NotificationHelper {
         sanitizedData.type = String(payload.type);
       }
 
+      if (!sanitizedData.title) {
+        sanitizedData.title = payload.title;
+      }
+
+      if (!sanitizedData.body) {
+        sanitizedData.body = payload.body;
+      }
+
+      const channelId =
+        payload.channelId ||
+        sanitizedData.channelId ||
+        sanitizedData.channel_id;
+
       for (const chunk of chunks) {
         const message: any = {
           tokens: chunk,
@@ -190,20 +204,31 @@ class NotificationHelper {
           apns: {
             headers: {
               "apns-priority": "10",
+              "apns-push-type": "alert",
             },
             payload: {
               aps: {
+                alert: {
+                  title: payload.title,
+                  body: payload.body,
+                },
                 sound: payload.sound || "default",
                 ...(typeof payload.badge === "number" ? { badge: payload.badge } : {}),
+                "content-available": 1,
               },
             },
           },
           android: {
             priority: "high",
             notification: {
+              title: payload.title,
+              body: payload.body,
               sound: payload.sound || "default",
               defaultSound: true,
               defaultVibrateTimings: true,
+              priority: "max",
+              clickAction: "FLUTTER_NOTIFICATION_CLICK",
+              ...(channelId ? { channelId } : {}),
             },
           },
         };

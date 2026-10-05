@@ -13,10 +13,12 @@ export const sendNotifications = async (
       title: data.title || "Notification",
       body: data.text || "",
       type: data.type,
+      sender: data.sender?.toString(),
       data: {
         type: data.type,
         referenceId: data.referenceId?.toString() || "",
         referenceModel: data.referenceModel || "",
+        sender: data.sender?.toString() || "",
       },
     };
 

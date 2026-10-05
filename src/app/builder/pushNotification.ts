@@ -11,7 +11,10 @@ export interface INotificationPayload {
   title: string;
   body: string;
   type: string;
-  data?: Record<string, string>;
+  data?: Record<string, any>;
+  sound?: string;
+  badge?: number;
+  sender?: string;
 }
 
 class NotificationHelper {
@@ -19,7 +22,19 @@ class NotificationHelper {
     userId: string | mongoose.Types.ObjectId,
     payload: INotificationPayload,
   ) {
-    return this.sendToBatch([userId], payload);
+    let badge = payload.badge;
+    if (badge === undefined) {
+      try {
+        const unreadCount = await Notification.countDocuments({
+          receiver: userId,
+          read: false,
+        });
+        badge = unreadCount + 1;
+      } catch (err) {
+        logger.error(colors.red("Error calculating unreadCount in sendToUser:"), err);
+      }
+    }
+    return this.sendToBatch([userId], { ...payload, badge });
   }
 
   async sendToBatch(
@@ -43,15 +58,44 @@ class NotificationHelper {
         userId: { $in: validUserIds },
         fcmToken: { $exists: true, $ne: "" },
       })
-        .select("fcmToken")
+        .select("fcmToken userId")
         .lean();
 
-      const fcmTokens = tokensData.map((t) => t.fcmToken);
+      const tasks: Promise<any>[] = [];
 
-      const tasks = [];
+      if (tokensData.length > 0) {
+        const tokensByUser = new Map<string, string[]>();
+        for (const tokenDoc of tokensData) {
+          const uid = tokenDoc.userId.toString();
+          if (!tokensByUser.has(uid)) {
+            tokensByUser.set(uid, []);
+          }
+          tokensByUser.get(uid)!.push(tokenDoc.fcmToken);
+        }
 
-      if (fcmTokens.length > 0) {
-        tasks.push(this.sendToFCM(fcmTokens, payload));
+        for (const [uid, userTokens] of tokensByUser.entries()) {
+          tasks.push(
+            (async () => {
+              let userBadge = payload.badge;
+              if (userBadge === undefined) {
+                try {
+                  const unreadCount = await Notification.countDocuments({
+                    receiver: uid,
+                    read: false,
+                  });
+                  userBadge = unreadCount + 1;
+                } catch (err) {
+                  logger.error("Error calculating unreadCount in sendToBatch:", err);
+                }
+              }
+
+              await this.sendToFCM(userTokens, {
+                ...payload,
+                badge: userBadge,
+              });
+            })(),
+          );
+        }
       }
 
       if (validUserIds.length > 0) {
@@ -97,6 +141,7 @@ class NotificationHelper {
         title: senderName,
         body: bodyText.substring(0, 100),
         type: NOTIFICATION_TYPE.MESSAGE_NEW,
+        sender: senderId,
         data: {
           type: NOTIFICATION_TYPE.MESSAGE_NEW,
           chatId: chat._id.toString(),
@@ -117,28 +162,78 @@ class NotificationHelper {
         chunks.push(tokens.slice(i, i + BATCH_SIZE));
       }
 
+      const sanitizedData: Record<string, string> = {};
+      if (payload.data) {
+        for (const [key, value] of Object.entries(payload.data)) {
+          if (value !== undefined && value !== null) {
+            sanitizedData[key] = typeof value === "string" ? value : String(value);
+          }
+        }
+      }
+
+      if (!sanitizedData.click_action) {
+        sanitizedData.click_action = "FLUTTER_NOTIFICATION_CLICK";
+      }
+
+      if (payload.type && !sanitizedData.type) {
+        sanitizedData.type = String(payload.type);
+      }
+
       for (const chunk of chunks) {
-        const message = {
+        const message: any = {
           tokens: chunk,
           notification: {
             title: payload.title,
             body: payload.body,
           },
-          data: payload.data || {},
+          data: sanitizedData,
+          apns: {
+            headers: {
+              "apns-priority": "10",
+            },
+            payload: {
+              aps: {
+                sound: payload.sound || "default",
+                ...(typeof payload.badge === "number" ? { badge: payload.badge } : {}),
+              },
+            },
+          },
+          android: {
+            priority: "high",
+            notification: {
+              sound: payload.sound || "default",
+              defaultSound: true,
+              defaultVibrateTimings: true,
+            },
+          },
         };
 
         const response = await firebaseAdmin
           .messaging()
           .sendEachForMulticast(message);
 
+        logger.info(
+          colors.blue(
+            `FCM send result: ${response.successCount} succeeded, ${response.failureCount} failed.`,
+          ),
+        );
+
         if (response.failureCount > 0) {
           const failedTokens: string[] = [];
           response.responses.forEach((resp: any, idx: number) => {
             if (!resp.success) {
               const errCode = resp.error?.code;
+              logger.warn(
+                colors.yellow(
+                  `FCM token delivery error [${chunk[idx]}]: ${resp.error?.message} (${errCode})`,
+                ),
+              );
               if (
                 errCode === "messaging/registration-token-not-registered" ||
-                errCode === "messaging/mismatched-credential"
+                errCode === "messaging/invalid-registration-token" ||
+                errCode === "messaging/mismatched-credential" ||
+                (errCode === "messaging/invalid-argument" &&
+                  resp.error?.message?.includes("registration token"))
               ) {
                 failedTokens.push(chunk[idx]);
               }
@@ -164,6 +259,7 @@ class NotificationHelper {
     try {
       const notifications = userIds.map((userId) => ({
         receiver: userId,
+        sender: payload.sender || payload.data?.sender || undefined,
         title: payload.title,
         text: payload.body,
         type: payload.type,
@@ -182,8 +278,10 @@ class NotificationHelper {
           socketIo.emit(`send-notification::${notif.receiver}`, populated);
         }
       }
+      return savedNotifications;
     } catch (error) {
       logger.error(colors.red("DB Save Error:"), error);
+      return [];
     }
   }
 }

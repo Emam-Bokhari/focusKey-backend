@@ -16,7 +16,6 @@ import {
   getZonedDateGroupHeader,
   getZonedEndOfDay,
   getZonedStartOfDay,
-  getZonedStartOfWeek,
   formatZonedIso,
 } from "../../../helpers/timezoneHelper";
 
@@ -250,10 +249,6 @@ const calculateDailyAndWeeklyMinutes = (
   userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
   const todayKey = formatZonedDateKey(now, userTimezone);
-  const startOfWeekKey = formatZonedDateKey(
-    getZonedStartOfWeek(now, userTimezone),
-    userTimezone,
-  );
 
   const todayStat =
     sevenDaysStats.find((s) => s.date === todayKey) ||
@@ -262,9 +257,11 @@ const calculateDailyAndWeeklyMinutes = (
       : null);
   const dailyMinutes = todayStat ? todayStat.totalMinutes : 0;
 
-  const weeklyMinutes = sevenDaysStats
-    .filter((s) => s.date >= startOfWeekKey)
-    .reduce((sum, s) => sum + (s.totalMinutes || 0), 0);
+  // Sum all 7 days from sevenDaysStats so weeklyFocusTime and sevenDaysStats are 100% consistent
+  const weeklyMinutes = sevenDaysStats.reduce(
+    (sum, s) => sum + (s.totalMinutes || 0),
+    0,
+  );
 
   return {
     dailyMinutes,

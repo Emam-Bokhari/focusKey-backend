@@ -12,7 +12,6 @@ import {
   formatZonedTimeRange,
   getZonedEndOfDay,
   getZonedStartOfDay,
-  getZonedStartOfWeek,
   dayjs,
 } from "../../../helpers/timezoneHelper";
 
@@ -199,7 +198,12 @@ const getActiveBreakStatus = async (
 
   const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
   const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
-  const startOfWeek = getZonedStartOfWeek(new Date(), userTimezone);
+  // Rolling 7 days (last 7 days) to match focus session weekly history
+  const startOfWeek = dayjs()
+    .tz(userTimezone)
+    .subtract(6, "day")
+    .startOf("day")
+    .toDate();
 
   const todayBreaks = await Break.find({
     userId: new mongoose.Types.ObjectId(userId),

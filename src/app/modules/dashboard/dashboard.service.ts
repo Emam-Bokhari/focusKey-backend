@@ -7,13 +7,13 @@ import { Friend, Nudge, NudgePreview } from "../friends/friends.model";
 import { FriendsService } from "../friends/friends.service";
 import {
   DEFAULT_TIMEZONE,
+  dayjs,
   formatZonedDateKey,
   formatZonedSinceDate,
   formatZonedTimeRange,
   getZonedDateGroupHeader,
   getZonedEndOfDay,
   getZonedStartOfDay,
-  getZonedStartOfWeek,
 } from "../../../helpers/timezoneHelper";
 
 const getDashboardData = async (
@@ -120,7 +120,12 @@ const getDashboardData = async (
   });
   todayFocusMinutes = Math.max(0, todayFocusMinutes);
 
-  const startOfWeek = getZonedStartOfWeek(new Date(), userTimezone);
+  // Rolling 7 days (last 7 days) to match focus session weekly history
+  const startOfWeek = dayjs()
+    .tz(userTimezone)
+    .subtract(6, "day")
+    .startOf("day")
+    .toDate();
 
   const weekSessions = await FocusSession.find({
     userId: userObjectId,

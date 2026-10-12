@@ -3,8 +3,8 @@
   "version": "1.0.0",
   "main": "app.ts",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "start": "node dist/server.js",
+    "dev": "node api.js && ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node api.js && node dist/server.js",
     "docs:generate": "ts-node scripts/generate-docs.ts",
     "generate:erd": "ts-node scripts/generate-erd.ts",
     "render:erd": "ts-node scripts/render-erd.ts",
@@ -12,7 +12,7 @@
     "export:erd": "ts-node scripts/export-erd.ts",
     "erd:download": "npm run erd && npm run export:erd",
     "generate:diagram": "ts-node scripts/generate-erd.ts && ts-node scripts/render-erd.ts && ts-node scripts/export-erd.ts",
-    "build": "tsc",
+    "build": "node api.js && tsc",
     "format": "prettier . --write",
     "heal:sessions": "ts-node scripts/healDanglingSessions.ts",
     "test": "echo \"Error: no test specified\" && exit 1"

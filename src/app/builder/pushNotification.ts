@@ -65,16 +65,24 @@ class NotificationHelper {
       const tasks: Promise<any>[] = [];
 
       if (tokensData.length > 0) {
-        const tokensByUser = new Map<string, string[]>();
+        // Group and deduplicate tokens per user
+        const tokensByUser = new Map<string, Set<string>>();
         for (const tokenDoc of tokensData) {
+          if (!tokenDoc.fcmToken) continue;
+          const tokenStr = tokenDoc.fcmToken.trim();
+          if (!tokenStr) continue;
+
           const uid = tokenDoc.userId.toString();
           if (!tokensByUser.has(uid)) {
-            tokensByUser.set(uid, []);
+            tokensByUser.set(uid, new Set());
           }
-          tokensByUser.get(uid)!.push(tokenDoc.fcmToken);
+          tokensByUser.get(uid)!.add(tokenStr);
         }
 
-        for (const [uid, userTokens] of tokensByUser.entries()) {
+        for (const [uid, userTokensSet] of tokensByUser.entries()) {
+          const userTokens = Array.from(userTokensSet);
+          if (userTokens.length === 0) continue;
+
           tasks.push(
             (async () => {
               let userBadge = payload.badge;
@@ -157,10 +165,23 @@ class NotificationHelper {
 
   private async sendToFCM(tokens: string[], payload: INotificationPayload) {
     try {
+      // Deduplicate tokens list and filter out empty strings
+      const uniqueTokens = Array.from(
+        new Set(
+          (tokens || [])
+            .map((t) => (typeof t === "string" ? t.trim() : ""))
+            .filter((t) => t.length > 0),
+        ),
+      );
+
+      if (uniqueTokens.length === 0) {
+        return;
+      }
+
       const BATCH_SIZE = 500;
       const chunks: string[][] = [];
-      for (let i = 0; i < tokens.length; i += BATCH_SIZE) {
-        chunks.push(tokens.slice(i, i + BATCH_SIZE));
+      for (let i = 0; i < uniqueTokens.length; i += BATCH_SIZE) {
+        chunks.push(uniqueTokens.slice(i, i + BATCH_SIZE));
       }
 
       const sanitizedData: Record<string, string> = {};
@@ -247,31 +268,49 @@ class NotificationHelper {
           const failedTokens: string[] = [];
           response.responses.forEach((resp: any, idx: number) => {
             if (!resp.success) {
-              const errCode = resp.error?.code;
+              const errCode = resp.error?.code || "";
+              const errMsg = resp.error?.message || "";
               logger.warn(
                 colors.yellow(
-                  `FCM token delivery error [${chunk[idx]}]: ${resp.error?.message} (${errCode})`,
+                  `FCM token delivery error [${chunk[idx]}]: ${errMsg} (${errCode})`,
                 ),
               );
-              if (
+
+              const isUnregistered =
                 errCode === "messaging/registration-token-not-registered" ||
+                errCode === "registration-token-not-registered" ||
                 errCode === "messaging/invalid-registration-token" ||
+                errCode === "invalid-registration-token" ||
                 errCode === "messaging/mismatched-credential" ||
+                String(errCode).includes("registration-token-not-registered") ||
+                String(errCode).includes("invalid-registration-token") ||
+                String(errMsg).includes("registration-token-not-registered") ||
+                String(errMsg).includes("Requested entity was not found") ||
                 (errCode === "messaging/invalid-argument" &&
-                  resp.error?.message?.includes("registration token"))
-              ) {
+                  String(errMsg).toLowerCase().includes("registration token"));
+
+              if (isUnregistered) {
                 failedTokens.push(chunk[idx]);
               }
             }
           });
 
           if (failedTokens.length > 0) {
-            await DeviceToken.deleteMany({ fcmToken: { $in: failedTokens } });
-            logger.info(
-              colors.yellow(
-                `Cleaned up ${failedTokens.length} invalid tokens.`,
-              ),
-            );
+            try {
+              const deleteResult = await DeviceToken.deleteMany({
+                fcmToken: { $in: failedTokens },
+              });
+              logger.info(
+                colors.yellow(
+                  `Cleaned up ${deleteResult.deletedCount} unregistered/invalid tokens from DB.`,
+                ),
+              );
+            } catch (cleanupErr) {
+              logger.error(
+                colors.red("Failed to clean up invalid tokens from DB:"),
+                cleanupErr,
+              );
+            }
           }
         }
       }

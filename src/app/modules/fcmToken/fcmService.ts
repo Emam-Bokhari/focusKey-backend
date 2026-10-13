@@ -25,10 +25,7 @@ const saveDeviceToken = async (
     // 1. Delete any record that has this fcmToken but belongs to a different deviceId or another user
     await DeviceToken.deleteMany({
       fcmToken,
-      $or: [
-        { userId: { $ne: userId } },
-        { deviceId: { $ne: deviceId } },
-      ],
+      $or: [{ userId: { $ne: userId } }, { deviceId: { $ne: deviceId } }],
     });
 
     // 2. Upsert by (userId, deviceId) so that if the device gets a new token, the old token for that device is replaced

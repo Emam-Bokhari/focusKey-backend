@@ -32,7 +32,10 @@ class NotificationHelper {
         });
         badge = unreadCount + 1;
       } catch (err) {
-        logger.error(colors.red("Error calculating unreadCount in sendToUser:"), err);
+        logger.error(
+          colors.red("Error calculating unreadCount in sendToUser:"),
+          err,
+        );
       }
     }
     return this.sendToBatch([userId], { ...payload, badge });
@@ -94,7 +97,10 @@ class NotificationHelper {
                   });
                   userBadge = unreadCount + 1;
                 } catch (err) {
-                  logger.error("Error calculating unreadCount in sendToBatch:", err);
+                  logger.error(
+                    "Error calculating unreadCount in sendToBatch:",
+                    err,
+                  );
                 }
               }
 
@@ -188,7 +194,8 @@ class NotificationHelper {
       if (payload.data) {
         for (const [key, value] of Object.entries(payload.data)) {
           if (value !== undefined && value !== null) {
-            sanitizedData[key] = typeof value === "string" ? value : String(value);
+            sanitizedData[key] =
+              typeof value === "string" ? value : String(value);
           }
         }
       }
@@ -234,7 +241,9 @@ class NotificationHelper {
                   body: payload.body,
                 },
                 sound: payload.sound || "default",
-                ...(typeof payload.badge === "number" ? { badge: payload.badge } : {}),
+                ...(typeof payload.badge === "number"
+                  ? { badge: payload.badge }
+                  : {}),
                 "content-available": 1,
               },
             },

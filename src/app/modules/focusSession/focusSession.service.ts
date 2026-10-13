@@ -115,8 +115,7 @@ export const calculateTotalMinutes = (
     const sStartTime = new Date(session.startTime);
     const rawMin = session.endTime
       ? Math.round(
-          (new Date(session.endTime).getTime() - sStartTime.getTime()) /
-            60000,
+          (new Date(session.endTime).getTime() - sStartTime.getTime()) / 60000,
         )
       : (session.durationMinutes ?? 0);
     if (rawMin > 1440) continue;

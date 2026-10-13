@@ -362,7 +362,12 @@ const getUsersFromDB = async (
   let total = 0;
 
   if (UserSearchEngine.isReady()) {
-    const searchRes = UserSearchEngine.searchUsers(cleanSearch, userId, page, limit);
+    const searchRes = UserSearchEngine.searchUsers(
+      cleanSearch,
+      userId,
+      page,
+      limit,
+    );
     users = searchRes.users;
     total = searchRes.total;
   }
@@ -411,8 +416,16 @@ const getUsersFromDB = async (
   // 4. Friend records check (using index-covered query on candidate userIds)
   const friendRecordsPromise = Friend.find({
     $or: [
-      { userId: userObjectId, friendId: { $in: userIds }, isDeleted: { $ne: true } },
-      { friendId: userObjectId, userId: { $in: userIds }, isDeleted: { $ne: true } },
+      {
+        userId: userObjectId,
+        friendId: { $in: userIds },
+        isDeleted: { $ne: true },
+      },
+      {
+        friendId: userObjectId,
+        userId: { $in: userIds },
+        isDeleted: { $ne: true },
+      },
     ],
   })
     .select("userId friendId status")
@@ -492,9 +505,7 @@ const getUsersFromDB = async (
 
   // Update active break cache
   if (uncachedBreakUserIds.length > 0) {
-    const foundBreakSet = new Set(
-      activeBreaks.map((b) => b.userId.toString()),
-    );
+    const foundBreakSet = new Set(activeBreaks.map((b) => b.userId.toString()));
     for (const uid of uncachedBreakUserIds) {
       const idStr = uid.toString();
       const isBreak = foundBreakSet.has(idStr);
@@ -1026,8 +1037,8 @@ const joinNudgeInDB = async (userId: string, nudgeId: string) => {
 
   if (nudge.status === "completed") {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Nudge is already completed");
-  } 
-  
+  }
+
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
   const isCreator = nudge.creatorId.equals(userObjectId);

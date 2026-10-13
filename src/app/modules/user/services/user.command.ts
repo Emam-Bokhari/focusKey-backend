@@ -206,7 +206,10 @@ const createUserToDB = async (payload: any) => {
     const cleanUserName = payload.userName.trim().toLowerCase();
     const isExistUserName = await User.findOne({ userName: cleanUserName });
     if (isExistUserName) {
-      throw new ApiError(StatusCodes.CONFLICT, "This username is already taken");
+      throw new ApiError(
+        StatusCodes.CONFLICT,
+        "This username is already taken",
+      );
     }
     payload.userName = cleanUserName;
   } else if (payload.email) {

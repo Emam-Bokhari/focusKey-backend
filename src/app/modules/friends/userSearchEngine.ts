@@ -105,8 +105,8 @@ function levenshteinDistance(a: string, b: string): number {
       } else {
         matrix[i][j] = Math.min(
           matrix[i - 1][j - 1] + 1, // substitution
-          matrix[i][j - 1] + 1,     // insertion
-          matrix[i - 1][j] + 1,     // deletion
+          matrix[i][j - 1] + 1, // insertion
+          matrix[i - 1][j] + 1, // deletion
         );
       }
     }
@@ -127,10 +127,15 @@ class UserSearchEngineSingleton {
   private searchCache = new FastLRUCache<any>(3000, 30_000);
 
   // User friendship status cache (Key: `friends:${userId}`)
-  private friendshipCache = new FastLRUCache<Map<string, { status: string; requestId: string; isSender: boolean }>>(2000, 45_000);
+  private friendshipCache = new FastLRUCache<
+    Map<string, { status: string; requestId: string; isSender: boolean }>
+  >(2000, 45_000);
 
   // User last focus session cache (Key: `lastSession:${userId}`)
-  private lastSessionCache = new FastLRUCache<{ endTime: Date; durationMinutes: number } | null>(5000, 60_000);
+  private lastSessionCache = new FastLRUCache<{
+    endTime: Date;
+    durationMinutes: number;
+  } | null>(5000, 60_000);
 
   // Active session status cache (Key: `activeSession:${userId}`)
   private activeSessionCache = new FastLRUCache<boolean>(3000, 10_000);
@@ -144,9 +149,12 @@ class UserSearchEngineSingleton {
 
   private setupPeriodicSync() {
     // Run sync every 2 minutes in the background
-    this.syncIntervalTimer = setInterval(() => {
-      this.syncFromDB().catch(() => {});
-    }, 2 * 60 * 1000);
+    this.syncIntervalTimer = setInterval(
+      () => {
+        this.syncFromDB().catch(() => {});
+      },
+      2 * 60 * 1000,
+    );
 
     if (this.syncIntervalTimer.unref) {
       this.syncIntervalTimer.unref();
@@ -231,7 +239,11 @@ class UserSearchEngineSingleton {
     }
   }
 
-  private insertTokenIntoTrie(trieRoot: TrieNode, token: string, userId: string) {
+  private insertTokenIntoTrie(
+    trieRoot: TrieNode,
+    token: string,
+    userId: string,
+  ) {
     if (!token) return;
     let curr = trieRoot;
     for (const char of token) {
@@ -338,11 +350,17 @@ class UserSearchEngineSingleton {
 
       // 4. Fuzzy matching for longer terms with possible typo (distance <= 1)
       if (!isShortQuery && score === 0) {
-        if (Math.abs(userName.length - q.length) <= 1 && levenshteinDistance(userName, q) <= 1) {
+        if (
+          Math.abs(userName.length - q.length) <= 1 &&
+          levenshteinDistance(userName, q) <= 1
+        ) {
           score += 25;
         } else {
           for (const w of nameWords) {
-            if (Math.abs(w.length - q.length) <= 1 && levenshteinDistance(w, q) <= 1) {
+            if (
+              Math.abs(w.length - q.length) <= 1 &&
+              levenshteinDistance(w, q) <= 1
+            ) {
               score += 20;
               break;
             }
@@ -356,7 +374,9 @@ class UserSearchEngineSingleton {
     }
 
     // Sort by score desc, then alphabetical by name
-    scoredUsers.sort((a, b) => b.score - a.score || a.user.name.localeCompare(b.user.name));
+    scoredUsers.sort(
+      (a, b) => b.score - a.score || a.user.name.localeCompare(b.user.name),
+    );
 
     const total = scoredUsers.length;
     const skip = (page - 1) * limit;
@@ -383,19 +403,31 @@ class UserSearchEngineSingleton {
     this.friendshipCache.delete(`friends:${userId}`);
   }
 
-  public getCachedFriendships(userId: string): Map<string, { status: string; requestId: string; isSender: boolean }> | undefined {
+  public getCachedFriendships(
+    userId: string,
+  ):
+    | Map<string, { status: string; requestId: string; isSender: boolean }>
+    | undefined {
     return this.friendshipCache.get(`friends:${userId}`);
   }
 
-  public setCachedFriendships(userId: string, data: Map<string, { status: string; requestId: string; isSender: boolean }>): void {
+  public setCachedFriendships(
+    userId: string,
+    data: Map<string, { status: string; requestId: string; isSender: boolean }>,
+  ): void {
     this.friendshipCache.set(`friends:${userId}`, data, 30_000);
   }
 
-  public getCachedLastSession(userId: string): { endTime: Date; durationMinutes: number } | null | undefined {
+  public getCachedLastSession(
+    userId: string,
+  ): { endTime: Date; durationMinutes: number } | null | undefined {
     return this.lastSessionCache.get(`lastSession:${userId}`);
   }
 
-  public setCachedLastSession(userId: string, session: { endTime: Date; durationMinutes: number } | null): void {
+  public setCachedLastSession(
+    userId: string,
+    session: { endTime: Date; durationMinutes: number } | null,
+  ): void {
     this.lastSessionCache.set(`lastSession:${userId}`, session, 60_000);
   }
 

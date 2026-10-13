@@ -596,9 +596,7 @@ const getHistoryV2 = async (
 
       if (b.status === "completed") {
         sessionBreakMinutes += b.endTime
-          ? Math.round(
-              (new Date(b.endTime).getTime() - bStartMs) / 60000,
-            )
+          ? Math.round((new Date(b.endTime).getTime() - bStartMs) / 60000)
           : (b.durationMinutes ?? 0);
       } else {
         const bDiff = nowMs - bStartMs;

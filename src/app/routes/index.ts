@@ -16,6 +16,7 @@ import { FriendsRoutes } from "../modules/friends/friends.route";
 import { PersonalReminderRoutes } from "../modules/personalReminder/personalReminder.route";
 import { AnalyticsRoutes } from "../modules/analytics/analytics.route";
 import { RegisteredDeviceRoutes } from "../modules/registeredDevice/registeredDevice.route";
+import { AppInfoRoutes } from "../modules/appInfo/appInfo.route";
 
 const router = express.Router();
 
@@ -87,6 +88,10 @@ const apiRoutes = [
   {
     path: "/devices",
     route: RegisteredDeviceRoutes,
+  },
+  {
+    path: "/app-info",
+    route: AppInfoRoutes,
   },
 ];
 

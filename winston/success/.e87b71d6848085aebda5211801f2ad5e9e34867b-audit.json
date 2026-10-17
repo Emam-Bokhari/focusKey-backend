@@ -6,14 +6,9 @@
     "auditLog": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\success\\.e87b71d6848085aebda5211801f2ad5e9e34867b-audit.json",
     "files": [
         {
-            "date": 1791175264846,
-            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\success\\05-10-2026-10-success.log",
-            "hash": "2d046cf557145860ec01a7d12b8ff60c2ae2f559df7e97e15449030de3c20982"
-        },
-        {
-            "date": 1791193552361,
-            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\success\\05-10-2026-15-success.log",
-            "hash": "9b433e5078d19f0559981152fd6d427dfe2fea2082b454ee662d821bbfbb43fd"
+            "date": 1792217511793,
+            "name": "C:\\Moshfiqur Rahman\\Projects\\focusKey-backend\\winston\\success\\17-10-2026-12-success.log",
+            "hash": "cdd247fe060a8da52e4b67e155d09d292d6d477ca76a8b8be7b99801ec534c6f"
         }
     ],
     "hashType": "sha256"

@@ -1,5 +1,5 @@
 {
-  "name": "go-connecte",
+  "name": "focuskey",
   "version": "1.0.0",
   "main": "app.ts",
   "scripts": {
@@ -17,7 +17,7 @@
     "heal:sessions": "ts-node scripts/healDanglingSessions.ts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "Moshfiqur Rahman & Tahsif Ahmed",
+  "author": "Moshfiqur Rahman",
   "license": "ISC",
   "description": "",
   "devDependencies": {

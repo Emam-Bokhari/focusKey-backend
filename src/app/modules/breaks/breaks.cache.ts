@@ -42,7 +42,10 @@ export const BreakCache = {
     const cached = breakStateCache.get(userId);
     const now = Date.now();
     const nowDate = new Date();
-    const currentDateKey = getZonedStartOfDay(nowDate, userTimezone).toISOString();
+    const currentDateKey = getZonedStartOfDay(
+      nowDate,
+      userTimezone,
+    ).toISOString();
 
     // Cache is valid for 30 seconds AND must be from the same day
     if (

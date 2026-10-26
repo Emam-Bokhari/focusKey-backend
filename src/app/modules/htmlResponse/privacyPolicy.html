@@ -1,545 +1,719 @@
 <!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy - FocusKey</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-page: #F7F4EE;
-      --bg-card: #FFFFFF;
-      --bg-subtle: #EFEBE3;
-      --bg-surface: #FBF9F5;
-      --border-subtle: #E8E2D8;
-      --border-hover: #D5CDC1;
-      --text-main: #1A1917;
-      --text-muted: #746F68;
-      --text-light: #9C958C;
-      --primary-black: #171513;
-      --primary-hover: #2E2B27;
-      --accent-green: #2B825B;
-      --accent-green-bg: #EDF7F1;
-      --accent-red: #C85A48;
-      --accent-red-bg: #FDF2F0;
-      --shadow-sm: 0 2px 8px rgba(35, 30, 22, 0.04);
-      --shadow-md: 0 12px 32px rgba(35, 30, 22, 0.07), 0 2px 6px rgba(35, 30, 22, 0.03);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-page);
-      color: var(--text-main);
-      line-height: 1.75;
-      padding: 40px 16px 60px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 860px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 28px;
-      padding: 52px 48px;
-      box-shadow: var(--shadow-md);
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .brand-header {
-      text-align: center;
-      margin-bottom: 40px;
-      padding-bottom: 28px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    .brand-logo {
-      width: 68px;
-      height: 68px;
-      border-radius: 18px;
-      object-fit: cover;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 16px;
-      transition: transform 0.3s ease;
-    }
-
-    .brand-logo:hover {
-      transform: scale(1.04);
-    }
-
-    .tag-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background-color: var(--bg-subtle);
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      padding: 6px 14px;
-      border-radius: 9999px;
-      margin-bottom: 14px;
-    }
-
-    h1 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 38px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 8px;
-      letter-spacing: -0.01em;
-    }
-
-    .policy-meta {
-      font-size: 14px;
-      color: var(--text-muted);
-    }
-
-    .toc {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 18px;
-      padding: 24px 28px;
-      margin: 32px 0 40px;
-    }
-
-    .toc-title {
-      font-size: 14px;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-    }
-
-    .toc-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 10px 20px;
-      list-style: none;
-      padding: 0;
-    }
-
-    .toc-grid li a {
-      color: var(--text-main);
-      text-decoration: none;
-      font-size: 14px;
-      font-weight: 500;
-      transition: color 0.2s ease, transform 0.2s ease;
-      display: inline-block;
-    }
-
-    .toc-grid li a:hover {
-      color: var(--primary-hover);
-      text-decoration: underline;
-      transform: translateX(2px);
-    }
-
-    .section {
-      margin-bottom: 38px;
-    }
-
-    h2 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 24px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-top: 36px;
-      margin-bottom: 16px;
-      padding-top: 10px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    h3 {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--text-main);
-      margin: 20px 0 10px;
-    }
-
-    p {
-      margin-bottom: 16px;
-      font-size: 15px;
-      color: #38342E;
-      line-height: 1.8;
-    }
-
-    ul {
-      margin: 12px 0 20px 22px;
-      padding: 0;
-    }
-
-    li {
-      margin-bottom: 10px;
-      font-size: 15px;
-      color: #38342E;
-      line-height: 1.7;
-    }
-
-    strong {
-      color: var(--text-main);
-      font-weight: 600;
-    }
-
-    .highlight-box {
-      background-color: var(--bg-surface);
-      border-left: 4px solid var(--primary-black);
-      border-radius: 0 14px 14px 0;
-      padding: 18px 22px;
-      margin: 24px 0;
-      font-size: 14px;
-      color: var(--text-main);
-      line-height: 1.7;
-    }
-
-    .highlight-box.green {
-      background-color: var(--accent-green-bg);
-      border-left-color: var(--accent-green);
-      color: #174C34;
-    }
-
-    .table-container {
-      overflow-x: auto;
-      margin: 24px 0;
-      border: 1px solid var(--border-subtle);
-      border-radius: 14px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 14px;
-    }
-
-    th {
-      background: var(--bg-subtle);
-      color: var(--text-main);
-      font-weight: 600;
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border-subtle);
-    }
-
-    td {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border-subtle);
-      color: var(--text-muted);
-    }
-
-    tr:last-child td {
-      border-bottom: none;
-    }
-
-    .contact-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 18px;
-      padding: 24px 28px;
-      margin-top: 24px;
-    }
-
-    .contact-card a {
-      color: var(--text-main);
-      font-weight: 600;
-      text-decoration: none;
-    }
-
-    .contact-card a:hover {
-      text-decoration: underline;
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 40px;
-      padding-top: 24px;
-      border-top: 1px solid var(--border-subtle);
-      font-size: 13px;
-      color: var(--text-light);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    footer a {
-      color: var(--text-muted);
-      text-decoration: none;
-    }
-
-    footer a:hover {
-      text-decoration: underline;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(20px);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Privacy Policy - FocusKey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-page: #f7f4ee;
+        --bg-card: #ffffff;
+        --bg-subtle: #efebe3;
+        --bg-surface: #fbf9f5;
+        --border-subtle: #e8e2d8;
+        --border-hover: #d5cdc1;
+        --text-main: #1a1917;
+        --text-muted: #746f68;
+        --text-light: #9c958c;
+        --primary-black: #171513;
+        --primary-hover: #2e2b27;
+        --accent-green: #2b825b;
+        --accent-green-bg: #edf7f1;
+        --accent-red: #c85a48;
+        --accent-red-bg: #fdf2f0;
+        --shadow-sm: 0 2px 8px rgba(35, 30, 22, 0.04);
+        --shadow-md:
+          0 12px 32px rgba(35, 30, 22, 0.07), 0 2px 6px rgba(35, 30, 22, 0.03);
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
 
-    @media (max-width: 680px) {
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
       body {
-        padding: 20px 12px 40px;
+        font-family:
+          "Plus Jakarta Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background-color: var(--bg-page);
+        color: var(--text-main);
+        line-height: 1.75;
+        padding: 40px 16px 60px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        min-height: 100vh;
       }
 
       .container {
-        padding: 32px 20px;
-        border-radius: 20px;
+        width: 100%;
+        max-width: 860px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 28px;
+        padding: 52px 48px;
+        box-shadow: var(--shadow-md);
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .brand-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 28px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      .brand-logo {
+        width: 68px;
+        height: 68px;
+        border-radius: 18px;
+        object-fit: cover;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-subtle);
+        margin-bottom: 16px;
+        transition: transform 0.3s ease;
+      }
+
+      .brand-logo:hover {
+        transform: scale(1.04);
+      }
+
+      .tag-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background-color: var(--bg-subtle);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        margin-bottom: 14px;
       }
 
       h1 {
-        font-size: 28px;
+        font-family: "Playfair Display", Georgia, serif;
+        font-size: 38px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 8px;
+        letter-spacing: -0.01em;
       }
 
-      h2 {
-        font-size: 21px;
+      .policy-meta {
+        font-size: 14px;
+        color: var(--text-muted);
       }
 
       .toc {
-        padding: 18px 20px;
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 18px;
+        padding: 24px 28px;
+        margin: 32px 0 40px;
       }
-    }
-  </style>
-</head>
 
-<body>
-  <div class="container">
-    <div class="brand-header">
-      <img src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216779/imgo_h4sqrx.jpg" alt="FocusKey Logo" class="brand-logo" />
-      <div>
-        <span class="tag-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-          </svg>
-          Privacy &amp; Data Protection
-        </span>
+      .toc-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
+
+      .toc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 10px 20px;
+        list-style: none;
+        padding: 0;
+      }
+
+      .toc-grid li a {
+        color: var(--text-main);
+        text-decoration: none;
+        font-size: 14px;
+        font-weight: 500;
+        transition:
+          color 0.2s ease,
+          transform 0.2s ease;
+        display: inline-block;
+      }
+
+      .toc-grid li a:hover {
+        color: var(--primary-hover);
+        text-decoration: underline;
+        transform: translateX(2px);
+      }
+
+      .section {
+        margin-bottom: 38px;
+      }
+
+      h2 {
+        font-family: "Playfair Display", Georgia, serif;
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-top: 36px;
+        margin-bottom: 16px;
+        padding-top: 10px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      h3 {
+        font-size: 17px;
+        font-weight: 700;
+        color: var(--text-main);
+        margin: 20px 0 10px;
+      }
+
+      p {
+        margin-bottom: 16px;
+        font-size: 15px;
+        color: #38342e;
+        line-height: 1.8;
+      }
+
+      ul {
+        margin: 12px 0 20px 22px;
+        padding: 0;
+      }
+
+      li {
+        margin-bottom: 10px;
+        font-size: 15px;
+        color: #38342e;
+        line-height: 1.7;
+      }
+
+      strong {
+        color: var(--text-main);
+        font-weight: 600;
+      }
+
+      .highlight-box {
+        background-color: var(--bg-surface);
+        border-left: 4px solid var(--primary-black);
+        border-radius: 0 14px 14px 0;
+        padding: 18px 22px;
+        margin: 24px 0;
+        font-size: 14px;
+        color: var(--text-main);
+        line-height: 1.7;
+      }
+
+      .highlight-box.green {
+        background-color: var(--accent-green-bg);
+        border-left-color: var(--accent-green);
+        color: #174c34;
+      }
+
+      .table-container {
+        overflow-x: auto;
+        margin: 24px 0;
+        border: 1px solid var(--border-subtle);
+        border-radius: 14px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        text-align: left;
+        font-size: 14px;
+      }
+
+      th {
+        background: var(--bg-subtle);
+        color: var(--text-main);
+        font-weight: 600;
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+      }
+
+      td {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--border-subtle);
+        color: var(--text-muted);
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      .contact-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 18px;
+        padding: 24px 28px;
+        margin-top: 24px;
+      }
+
+      .contact-card a {
+        color: var(--text-main);
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .contact-card a:hover {
+        text-decoration: underline;
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 40px;
+        padding-top: 24px;
+        border-top: 1px solid var(--border-subtle);
+        font-size: 13px;
+        color: var(--text-light);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      footer a {
+        color: var(--text-muted);
+        text-decoration: none;
+      }
+
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 680px) {
+        body {
+          padding: 20px 12px 40px;
+        }
+
+        .container {
+          padding: 32px 20px;
+          border-radius: 20px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        h2 {
+          font-size: 21px;
+        }
+
+        .toc {
+          padding: 18px 20px;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="brand-header">
+        <img
+          src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216779/imgo_h4sqrx.jpg"
+          alt="FocusKey Logo"
+          class="brand-logo"
+        />
+        <div>
+          <span class="tag-badge">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+            </svg>
+            Privacy &amp; Data Protection
+          </span>
+        </div>
+        <h1>Privacy Policy</h1>
       </div>
-      <h1>Privacy Policy</h1>
-    </div>
 
-    <!-- Table of Contents -->
-    <div class="toc">
-      <div class="toc-title">Table of Contents</div>
-      <ul class="toc-grid">
-        <li><a href="#overview">1. Overview &amp; Principles</a></li>
-        <li><a href="#info-we-collect">2. Information We Collect</a></li>
-        <li><a href="#how-we-use">3. How We Use Information</a></li>
-        <li><a href="#app-blocking">4. Focus Modes &amp; App Blocking</a></li>
-        <li><a href="#hardware-key">5. FocusKey Hardware &amp; NFC</a></li>
-        <li><a href="#partners">6. Accountability Partners</a></li>
-        <li><a href="#data-sharing">7. Data Sharing &amp; Third Parties</a></li>
-        <li><a href="#retention-deletion">8. Retention &amp; Deletion</a></li>
-        <li><a href="#your-rights">9. Your Privacy Rights</a></li>
-        <li><a href="#contact">10. Contact Information</a></li>
-      </ul>
-    </div>
-
-    <!-- 1. Overview -->
-    <div class="section" id="overview">
-      <h2>1. Overview &amp; Principles</h2>
-      <p>
-        Welcome to <strong>FocusKey</strong>. FocusKey is developed and operated by <strong>Presence Laboratories</strong> ("we", "our", or "us"), based in Singapore. We build purposeful digital wellness tools to help you reclaim your time, cultivate deep work, and minimize mindless digital consumption.
-      </p>
-      <p>
-        Your privacy is foundational to everything we build. We strictly minimize data collection, process only what is necessary to deliver your focus sessions and hardware key synchronizations, and <strong>never sell or monetize your personal information or digital usage habits to third parties or advertisers</strong>.
-      </p>
-    </div>
-
-    <!-- 2. Information We Collect -->
-    <div class="section" id="info-we-collect">
-      <h2>2. Information We Collect</h2>
-      <p>We collect the following categories of information when you register, configure modes, pair your FocusKey, and use our services:</p>
-
-      <h3>A. Account &amp; Profile Information</h3>
-      <ul>
-        <li><strong>Basic Identity:</strong> Your full name, email address, password (securely hashed via salted bcrypt), optional phone number, country code, postal code, and profile photo.</li>
-        <li><strong>Account Preferences:</strong> Chosen timezone, notification preferences, and reminder settings.</li>
-      </ul>
-
-      <h3>B. Focus Modes &amp; App Restriction Settings</h3>
-      <ul>
-        <li><strong>Mode Configurations:</strong> Names, descriptions, and icon themes for your personalized focus modes (such as <em>Study</em>, <em>Detox</em>, <em>Total Focus</em>, <em>Deep Work</em>, etc.).</li>
-        <li><strong>Restricted App Identifiers:</strong> Application package names and labels that you explicitly choose to lock during active focus sessions (e.g., social media or entertainment applications).</li>
-        <li><strong>Lock Events:</strong> Timestamps of lock, unlock, and mode activation triggers.</li>
-      </ul>
-
-      <h3>C. Focus Sessions, Breaks &amp; Analytics</h3>
-      <ul>
-        <li><strong>Session Records:</strong> Start time, end time, total duration, session status (active or completed), break intervals requested, and breaks used.</li>
-        <li><strong>Productivity Metrics:</strong> Weekly focus totals, streak counts, and session history (available for export in the app via <em>Export data</em>).</li>
-      </ul>
-
-      <h3>D. Hardware &amp; Device Information</h3>
-      <ul>
-        <li><strong>Registered Device Data:</strong> Device model, operating system (iOS or Android), unique device fingerprint, and platform information.</li>
-        <li><strong>FocusKey Hardware Pairing:</strong> NFC chip identifier, pairing status, and pairing codes used to sync with your physical FocusKey device.</li>
-      </ul>
-
-      <h3>E. Social Accountability ("Partners")</h3>
-      <ul>
-        <li><strong>Friend Connections:</strong> Partner requests, accepted connections, and shared active focus status or streaks with peers you choose to connect with.</li>
-      </ul>
-
-      <h3>F. Technical &amp; Communication Data</h3>
-      <ul>
-        <li><strong>Push Notification Tokens:</strong> Firebase Cloud Messaging (FCM) tokens required to deliver session reminders, break alerts, and partner notifications.</li>
-        <li><strong>Support Communications:</strong> Inquiries, attachments, and feedback submitted to our support team.</li>
-      </ul>
-    </div>
-
-    <!-- 3. How We Use Your Information -->
-    <div class="section" id="how-we-use">
-      <h2>3. How We Use Information</h2>
-      <p>We process your data exclusively for legitimate operational purposes:</p>
-      <ul>
-        <li><strong>Delivering Core Focus Functionality:</strong> Enforcing focus modes, locking distractions, and pairing seamlessly with your physical FocusKey.</li>
-        <li><strong>Personal Analytics:</strong> Generating your personal focus history, streaks, and progress dashboards.</li>
-        <li><strong>Accountability Features:</strong> Allowing confirmed accountability partners to view your focus status and share encouragement.</li>
-        <li><strong>Timely Notifications:</strong> Sending personal reminders, break ending warnings, and critical account security updates.</li>
-        <li><strong>Security &amp; Fraud Prevention:</strong> Authenticating logins, verifying account ownership, and protecting our services from unauthorized tampering.</li>
-      </ul>
-    </div>
-
-    <!-- 4. Focus Modes & App Blocking -->
-    <div class="section" id="app-blocking">
-      <h2>4. Focus Modes &amp; App Restriction Transparency</h2>
-      <div class="highlight-box green">
-        <strong>Our Commitment to Content Privacy:</strong><br>
-        FocusKey relies on on-device platform APIs (such as Screen Time / Accessibility Services) strictly to detect if an application on your restricted list has been launched during an active session. <strong>FocusKey DOES NOT record, read, inspect, or transmit the content of your communications, messages, photos, keystrokes, or browsing activities.</strong>
+      <!-- Table of Contents -->
+      <div class="toc">
+        <div class="toc-title">Table of Contents</div>
+        <ul class="toc-grid">
+          <li><a href="#overview">1. Overview &amp; Principles</a></li>
+          <li><a href="#info-we-collect">2. Information We Collect</a></li>
+          <li><a href="#how-we-use">3. How We Use Information</a></li>
+          <li><a href="#app-blocking">4. Focus Modes &amp; App Blocking</a></li>
+          <li><a href="#hardware-key">5. FocusKey Hardware &amp; NFC</a></li>
+          <li><a href="#partners">6. Accountability Partners</a></li>
+          <li>
+            <a href="#data-sharing">7. Data Sharing &amp; Third Parties</a>
+          </li>
+          <li><a href="#retention-deletion">8. Retention &amp; Deletion</a></li>
+          <li><a href="#your-rights">9. Your Privacy Rights</a></li>
+          <li><a href="#contact">10. Contact Information</a></li>
+        </ul>
       </div>
-      <p>
-        The decision of which apps to restrict is entirely in your hands. You may modify your mode presets, add apps, or remove apps at any time from the FocusKey settings interface.
-      </p>
-    </div>
 
-    <!-- 5. Hardware Key & NFC -->
-    <div class="section" id="hardware-key">
-      <h2>5. FocusKey Hardware &amp; NFC Pairing</h2>
-      <p>
-        When you pair your physical FocusKey hardware via NFC chip or pairing code, we record the hardware status (e.g., <em>Paired</em>) and device fingerprint to ensure only authorized physical keys can trigger or unlock designated deep focus sessions. No location tracking or ambient physical sensors are embedded in the FocusKey tag.
-      </p>
-    </div>
-
-    <!-- 6. Partners -->
-    <div class="section" id="partners">
-      <h2>6. Accountability Partners ("Partners")</h2>
-      <p>
-        FocusKey includes a social accountability feature enabling you to pair with friends or colleagues. Participation is completely optional:
-      </p>
-      <ul>
-        <li>No user can view your focus sessions without an explicit, mutual partner confirmation.</li>
-        <li>Partners can only view high-level focus milestones (e.g., whether you are currently in an active mode or your daily total), never your private app selection or private account credentials.</li>
-        <li>You may disconnect from any partner at any time directly through the <strong>Partners</strong> tab.</li>
-      </ul>
-    </div>
-
-    <!-- 7. Data Sharing & Third Parties -->
-    <div class="section" id="data-sharing">
-      <h2>7. Data Sharing &amp; Third Parties</h2>
-      <div class="highlight-box">
-        <strong>We DO NOT sell, rent, or trade your personal data under any circumstances.</strong>
+      <!-- 1. Overview -->
+      <div class="section" id="overview">
+        <h2>1. Overview &amp; Principles</h2>
+        <p>
+          Welcome to <strong>FocusKey</strong>. FocusKey is developed and
+          operated by <strong>Presence Laboratories</strong> ("we", "our", or
+          "us"), based in Singapore. We build purposeful digital wellness tools
+          to help you reclaim your time, cultivate deep work, and minimize
+          mindless digital consumption.
+        </p>
+        <p>
+          Your privacy is foundational to everything we build. We strictly
+          minimize data collection, process only what is necessary to deliver
+          your focus sessions and hardware key synchronizations, and
+          <strong
+            >never sell or monetize your personal information or digital usage
+            habits to third parties or advertisers</strong
+          >.
+        </p>
       </div>
-      <p>We only share information with third-party service providers who assist us in operating our platform, strictly bound by data protection obligations:</p>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Provider</th>
-              <th>Purpose</th>
-              <th>Data Handled</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td><strong>Firebase (Google)</strong></td>
-              <td>Push notifications &amp; authentication verification</td>
-              <td>FCM device tokens, Auth UID</td>
-            </tr>
-            <tr>
-              <td><strong>Twilio</strong></td>
-              <td>SMS one-time verification codes</td>
-              <td>Phone number, OTP token</td>
-            </tr>
-            <tr>
-              <td><strong>Cloud Database &amp; Hosting</strong></td>
-              <td>Secure encrypted backend infrastructure</td>
-              <td>Encrypted user records, session logs</td>
-            </tr>
-          </tbody>
-        </table>
+
+      <!-- 2. Information We Collect -->
+      <div class="section" id="info-we-collect">
+        <h2>2. Information We Collect</h2>
+        <p>
+          We collect the following categories of information when you register,
+          configure modes, pair your FocusKey, and use our services:
+        </p>
+
+        <h3>A. Account &amp; Profile Information</h3>
+        <ul>
+          <li>
+            <strong>Basic Identity:</strong> Your full name, email address,
+            password (securely hashed via salted bcrypt), optional phone number,
+            country code, postal code, and profile photo.
+          </li>
+          <li>
+            <strong>Account Preferences:</strong> Chosen timezone, notification
+            preferences, and reminder settings.
+          </li>
+        </ul>
+
+        <h3>B. Focus Modes &amp; App Restriction Settings</h3>
+        <ul>
+          <li>
+            <strong>Mode Configurations:</strong> Names, descriptions, and icon
+            themes for your personalized focus modes (such as <em>Study</em>,
+            <em>Detox</em>, <em>Total Focus</em>, <em>Deep Work</em>, etc.).
+          </li>
+          <li>
+            <strong>Restricted App Identifiers:</strong> Application package
+            names and labels that you explicitly choose to lock during active
+            focus sessions (e.g., social media or entertainment applications).
+          </li>
+          <li>
+            <strong>Lock Events:</strong> Timestamps of lock, unlock, and mode
+            activation triggers.
+          </li>
+        </ul>
+
+        <h3>C. Focus Sessions, Breaks &amp; Analytics</h3>
+        <ul>
+          <li>
+            <strong>Session Records:</strong> Start time, end time, total
+            duration, session status (active or completed), break intervals
+            requested, and breaks used.
+          </li>
+          <li>
+            <strong>Productivity Metrics:</strong> Weekly focus totals, streak
+            counts, and session history (available for export in the app via
+            <em>Export data</em>).
+          </li>
+        </ul>
+
+        <h3>D. Hardware &amp; Device Information</h3>
+        <ul>
+          <li>
+            <strong>Registered Device Data:</strong> Device model, operating
+            system (iOS or Android), unique device fingerprint, and platform
+            information.
+          </li>
+          <li>
+            <strong>FocusKey Hardware Pairing:</strong> NFC chip identifier,
+            pairing status, and pairing codes used to sync with your physical
+            FocusKey device.
+          </li>
+        </ul>
+
+        <h3>E. Social Accountability ("Partners")</h3>
+        <ul>
+          <li>
+            <strong>Friend Connections:</strong> Partner requests, accepted
+            connections, and shared active focus status or streaks with peers
+            you choose to connect with.
+          </li>
+        </ul>
+
+        <h3>F. Technical &amp; Communication Data</h3>
+        <ul>
+          <li>
+            <strong>Push Notification Tokens:</strong> Firebase Cloud Messaging
+            (FCM) tokens required to deliver session reminders, break alerts,
+            and partner notifications.
+          </li>
+          <li>
+            <strong>Support Communications:</strong> Inquiries, attachments, and
+            feedback submitted to our support team.
+          </li>
+        </ul>
       </div>
-    </div>
 
-    <!-- 8. Retention & Deletion -->
-    <div class="section" id="retention-deletion">
-      <h2>8. Data Retention &amp; Permanent Deletion</h2>
-      <p>
-        We store your account and session data only for as long as your account remains open and active.
-      </p>
-      <p>
-        You have direct control over your data lifecycle inside the app:
-      </p>
-      <ul>
-        <li><strong>Clear All Data:</strong> Resets your focus history and sessions while retaining your login credentials (<em>Settings &gt; Clear all data</em>).</li>
-        <li><strong>Delete Account:</strong> Permanently deletes your user account, focus history, partner links, paired device tags, and settings (<em>Settings &gt; Delete account</em>).</li>
-      </ul>
-      <p>
-        Once initiated, deletion is permanent and irreversible. Your data is promptly purged from our active databases in accordance with our data hygiene protocols.
-      </p>
-    </div>
-
-    <!-- 9. Your Rights -->
-    <div class="section" id="your-rights">
-      <h2>9. Your Privacy Rights</h2>
-      <p>Regardless of your geographical location, you enjoy the following privacy rights:</p>
-      <ul>
-        <li><strong>Right to Access:</strong> Request a summary of your personal information held by us.</li>
-        <li><strong>Right to Portability &amp; Export:</strong> Export your complete focus records directly through the <em>Export data</em> option in the Settings menu.</li>
-        <li><strong>Right to Rectification:</strong> Update or correct your profile details anytime in the app.</li>
-        <li><strong>Right to Erasure ("Right to be Forgotten"):</strong> Permanently delete your account through the app or by contacting our support team.</li>
-        <li><strong>Right to Withdraw Consent:</strong> Revoke notification, screen time, or NFC permissions anytime through your mobile operating system settings.</li>
-      </ul>
-    </div>
-
-    <!-- 10. Contact Us -->
-    <div class="section" id="contact">
-      <h2>10. Contact Information</h2>
-      <p>
-        For inquiries, data protection questions, or requests regarding this Privacy Policy, please contact our team:
-      </p>
-      <div class="contact-card">
-        <p><strong>Presence Laboratories &bull; FocusKey</strong></p>
-        <p>Email: <a href="mailto:mark@presencelaboratories.com">mark@presencelaboratories.com</a></p>
-        <p>Phone: <a href="tel:6588583127">+65 8858 3127</a></p>
-        <p>Address: 104 Namly Avenue, Shamrock Park, Singapore 267673, Singapore</p>
+      <!-- 3. How We Use Your Information -->
+      <div class="section" id="how-we-use">
+        <h2>3. How We Use Information</h2>
+        <p>
+          We process your data exclusively for legitimate operational purposes:
+        </p>
+        <ul>
+          <li>
+            <strong>Delivering Core Focus Functionality:</strong> Enforcing
+            focus modes, locking distractions, and pairing seamlessly with your
+            physical FocusKey.
+          </li>
+          <li>
+            <strong>Personal Analytics:</strong> Generating your personal focus
+            history, streaks, and progress dashboards.
+          </li>
+          <li>
+            <strong>Accountability Features:</strong> Allowing confirmed
+            accountability partners to view your focus status and share
+            encouragement.
+          </li>
+          <li>
+            <strong>Timely Notifications:</strong> Sending personal reminders,
+            break ending warnings, and critical account security updates.
+          </li>
+          <li>
+            <strong>Security &amp; Fraud Prevention:</strong> Authenticating
+            logins, verifying account ownership, and protecting our services
+            from unauthorized tampering.
+          </li>
+        </ul>
       </div>
+
+      <!-- 4. Focus Modes & App Blocking -->
+      <div class="section" id="app-blocking">
+        <h2>4. Focus Modes &amp; App Restriction Transparency</h2>
+        <div class="highlight-box green">
+          <strong>Our Commitment to Content Privacy:</strong><br />
+          FocusKey relies on on-device platform APIs (such as Screen Time /
+          Accessibility Services) strictly to detect if an application on your
+          restricted list has been launched during an active session.
+          <strong
+            >FocusKey DOES NOT record, read, inspect, or transmit the content of
+            your communications, messages, photos, keystrokes, or browsing
+            activities.</strong
+          >
+        </div>
+        <p>
+          The decision of which apps to restrict is entirely in your hands. You
+          may modify your mode presets, add apps, or remove apps at any time
+          from the FocusKey settings interface.
+        </p>
+      </div>
+
+      <!-- 5. Hardware Key & NFC -->
+      <div class="section" id="hardware-key">
+        <h2>5. FocusKey Hardware &amp; NFC Pairing</h2>
+        <p>
+          When you pair your physical FocusKey hardware via NFC chip or pairing
+          code, we record the hardware status (e.g., <em>Paired</em>) and device
+          fingerprint to ensure only authorized physical keys can trigger or
+          unlock designated deep focus sessions. No location tracking or ambient
+          physical sensors are embedded in the FocusKey tag.
+        </p>
+      </div>
+
+      <!-- 6. Partners -->
+      <div class="section" id="partners">
+        <h2>6. Accountability Partners ("Partners")</h2>
+        <p>
+          FocusKey includes a social accountability feature enabling you to pair
+          with friends or colleagues. Participation is completely optional:
+        </p>
+        <ul>
+          <li>
+            No user can view your focus sessions without an explicit, mutual
+            partner confirmation.
+          </li>
+          <li>
+            Partners can only view high-level focus milestones (e.g., whether
+            you are currently in an active mode or your daily total), never your
+            private app selection or private account credentials.
+          </li>
+          <li>
+            You may disconnect from any partner at any time directly through the
+            <strong>Partners</strong> tab.
+          </li>
+        </ul>
+      </div>
+
+      <!-- 7. Data Sharing & Third Parties -->
+      <div class="section" id="data-sharing">
+        <h2>7. Data Sharing &amp; Third Parties</h2>
+        <div class="highlight-box">
+          <strong
+            >We DO NOT sell, rent, or trade your personal data under any
+            circumstances.</strong
+          >
+        </div>
+        <p>
+          We only share information with third-party service providers who
+          assist us in operating our platform, strictly bound by data protection
+          obligations:
+        </p>
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Provider</th>
+                <th>Purpose</th>
+                <th>Data Handled</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Firebase (Google)</strong></td>
+                <td>Push notifications &amp; authentication verification</td>
+                <td>FCM device tokens, Auth UID</td>
+              </tr>
+              <tr>
+                <td><strong>Twilio</strong></td>
+                <td>SMS one-time verification codes</td>
+                <td>Phone number, OTP token</td>
+              </tr>
+              <tr>
+                <td><strong>Cloud Database &amp; Hosting</strong></td>
+                <td>Secure encrypted backend infrastructure</td>
+                <td>Encrypted user records, session logs</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- 8. Retention & Deletion -->
+      <div class="section" id="retention-deletion">
+        <h2>8. Data Retention &amp; Permanent Deletion</h2>
+        <p>
+          We store your account and session data only for as long as your
+          account remains open and active.
+        </p>
+        <p>You have direct control over your data lifecycle inside the app:</p>
+        <ul>
+          <li>
+            <strong>Clear All Data:</strong> Resets your focus history and
+            sessions while retaining your login credentials (<em
+              >Settings &gt; Clear all data</em
+            >).
+          </li>
+          <li>
+            <strong>Delete Account:</strong> Permanently deletes your user
+            account, focus history, partner links, paired device tags, and
+            settings (<em>Settings &gt; Delete account</em>).
+          </li>
+        </ul>
+        <p>
+          Once initiated, deletion is permanent and irreversible. Your data is
+          promptly purged from our active databases in accordance with our data
+          hygiene protocols.
+        </p>
+      </div>
+
+      <!-- 9. Your Rights -->
+      <div class="section" id="your-rights">
+        <h2>9. Your Privacy Rights</h2>
+        <p>
+          Regardless of your geographical location, you enjoy the following
+          privacy rights:
+        </p>
+        <ul>
+          <li>
+            <strong>Right to Access:</strong> Request a summary of your personal
+            information held by us.
+          </li>
+          <li>
+            <strong>Right to Portability &amp; Export:</strong> Export your
+            complete focus records directly through the
+            <em>Export data</em> option in the Settings menu.
+          </li>
+          <li>
+            <strong>Right to Rectification:</strong> Update or correct your
+            profile details anytime in the app.
+          </li>
+          <li>
+            <strong>Right to Erasure ("Right to be Forgotten"):</strong>
+            Permanently delete your account through the app or by contacting our
+            support team.
+          </li>
+          <li>
+            <strong>Right to Withdraw Consent:</strong> Revoke notification,
+            screen time, or NFC permissions anytime through your mobile
+            operating system settings.
+          </li>
+        </ul>
+      </div>
+
+      <!-- 10. Contact Us -->
+      <div class="section" id="contact">
+        <h2>10. Contact Information</h2>
+        <p>
+          For inquiries, data protection questions, or requests regarding this
+          Privacy Policy, please contact our team:
+        </p>
+        <div class="contact-card">
+          <p><strong>Presence Laboratories &bull; FocusKey</strong></p>
+          <p>
+            Email:
+            <a href="mailto:mark@presencelaboratories.com"
+              >mark@presencelaboratories.com</a
+            >
+          </p>
+          <p>Phone: <a href="tel:6588583127">+65 8858 3127</a></p>
+          <p>
+            Address: 104 Namly Avenue, Shamrock Park, Singapore 267673,
+            Singapore
+          </p>
+        </div>
+      </div>
+
+      <footer>
+        <div>&copy; 2026 FocusKey. All rights reserved.</div>
+      </footer>
     </div>
-
-    <footer>
-      <div>&copy; 2026 FocusKey. All rights reserved.</div>
-    </footer>
-  </div>
-</body>
-
+  </body>
 </html>

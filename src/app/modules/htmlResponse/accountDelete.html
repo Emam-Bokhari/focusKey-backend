@@ -1,469 +1,548 @@
 <!doctype html>
 <html lang="en">
-
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>How to Delete Your Account - FocusKey</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg-page: #F7F4EE;
-      --bg-card: #FFFFFF;
-      --bg-subtle: #EFEBE3;
-      --bg-surface: #FBF9F5;
-      --border-subtle: #E8E2D8;
-      --border-hover: #D5CDC1;
-      --text-main: #1A1917;
-      --text-muted: #746F68;
-      --text-light: #9C958C;
-      --primary-black: #171513;
-      --primary-hover: #2E2B27;
-      --accent-red: #C85A48;
-      --accent-red-bg: #FDF2F0;
-      --accent-red-border: #F5CECA;
-      --accent-green: #2B825B;
-      --shadow-sm: 0 2px 8px rgba(35, 30, 22, 0.04);
-      --shadow-md: 0 10px 30px rgba(35, 30, 22, 0.07), 0 2px 6px rgba(35, 30, 22, 0.03);
-      --shadow-phone: 0 16px 36px rgba(35, 30, 22, 0.12), 0 2px 8px rgba(35, 30, 22, 0.06);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background-color: var(--bg-page);
-      color: var(--text-main);
-      line-height: 1.7;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 16px 60px;
-    }
-
-    .container {
-      width: 100%;
-      max-width: 780px;
-      background: var(--bg-card);
-      border: 1px solid var(--border-subtle);
-      border-radius: 28px;
-      padding: 48px 40px;
-      box-shadow: var(--shadow-md);
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-    }
-
-    .brand-header {
-      text-align: center;
-      margin-bottom: 36px;
-    }
-
-    .brand-logo {
-      width: 68px;
-      height: 68px;
-      border-radius: 18px;
-      object-fit: cover;
-      box-shadow: var(--shadow-sm);
-      border: 1px solid var(--border-subtle);
-      margin-bottom: 16px;
-      transition: transform 0.3s ease;
-    }
-
-    .brand-logo:hover {
-      transform: scale(1.04);
-    }
-
-    .tag-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background-color: var(--bg-subtle);
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      padding: 6px 14px;
-      border-radius: 9999px;
-      margin-bottom: 14px;
-    }
-
-    h1 {
-      font-family: 'Playfair Display', Georgia, serif;
-      font-size: 36px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 12px;
-      letter-spacing: -0.01em;
-    }
-
-    .subtitle {
-      color: var(--text-muted);
-      font-size: 16px;
-      max-width: 580px;
-      margin: 0 auto;
-    }
-
-    .steps-list {
-      list-style: none;
-      counter-reset: step-counter;
-      margin-top: 36px;
-      padding: 0;
-    }
-
-    .step-item {
-      counter-increment: step-counter;
-      position: relative;
-      padding-left: 54px;
-      margin-bottom: 40px;
-    }
-
-    .step-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .step-item::before {
-      content: counter(step-counter);
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 38px;
-      height: 38px;
-      border-radius: 50%;
-      background-color: var(--primary-black);
-      color: #FFFFFF;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 15px;
-      font-weight: 700;
-      box-shadow: 0 4px 10px rgba(23, 21, 19, 0.15);
-    }
-
-    .step-title {
-      font-size: 17px;
-      font-weight: 600;
-      color: var(--text-main);
-      margin-bottom: 8px;
-      padding-top: 4px;
-    }
-
-    .step-text {
-      font-size: 15px;
-      color: var(--text-muted);
-      margin-bottom: 14px;
-    }
-
-    .highlight {
-      background-color: var(--bg-subtle);
-      color: var(--text-main);
-      padding: 2px 9px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 14px;
-      border: 1px solid var(--border-subtle);
-      display: inline-block;
-    }
-
-    .highlight-danger {
-      background-color: var(--accent-red-bg);
-      color: var(--accent-red);
-      border: 1px solid var(--accent-red-border);
-      padding: 2px 9px;
-      border-radius: 6px;
-      font-weight: 600;
-      font-size: 14px;
-      display: inline-block;
-    }
-
-    .highlight-button {
-      background-color: var(--primary-black);
-      color: #FFFFFF;
-      padding: 4px 12px;
-      border-radius: 9999px;
-      font-weight: 600;
-      font-size: 13px;
-      display: inline-block;
-      letter-spacing: 0.01em;
-    }
-
-    .image-container {
-      text-align: center;
-      margin: 18px 0 10px;
-    }
-
-    .phone-mockup-wrapper {
-      display: inline-block;
-      max-width: 320px;
-      width: 100%;
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-subtle);
-      border-radius: 24px;
-      padding: 8px;
-      box-shadow: var(--shadow-phone);
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .phone-mockup-wrapper:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 20px 42px rgba(35, 30, 22, 0.15);
-    }
-
-    .phone-mockup-wrapper img {
-      width: 100%;
-      height: auto;
-      border-radius: 18px;
-      display: block;
-    }
-
-    .image-caption {
-      margin-top: 10px;
-      font-size: 13px;
-      color: var(--text-light);
-      font-style: italic;
-    }
-
-    .warning-card {
-      background: var(--accent-red-bg);
-      border: 1px solid var(--accent-red-border);
-      border-radius: 16px;
-      padding: 18px 22px;
-      margin: 20px 0 10px;
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-    }
-
-    .warning-icon {
-      color: var(--accent-red);
-      flex-shrink: 0;
-      margin-top: 2px;
-    }
-
-    .warning-title {
-      font-size: 15px;
-      font-weight: 700;
-      color: var(--accent-red);
-      margin-bottom: 4px;
-    }
-
-    .warning-desc {
-      font-size: 14px;
-      color: #7D3126;
-      line-height: 1.6;
-    }
-
-    .support-note-card {
-      background: var(--bg-surface);
-      border: 1px solid var(--border-subtle);
-      border-radius: 16px;
-      padding: 22px 24px;
-      margin-top: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 18px;
-      flex-wrap: wrap;
-    }
-
-    .support-note-text {
-      font-size: 14px;
-      color: var(--text-muted);
-      flex: 1;
-      min-width: 240px;
-    }
-
-    .support-note-text strong {
-      color: var(--text-main);
-    }
-
-    .support-link-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: var(--primary-black);
-      color: #FFFFFF;
-      text-decoration: none;
-      padding: 10px 20px;
-      border-radius: 9999px;
-      font-size: 13px;
-      font-weight: 600;
-      transition: background-color 0.2s ease, transform 0.2s ease;
-    }
-
-    .support-link-btn:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    footer {
-      text-align: center;
-      margin-top: 36px;
-      font-size: 13px;
-      color: var(--text-light);
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      align-items: center;
-    }
-
-    footer a {
-      color: var(--text-muted);
-      text-decoration: none;
-      transition: color 0.2s ease;
-    }
-
-    footer a:hover {
-      color: var(--text-main);
-      text-decoration: underline;
-    }
-
-    @keyframes fadeInUp {
-      from {
-        opacity: 0;
-        transform: translateY(24px);
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>How to Delete Your Account - FocusKey</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg-page: #f7f4ee;
+        --bg-card: #ffffff;
+        --bg-subtle: #efebe3;
+        --bg-surface: #fbf9f5;
+        --border-subtle: #e8e2d8;
+        --border-hover: #d5cdc1;
+        --text-main: #1a1917;
+        --text-muted: #746f68;
+        --text-light: #9c958c;
+        --primary-black: #171513;
+        --primary-hover: #2e2b27;
+        --accent-red: #c85a48;
+        --accent-red-bg: #fdf2f0;
+        --accent-red-border: #f5ceca;
+        --accent-green: #2b825b;
+        --shadow-sm: 0 2px 8px rgba(35, 30, 22, 0.04);
+        --shadow-md:
+          0 10px 30px rgba(35, 30, 22, 0.07), 0 2px 6px rgba(35, 30, 22, 0.03);
+        --shadow-phone:
+          0 16px 36px rgba(35, 30, 22, 0.12), 0 2px 8px rgba(35, 30, 22, 0.06);
       }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
 
-    @media (max-width: 680px) {
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
       body {
-        padding: 20px 12px 40px;
+        font-family:
+          "Plus Jakarta Sans",
+          -apple-system,
+          BlinkMacSystemFont,
+          "Segoe UI",
+          Roboto,
+          sans-serif;
+        background-color: var(--bg-page);
+        color: var(--text-main);
+        line-height: 1.7;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 16px 60px;
       }
 
       .container {
-        padding: 32px 20px;
-        border-radius: 20px;
+        width: 100%;
+        max-width: 780px;
+        background: var(--bg-card);
+        border: 1px solid var(--border-subtle);
+        border-radius: 28px;
+        padding: 48px 40px;
+        box-shadow: var(--shadow-md);
+        opacity: 0;
+        transform: translateY(20px);
+        animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+      }
+
+      .brand-header {
+        text-align: center;
+        margin-bottom: 36px;
+      }
+
+      .brand-logo {
+        width: 68px;
+        height: 68px;
+        border-radius: 18px;
+        object-fit: cover;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid var(--border-subtle);
+        margin-bottom: 16px;
+        transition: transform 0.3s ease;
+      }
+
+      .brand-logo:hover {
+        transform: scale(1.04);
+      }
+
+      .tag-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background-color: var(--bg-subtle);
+        color: var(--text-muted);
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        padding: 6px 14px;
+        border-radius: 9999px;
+        margin-bottom: 14px;
       }
 
       h1 {
-        font-size: 28px;
+        font-family: "Playfair Display", Georgia, serif;
+        font-size: 36px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 12px;
+        letter-spacing: -0.01em;
+      }
+
+      .subtitle {
+        color: var(--text-muted);
+        font-size: 16px;
+        max-width: 580px;
+        margin: 0 auto;
+      }
+
+      .steps-list {
+        list-style: none;
+        counter-reset: step-counter;
+        margin-top: 36px;
+        padding: 0;
       }
 
       .step-item {
-        padding-left: 46px;
+        counter-increment: step-counter;
+        position: relative;
+        padding-left: 54px;
+        margin-bottom: 40px;
+      }
+
+      .step-item:last-child {
+        margin-bottom: 0;
       }
 
       .step-item::before {
-        width: 32px;
-        height: 32px;
+        content: counter(step-counter);
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background-color: var(--primary-black);
+        color: #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 15px;
+        font-weight: 700;
+        box-shadow: 0 4px 10px rgba(23, 21, 19, 0.15);
+      }
+
+      .step-title {
+        font-size: 17px;
+        font-weight: 600;
+        color: var(--text-main);
+        margin-bottom: 8px;
+        padding-top: 4px;
+      }
+
+      .step-text {
+        font-size: 15px;
+        color: var(--text-muted);
+        margin-bottom: 14px;
+      }
+
+      .highlight {
+        background-color: var(--bg-subtle);
+        color: var(--text-main);
+        padding: 2px 9px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        border: 1px solid var(--border-subtle);
+        display: inline-block;
+      }
+
+      .highlight-danger {
+        background-color: var(--accent-red-bg);
+        color: var(--accent-red);
+        border: 1px solid var(--accent-red-border);
+        padding: 2px 9px;
+        border-radius: 6px;
+        font-weight: 600;
+        font-size: 14px;
+        display: inline-block;
+      }
+
+      .highlight-button {
+        background-color: var(--primary-black);
+        color: #ffffff;
+        padding: 4px 12px;
+        border-radius: 9999px;
+        font-weight: 600;
         font-size: 13px;
+        display: inline-block;
+        letter-spacing: 0.01em;
+      }
+
+      .image-container {
+        text-align: center;
+        margin: 18px 0 10px;
       }
 
       .phone-mockup-wrapper {
-        max-width: 100%;
+        display: inline-block;
+        max-width: 320px;
+        width: 100%;
+        background: var(--bg-subtle);
+        border: 1px solid var(--border-subtle);
+        border-radius: 24px;
+        padding: 8px;
+        box-shadow: var(--shadow-phone);
+        transition:
+          transform 0.3s ease,
+          box-shadow 0.3s ease;
       }
-    }
-  </style>
-</head>
 
-<body>
-  <div class="container">
-    <div class="brand-header">
-      <img src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216779/imgo_h4sqrx.jpg" alt="FocusKey Logo" class="brand-logo" />
-      <div>
-        <span class="tag-badge">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-          </svg>
-          Account Deletion Guide
-        </span>
+      .phone-mockup-wrapper:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 42px rgba(35, 30, 22, 0.15);
+      }
+
+      .phone-mockup-wrapper img {
+        width: 100%;
+        height: auto;
+        border-radius: 18px;
+        display: block;
+      }
+
+      .image-caption {
+        margin-top: 10px;
+        font-size: 13px;
+        color: var(--text-light);
+        font-style: italic;
+      }
+
+      .warning-card {
+        background: var(--accent-red-bg);
+        border: 1px solid var(--accent-red-border);
+        border-radius: 16px;
+        padding: 18px 22px;
+        margin: 20px 0 10px;
+        display: flex;
+        gap: 14px;
+        align-items: flex-start;
+      }
+
+      .warning-icon {
+        color: var(--accent-red);
+        flex-shrink: 0;
+        margin-top: 2px;
+      }
+
+      .warning-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: var(--accent-red);
+        margin-bottom: 4px;
+      }
+
+      .warning-desc {
+        font-size: 14px;
+        color: #7d3126;
+        line-height: 1.6;
+      }
+
+      .support-note-card {
+        background: var(--bg-surface);
+        border: 1px solid var(--border-subtle);
+        border-radius: 16px;
+        padding: 22px 24px;
+        margin-top: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 18px;
+        flex-wrap: wrap;
+      }
+
+      .support-note-text {
+        font-size: 14px;
+        color: var(--text-muted);
+        flex: 1;
+        min-width: 240px;
+      }
+
+      .support-note-text strong {
+        color: var(--text-main);
+      }
+
+      .support-link-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--primary-black);
+        color: #ffffff;
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 9999px;
+        font-size: 13px;
+        font-weight: 600;
+        transition:
+          background-color 0.2s ease,
+          transform 0.2s ease;
+      }
+
+      .support-link-btn:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+      }
+
+      footer {
+        text-align: center;
+        margin-top: 36px;
+        font-size: 13px;
+        color: var(--text-light);
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        align-items: center;
+      }
+
+      footer a {
+        color: var(--text-muted);
+        text-decoration: none;
+        transition: color 0.2s ease;
+      }
+
+      footer a:hover {
+        color: var(--text-main);
+        text-decoration: underline;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @media (max-width: 680px) {
+        body {
+          padding: 20px 12px 40px;
+        }
+
+        .container {
+          padding: 32px 20px;
+          border-radius: 20px;
+        }
+
+        h1 {
+          font-size: 28px;
+        }
+
+        .step-item {
+          padding-left: 46px;
+        }
+
+        .step-item::before {
+          width: 32px;
+          height: 32px;
+          font-size: 13px;
+        }
+
+        .phone-mockup-wrapper {
+          max-width: 100%;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="brand-header">
+        <img
+          src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216779/imgo_h4sqrx.jpg"
+          alt="FocusKey Logo"
+          class="brand-logo"
+        />
+        <div>
+          <span class="tag-badge">
+            <svg
+              width="12"
+              height="12"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2.5"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+              <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            Account Deletion Guide
+          </span>
+        </div>
+        <h1>How to Delete Your Account</h1>
+        <p class="subtitle">
+          Follow the steps below to permanently delete your FocusKey account and
+          all associated data directly inside the mobile app.
+        </p>
       </div>
-      <h1>How to Delete Your Account</h1>
-      <p class="subtitle">Follow the steps below to permanently delete your FocusKey account and all associated data directly inside the mobile app.</p>
-    </div>
 
-    <ol class="steps-list">
-      <!-- Step 1 -->
-      <li class="step-item">
-        <div class="step-title">Open Settings Tab</div>
-        <p class="step-text">
-          Launch the <strong>FocusKey</strong> app on your device and tap on the <span class="highlight">Settings</span> icon located on the bottom right of the main navigation bar.
-        </p>
-        <div class="image-container">
-          <div class="phone-mockup-wrapper">
-            <img src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216918/Settings_pxnb2k.png" alt="FocusKey Settings Screen showing Account and Delete account option" />
-          </div>
-          <div class="image-caption">FocusKey Settings &mdash; Account overview and options</div>
-        </div>
-      </li>
-
-      <!-- Step 2 -->
-      <li class="step-item">
-        <div class="step-title">Select "Delete account"</div>
-        <p class="step-text">
-          Under the <strong>ACCOUNT</strong> section at the top of the Settings screen, tap the red <span class="highlight-danger">Delete account</span> option.
-        </p>
-      </li>
-
-      <!-- Step 3 -->
-      <li class="step-item">
-        <div class="step-title">Confirm with Your Password</div>
-        <p class="step-text">
-          On the confirmation screen, enter your current account <span class="highlight">Password</span> to verify your ownership and request.
-        </p>
-        <div class="image-container">
-          <div class="phone-mockup-wrapper">
-            <img src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216944/Delete_Account_djhrv0.png" alt="FocusKey Delete Account confirmation screen with password field" />
-          </div>
-          <div class="image-caption">FocusKey Delete Account &mdash; Password verification screen</div>
-        </div>
-      </li>
-
-      <!-- Step 4 -->
-      <li class="step-item">
-        <div class="step-title">Permanently Delete Account</div>
-        <p class="step-text">
-          Tap the black <span class="highlight-button">Permanently Delete Account</span> button to complete the process. You will be immediately logged out, and your account deletion will take effect permanently.
-        </p>
-
-        <div class="warning-card">
-          <svg class="warning-icon" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
-            <line x1="12" y1="9" x2="12" y2="13"></line>
-            <line x1="12" y1="17" x2="12.01" y2="17"></line>
-          </svg>
-          <div>
-            <div class="warning-title">Permanent &amp; Irreversible Action</div>
-            <div class="warning-desc">
-              Deleting your account is permanent. Your focus history, friend connections, paired key status, and custom modes will be vanished into the quietude. This action cannot be undone.
+      <ol class="steps-list">
+        <!-- Step 1 -->
+        <li class="step-item">
+          <div class="step-title">Open Settings Tab</div>
+          <p class="step-text">
+            Launch the <strong>FocusKey</strong> app on your device and tap on
+            the <span class="highlight">Settings</span> icon located on the
+            bottom right of the main navigation bar.
+          </p>
+          <div class="image-container">
+            <div class="phone-mockup-wrapper">
+              <img
+                src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216918/Settings_pxnb2k.png"
+                alt="FocusKey Settings Screen showing Account and Delete account option"
+              />
+            </div>
+            <div class="image-caption">
+              FocusKey Settings &mdash; Account overview and options
             </div>
           </div>
+        </li>
+
+        <!-- Step 2 -->
+        <li class="step-item">
+          <div class="step-title">Select "Delete account"</div>
+          <p class="step-text">
+            Under the <strong>ACCOUNT</strong> section at the top of the
+            Settings screen, tap the red
+            <span class="highlight-danger">Delete account</span> option.
+          </p>
+        </li>
+
+        <!-- Step 3 -->
+        <li class="step-item">
+          <div class="step-title">Confirm with Your Password</div>
+          <p class="step-text">
+            On the confirmation screen, enter your current account
+            <span class="highlight">Password</span> to verify your ownership and
+            request.
+          </p>
+          <div class="image-container">
+            <div class="phone-mockup-wrapper">
+              <img
+                src="https://res.cloudinary.com/dphkhbunv/image/upload/v1792216944/Delete_Account_djhrv0.png"
+                alt="FocusKey Delete Account confirmation screen with password field"
+              />
+            </div>
+            <div class="image-caption">
+              FocusKey Delete Account &mdash; Password verification screen
+            </div>
+          </div>
+        </li>
+
+        <!-- Step 4 -->
+        <li class="step-item">
+          <div class="step-title">Permanently Delete Account</div>
+          <p class="step-text">
+            Tap the black
+            <span class="highlight-button">Permanently Delete Account</span>
+            button to complete the process. You will be immediately logged out,
+            and your account deletion will take effect permanently.
+          </p>
+
+          <div class="warning-card">
+            <svg
+              class="warning-icon"
+              width="22"
+              height="22"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <path
+                d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"
+              ></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+            <div>
+              <div class="warning-title">
+                Permanent &amp; Irreversible Action
+              </div>
+              <div class="warning-desc">
+                Deleting your account is permanent. Your focus history, friend
+                connections, paired key status, and custom modes will be
+                vanished into the quietude. This action cannot be undone.
+              </div>
+            </div>
+          </div>
+        </li>
+      </ol>
+
+      <!-- Support Assistance Card -->
+      <div class="support-note-card">
+        <div class="support-note-text">
+          <strong>Need direct assistance?</strong><br />
+          If you are unable to access your device or require manual account
+          removal, please reach out to our dedicated support desk.
         </div>
-      </li>
-    </ol>
-
-    <!-- Support Assistance Card -->
-    <div class="support-note-card">
-      <div class="support-note-text">
-        <strong>Need direct assistance?</strong><br>
-        If you are unable to access your device or require manual account removal, please reach out to our dedicated support desk.
+        <a
+          href="mailto:mark@presencelaboratories.com?subject=FocusKey%20Account%20Deletion%20Request"
+          class="support-link-btn"
+        >
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
+            ></path>
+            <polyline points="22,6 12,13 2,6"></polyline>
+          </svg>
+          Contact Support
+        </a>
       </div>
-      <a href="mailto:mark@presencelaboratories.com?subject=FocusKey%20Account%20Deletion%20Request" class="support-link-btn">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-          <polyline points="22,6 12,13 2,6"></polyline>
-        </svg>
-        Contact Support
-      </a>
+
+      <footer>
+        <div>&copy; 2026 FocusKey. All rights reserved.</div>
+      </footer>
     </div>
-
-    <footer>
-      <div>&copy; 2026 FocusKey. All rights reserved.</div>
-    </footer>
-  </div>
-</body>
-
+  </body>
 </html>

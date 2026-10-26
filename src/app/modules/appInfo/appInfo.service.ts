@@ -1,15 +1,15 @@
-import path from 'path';
+import path from "path";
 
 const getPrivacyPolicy = async () => {
-  return path.join(__dirname, '..', 'htmlResponse', 'privacyPolicy.html');
+  return path.join(__dirname, "..", "htmlResponse", "privacyPolicy.html");
 };
 
 const getAccountDelete = async () => {
-  return path.join(__dirname, '..', 'htmlResponse', 'accountDelete.html');
+  return path.join(__dirname, "..", "htmlResponse", "accountDelete.html");
 };
 
 const getSupport = async () => {
-  return path.join(__dirname, '..', 'htmlResponse', 'support.html');
+  return path.join(__dirname, "..", "htmlResponse", "support.html");
 };
 
 export const SettingsServices = {

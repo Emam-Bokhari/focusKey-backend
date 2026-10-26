@@ -67,7 +67,13 @@ breakSchema.index({ userId: 1, nudgeId: 1, status: 1 });
 breakSchema.index({ userId: 1, isDeleted: 1 });
 breakSchema.index({ userId: 1, createdAt: -1 });
 breakSchema.index({ userId: 1, clientBreakId: 1 }, { sparse: true });
-breakSchema.index({ userId: 1, isDeleted: 1, status: 1, endTime: 1, nudgeId: 1 });
+breakSchema.index({
+  userId: 1,
+  isDeleted: 1,
+  status: 1,
+  endTime: 1,
+  nudgeId: 1,
+});
 breakSchema.index({ userId: 1, isDeleted: 1, nudgeId: 1, createdAt: -1 });
 
 export const Break = model<IBreak>("Break", breakSchema);

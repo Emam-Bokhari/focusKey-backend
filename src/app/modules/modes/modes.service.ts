@@ -12,6 +12,7 @@ import {
   NOTIFICATION_TYPE,
 } from "../notification/notification.constant";
 import { DEFAULT_TIMEZONE } from "../../../helpers/timezoneHelper";
+import { BreakCache } from "../breaks/breaks.cache";
 
 const defaultModeCreationPromises = new Map<string, Promise<void>>();
 const knownUsersWithModes = new Set<string>();
@@ -249,6 +250,7 @@ const deleteModeFromDB = async (modeId: string) => {
   );
 
   if (result) {
+    BreakCache.invalidate(mode.userId.toString());
     sendNotifications({
       title: "Mode Deleted",
       text: `You have successfully deleted the focus mode: "${mode.name}".`,
@@ -442,6 +444,9 @@ const toggleModeActivation = async (
   if (!result) {
     throw new ApiError(StatusCodes.NOT_FOUND, "Mode not found");
   }
+
+  // Ensure break state cache is immediately synchronized with new mode state
+  BreakCache.invalidate(userId);
 
   return {
     ...result,

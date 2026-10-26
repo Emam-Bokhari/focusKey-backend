@@ -20,6 +20,7 @@ import unlinkFile from "../../../../shared/unlinkFile";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { ModeService } from "../../modes/modes.service";
+import { invalidateUserAuthCache } from "../../../middlewares/auth";
 
 const generatePairingCode = (): string => {
   return crypto.randomBytes(3).toString("hex").toUpperCase(); // 6 character hex code
@@ -323,6 +324,9 @@ const updateProfileToDB = async (
   const updateDoc = await User.findOneAndUpdate({ _id: id }, payload, {
     new: true,
   });
+  if (updateDoc) {
+    invalidateUserAuthCache(id);
+  }
   return updateDoc;
 };
 
@@ -354,6 +358,8 @@ const updateUserStatusByIdToDB = async (
     throw new ApiError(400, "Failed to change status by this user ID");
   }
 
+  invalidateUserAuthCache(id);
+
   return result;
 };
 
@@ -372,6 +378,7 @@ const deleteUserByIdFromDB = async (id: string) => {
   }
 
   const result = await User.findByIdAndDelete(id);
+  invalidateUserAuthCache(id);
 
   if (!result) {
     throw new ApiError(400, "Failed to delete user by this ID");

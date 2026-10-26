@@ -9,6 +9,20 @@ import { STATUS } from "../../enums/user";
 
 import { resolveTimezone } from "../../helpers/timezoneHelper";
 
+interface ICachedAuthUser {
+  id: string;
+  status?: string;
+  timezone?: string;
+  role?: string;
+  expiresAt: number;
+}
+
+const authUserCache = new Map<string, ICachedAuthUser>();
+
+export const invalidateUserAuthCache = (userId: string) => {
+  authUserCache.delete(userId);
+};
+
 const auth =
   (...roles: string[]) =>
   async (req: Request, res: Response, next: NextFunction) => {
@@ -40,7 +54,34 @@ const auth =
           );
         }
 
-        const user = await User.isExistUserById(verifyUser.id);
+        const nowMs = Date.now();
+        const cachedUser = authUserCache.get(verifyUser.id);
+        let user: { status?: string; timezone?: string; role?: string } | null =
+          null;
+
+        if (cachedUser && cachedUser.expiresAt > nowMs) {
+          user = cachedUser;
+        } else {
+          const dbUser = await User.findById(verifyUser.id)
+            .select("status timezone role")
+            .lean();
+
+          if (dbUser) {
+            user = {
+              status: dbUser.status,
+              timezone: dbUser.timezone,
+              role: dbUser.role,
+            };
+            authUserCache.set(verifyUser.id, {
+              id: verifyUser.id,
+              status: dbUser.status,
+              timezone: dbUser.timezone,
+              role: dbUser.role,
+              expiresAt: nowMs + 60_000,
+            });
+          }
+        }
+
         if (!user) {
           throw new ApiError(
             StatusCodes.NOT_FOUND,

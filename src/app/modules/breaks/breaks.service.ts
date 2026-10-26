@@ -14,6 +14,8 @@ import {
   getZonedStartOfDay,
   dayjs,
 } from "../../../helpers/timezoneHelper";
+import { errorLogger } from "../../../shared/logger";
+import { BreakCache } from "./breaks.cache";
 
 const startBreak = async (
   userId: string,
@@ -21,50 +23,17 @@ const startBreak = async (
 ) => {
   const now = new Date();
   const userObjectId = new mongoose.Types.ObjectId(userId);
-  const startOfDay = getZonedStartOfDay(now, userTimezone);
-  const endOfDay = getZonedEndOfDay(now, userTimezone);
 
-  const [
-    activeMode,
-    activeSession,
-    existingBreak,
-    breakConfigDoc,
-    breaksToday,
-  ] = await Promise.all([
-    Mode.findOne({
-      userId: userObjectId,
-      isActive: true,
-      isDeleted: false,
-    })
-      .select("_id")
-      .lean(),
+  // Fast retrieval from in-memory cache, or optimized DB load if cold
+  let state = await BreakCache.getOrFetchState(userId, userTimezone);
 
-    FocusSession.findOne({
-      userId: userObjectId,
-      status: "active",
-    }).lean(),
+  // If both activeMode and activeSession are null in cache, re-verify with DB to prevent false rejection
+  if (!state.activeMode && !state.activeSession) {
+    state = await BreakCache.getOrFetchState(userId, userTimezone, true);
+  }
 
-    Break.findOne({
-      userId: userObjectId,
-      nudgeId: { $exists: false },
-      status: "active",
-      endTime: { $gt: now },
-    })
-      .select("_id startTime createdAt")
-      .lean(),
-
-    BreakConfig.findOne({
-      userId: userObjectId,
-    })
-      .select("breaksPerDay breakDurationMinutes")
-      .lean(),
-
-    Break.countDocuments({
-      userId: userObjectId,
-      nudgeId: { $exists: false }, // Only count global breaks
-      createdAt: { $gte: startOfDay, $lte: endOfDay },
-    }),
-  ]);
+  const { activeMode, activeSession, existingBreak, breakConfig, breaksToday } =
+    state;
 
   if (!activeMode && !activeSession) {
     throw new ApiError(
@@ -91,21 +60,14 @@ const startBreak = async (
       );
     }
 
-    // Otherwise, this is a leftover/stale break from an earlier session: cleanly auto-complete it
-    await Break.findByIdAndUpdate(existingBreak._id, {
+    // Cleanly auto-complete leftover/stale break in background
+    Break.findByIdAndUpdate(existingBreak._id, {
       status: "completed",
       endTime: now,
       remainingSeconds: 0,
-    });
-  }
-
-  let breakConfig = breakConfigDoc;
-  if (!breakConfig) {
-    breakConfig = await BreakConfig.create({
-      userId: userObjectId,
-      breaksPerDay: 4,
-      breakDurationMinutes: 15,
-    });
+    }).catch((err) =>
+      errorLogger.error("Failed to auto-complete stale break:", err),
+    );
   }
 
   let allowedBreaks = breakConfig.breaksPerDay;
@@ -136,7 +98,8 @@ const startBreak = async (
   const startTime = new Date();
   const endTime = new Date(startTime.getTime() + breakDurationMinutes * 60000);
 
-  const result = await Break.create({
+  const result = new Break({
+    _id: new mongoose.Types.ObjectId(),
     userId: userObjectId,
     modeId: modeIdToUse,
     startTime,
@@ -145,11 +108,24 @@ const startBreak = async (
     remainingSeconds: breakDurationMinutes * 60,
     durationMinutes: 0,
     status: "active",
+    isDeleted: false,
+    createdAt: startTime,
+    updatedAt: startTime,
+  });
+
+  // Immediately update in-memory cache so subsequent requests instantly see active break
+  BreakCache.setActiveBreak(userId, result, breakDurationMinutes, userTimezone);
+
+  // Background non-blocking DB persistence
+  result.save().catch((err) => {
+    errorLogger.error("Failed to save break in DB:", err);
   });
 
   if (activeSession?._id) {
-    await FocusSession.findByIdAndUpdate(activeSession._id, {
+    FocusSession.findByIdAndUpdate(activeSession._id, {
       $inc: { usedBreaksCount: 1 },
+    }).catch((err) => {
+      errorLogger.error("Failed to update session usedBreaksCount:", err);
     });
   }
 
@@ -171,7 +147,7 @@ const getActiveBreakStatus = async (
   userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
   const now = new Date();
-  const [currentBreak, breakConfigDoc, activeSession] = await Promise.all([
+  let [currentBreak, breakConfigDoc, activeSession] = await Promise.all([
     Break.findOne({
       userId: new mongoose.Types.ObjectId(userId),
       nudgeId: { $exists: false },
@@ -186,6 +162,13 @@ const getActiveBreakStatus = async (
       status: "active",
     }).lean(),
   ]);
+
+  if (!currentBreak) {
+    const cachedActive = BreakCache.getActiveBreak(userId);
+    if (cachedActive) {
+      currentBreak = cachedActive;
+    }
+  }
 
   let breakConfig = breakConfigDoc;
   if (!breakConfig) {
@@ -347,12 +330,16 @@ const getRemainingBreaks = async (
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
 
-  const currentBreak = await Break.findOne({
+  let currentBreak = await Break.findOne({
     userId: new mongoose.Types.ObjectId(userId),
     nudgeId: { $exists: false },
     status: "active",
     endTime: { $gt: new Date() },
   });
+
+  if (!currentBreak) {
+    currentBreak = BreakCache.getActiveBreak(userId);
+  }
 
   let activeBreakInfo = null;
   if (currentBreak) {
@@ -405,16 +392,22 @@ const stopBreak = async (userId: string) => {
   const now = new Date();
   const userObjectId = new mongoose.Types.ObjectId(userId);
 
-  const currentBreakToStop = await Break.findOne({
-    userId: userObjectId,
-    nudgeId: { $exists: false },
-    status: "active",
-    endTime: { $gt: now },
-  })
-    .select(
-      "_id status remainingSeconds endTime startTime totalDurationMinutes",
-    )
-    .lean();
+  // Check cache first for active break (instant 0.001ms hit)
+  let currentBreakToStop = BreakCache.getActiveBreak(userId);
+
+  if (!currentBreakToStop) {
+    currentBreakToStop = await Break.findOne({
+      userId: userObjectId,
+      nudgeId: { $exists: false },
+      status: "active",
+      endTime: { $gt: now },
+      isDeleted: false,
+    })
+      .select(
+        "_id status remainingSeconds endTime startTime totalDurationMinutes modeId isDeleted createdAt updatedAt",
+      )
+      .lean();
+  }
 
   if (!currentBreakToStop) {
     throw new ApiError(
@@ -441,7 +434,25 @@ const stopBreak = async (userId: string) => {
   const spentSeconds = Math.max(0, totalAllocatedSeconds - remainingSeconds);
   const durationMinutes = Math.round(spentSeconds / 60);
 
-  const updatedBreak = await Break.findByIdAndUpdate(
+  // Update in-memory cache immediately
+  BreakCache.clearActiveBreak(userId);
+
+  const rawDoc =
+    typeof (currentBreakToStop as any).toObject === "function"
+      ? (currentBreakToStop as any).toObject()
+      : currentBreakToStop;
+
+  const updatedBreak = {
+    ...rawDoc,
+    status: "completed",
+    endTime: now,
+    durationMinutes,
+    remainingSeconds: 0,
+    updatedAt: now,
+  };
+
+  // Background non-blocking DB update
+  Break.findByIdAndUpdate(
     currentBreakToStop._id,
     {
       status: "completed",
@@ -450,7 +461,9 @@ const stopBreak = async (userId: string) => {
       remainingSeconds: 0,
     },
     { new: true },
-  );
+  ).catch((err) => {
+    errorLogger.error("Failed to stop break in DB:", err);
+  });
 
   //@ts-ignore
   const io = global.io;
@@ -495,9 +508,12 @@ const updateExpiredBreaks = async () => {
     });
   }
 
+  const uniqueUserIds = [...new Set(userIds)];
+  uniqueUserIds.forEach((uid) => BreakCache.invalidate(uid));
+
   return {
     modifiedCount: expiredBreaks.length,
-    userIds: [...new Set(userIds)], // Unique user IDs
+    userIds: uniqueUserIds,
   };
 };
 
@@ -533,6 +549,8 @@ const updateGlobalBreakConfig = async (
       runValidators: true,
     },
   );
+
+  BreakCache.updateBreakConfig(userId, payload);
 
   return result;
 };
@@ -847,6 +865,8 @@ const reconcileBreakFromDB = async (
   const populatedBreak = await Break.findById(createdBreak._id).populate(
     "modeId",
   );
+
+  BreakCache.invalidate(userId);
 
   return {
     isAccepted: true,

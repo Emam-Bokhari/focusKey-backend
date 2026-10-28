@@ -114,7 +114,16 @@ const startBreak = async (
   });
 
   // Immediately update in-memory cache so subsequent requests instantly see active break
-  BreakCache.setActiveBreak(userId, result, breakDurationMinutes, userTimezone);
+  const cachedDoc = {
+    ...result.toObject(),
+    modeId: activeMode || modeIdToUse,
+  };
+  BreakCache.setActiveBreak(
+    userId,
+    cachedDoc,
+    breakDurationMinutes,
+    userTimezone,
+  );
 
   // Background non-blocking DB persistence
   result.save().catch((err) => {
@@ -147,98 +156,17 @@ const getActiveBreakStatus = async (
   userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
   const now = new Date();
-  let [currentBreak, breakConfigDoc, activeSession] = await Promise.all([
-    Break.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
-      nudgeId: { $exists: false },
-      status: "active",
-      endTime: { $gt: now },
-    }).populate("modeId"),
-    BreakConfig.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
-    }),
-    FocusSession.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
-      status: "active",
-    }).lean(),
-  ]);
+  const state = await BreakCache.getOrFetchState(userId, userTimezone);
+  const { existingBreak, breakConfig, activeSession, breaksToday } = state;
 
-  if (!currentBreak) {
-    const cachedActive = BreakCache.getActiveBreak(userId);
-    if (cachedActive) {
-      currentBreak = cachedActive;
-    }
+  let currentBreak: any = null;
+  if (
+    existingBreak &&
+    existingBreak.status === "active" &&
+    new Date(existingBreak.endTime).getTime() > now.getTime()
+  ) {
+    currentBreak = existingBreak;
   }
-
-  let breakConfig = breakConfigDoc;
-  if (!breakConfig) {
-    breakConfig = await BreakConfig.create({
-      userId: new mongoose.Types.ObjectId(userId),
-      breaksPerDay: 4,
-      breakDurationMinutes: 15,
-    });
-  }
-
-  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
-  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
-  // Rolling 7 days (last 7 days) to match focus session weekly history
-  const startOfWeek = dayjs()
-    .tz(userTimezone)
-    .subtract(6, "day")
-    .startOf("day")
-    .toDate();
-
-  const todayBreaks = await Break.find({
-    userId: new mongoose.Types.ObjectId(userId),
-    $or: [
-      { createdAt: { $gte: startOfDay, $lte: endOfDay } },
-      { status: "active" },
-    ],
-  });
-
-  const weekBreaks = await Break.find({
-    userId: new mongoose.Types.ObjectId(userId),
-    $or: [{ createdAt: { $gte: startOfWeek } }, { status: "active" }],
-  });
-
-  let todayMinutes = 0;
-  todayBreaks.forEach((breakItem) => {
-    if (breakItem.status === "completed") {
-      todayMinutes += breakItem.durationMinutes || 0;
-    } else {
-      const durationMs = Math.max(
-        0,
-        new Date().getTime() - breakItem.startTime.getTime(),
-      );
-      todayMinutes += Math.round(durationMs / 60000);
-    }
-  });
-  todayMinutes = Math.max(0, todayMinutes);
-
-  let weekMinutes = 0;
-  weekBreaks.forEach((breakItem) => {
-    if (breakItem.status === "completed") {
-      weekMinutes += breakItem.durationMinutes || 0;
-    } else {
-      const durationMs = Math.max(
-        0,
-        new Date().getTime() - breakItem.startTime.getTime(),
-      );
-      weekMinutes += Math.round(durationMs / 60000);
-    }
-  });
-  weekMinutes = Math.max(0, weekMinutes);
-
-  const breaksToday = await Break.countDocuments({
-    userId: new mongoose.Types.ObjectId(userId),
-    nudgeId: { $exists: false },
-    createdAt: { $gte: startOfDay, $lte: endOfDay },
-  });
-
-  const breakStats = {
-    todayMinutes,
-    weekMinutes,
-  };
 
   let remainingBreaksToday = Math.max(
     0,
@@ -255,6 +183,26 @@ const getActiveBreakStatus = async (
         : breaksToday;
     remainingBreaksToday = Math.max(0, sessionMax - sessionUsed);
   }
+
+  let elapsedMinutes = 0;
+  if (currentBreak) {
+    const breakStartMs = new Date(currentBreak.startTime).getTime();
+    elapsedMinutes = Math.max(
+      0,
+      Math.round((now.getTime() - breakStartMs) / 60000),
+    );
+  }
+
+  const breakStats = {
+    todayMinutes: Math.max(
+      0,
+      (state.todayCompletedMinutes || 0) + elapsedMinutes,
+    ),
+    weekMinutes: Math.max(
+      0,
+      (state.weekCompletedMinutes || 0) + elapsedMinutes,
+    ),
+  };
 
   if (!currentBreak) {
     return {
@@ -273,16 +221,23 @@ const getActiveBreakStatus = async (
     totalBreakSeconds,
     Math.max(
       0,
-      Math.ceil((currentBreak.endTime.getTime() - now.getTime()) / 1000),
+      Math.ceil(
+        (new Date(currentBreak.endTime).getTime() - now.getTime()) / 1000,
+      ),
     ),
   );
   const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
+
+  const rawDoc =
+    typeof (currentBreak as any).toObject === "function"
+      ? (currentBreak as any).toObject()
+      : { ...currentBreak };
 
   return {
     isBreakActive: true,
     isBreakPaused: false,
     breakDetails: {
-      ...currentBreak.toObject(),
+      ...rawDoc,
       remainingSeconds,
       remainingMinutes,
     },
@@ -295,65 +250,29 @@ const getRemainingBreaks = async (
   userId: string,
   userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
-  const [breakConfigDoc, activeSession] = await Promise.all([
-    BreakConfig.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
-      isDeleted: { $in: [true, false] },
-    }),
-    FocusSession.findOne({
-      userId: new mongoose.Types.ObjectId(userId),
-      status: "active",
-    }).lean(),
-  ]);
-
-  let breakConfig = breakConfigDoc;
-
-  if (!breakConfig) {
-    breakConfig = await BreakConfig.create({
-      userId: new mongoose.Types.ObjectId(userId),
-      breaksPerDay: 4,
-      breakDurationMinutes: 15,
-    });
-  } else if (breakConfig.isDeleted) {
-    breakConfig.isDeleted = false;
-    //@ts-ignore
-    breakConfig.deletedAt = null;
-    await breakConfig.save();
-  }
-
-  const startOfDay = getZonedStartOfDay(new Date(), userTimezone);
-  const endOfDay = getZonedEndOfDay(new Date(), userTimezone);
-
-  const breaksToday = await Break.countDocuments({
-    userId: new mongoose.Types.ObjectId(userId),
-    nudgeId: { $exists: false },
-    createdAt: { $gte: startOfDay, $lte: endOfDay },
-  });
-
-  let currentBreak = await Break.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-    nudgeId: { $exists: false },
-    status: "active",
-    endTime: { $gt: new Date() },
-  });
-
-  if (!currentBreak) {
-    currentBreak = BreakCache.getActiveBreak(userId);
-  }
+  const now = new Date();
+  const state = await BreakCache.getOrFetchState(userId, userTimezone);
+  const { breakConfig, breaksToday, activeSession, existingBreak } = state;
 
   let activeBreakInfo = null;
-  if (currentBreak) {
+  if (
+    existingBreak &&
+    existingBreak.status === "active" &&
+    new Date(existingBreak.endTime).getTime() > now.getTime()
+  ) {
     const remainingSeconds = Math.max(
       0,
-      Math.ceil((currentBreak.endTime.getTime() - new Date().getTime()) / 1000),
+      Math.ceil(
+        (new Date(existingBreak.endTime).getTime() - now.getTime()) / 1000,
+      ),
     );
     const remainingMinutes = Math.max(0, Math.ceil(remainingSeconds / 60));
 
     activeBreakInfo = {
-      _id: currentBreak._id,
-      status: currentBreak.status,
+      _id: existingBreak._id,
+      status: existingBreak.status,
       isPaused: false,
-      endTime: currentBreak.endTime,
+      endTime: existingBreak.endTime,
       remainingSeconds,
       remainingMinutes,
     };
@@ -435,7 +354,7 @@ const stopBreak = async (userId: string) => {
   const durationMinutes = Math.round(spentSeconds / 60);
 
   // Update in-memory cache immediately
-  BreakCache.clearActiveBreak(userId);
+  BreakCache.clearActiveBreak(userId, durationMinutes);
 
   const rawDoc =
     typeof (currentBreakToStop as any).toObject === "function"

@@ -4,6 +4,7 @@ import ApiError from "../../../errors/ApiErrors";
 import { FocusSession } from "./focusSession.model";
 import { IReconcileSessionPayload } from "./focusSession.interface";
 import { Break, BreakConfig } from "../breaks/breaks.model";
+import { BreakCache } from "../breaks/breaks.cache";
 import { Mode } from "../modes/modes.model";
 import { ModeService } from "../modes/modes.service";
 import dayjs from "dayjs";
@@ -842,6 +843,7 @@ const clearAllDataFromDB = async (userId: string) => {
     ),
   ]);
 
+  BreakCache.invalidate(userId);
   return { message: "All data cleared successfully" };
 };
 
@@ -1185,6 +1187,8 @@ const reconcileSessionFromDB = async (
     userId,
     activeTimezone,
   );
+
+  BreakCache.invalidate(userId);
 
   return {
     exists: false,

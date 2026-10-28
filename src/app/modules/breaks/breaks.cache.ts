@@ -6,11 +6,12 @@ import {
   DEFAULT_TIMEZONE,
   getZonedEndOfDay,
   getZonedStartOfDay,
+  dayjs,
 } from "../../../helpers/timezoneHelper";
 import { IBreakConfig } from "./breaks.interface";
 
 export interface IBreakState {
-  activeMode: { _id: any } | null;
+  activeMode: { _id: any; [key: string]: any } | null;
   activeSession: {
     _id: any;
     modeId?: any;
@@ -24,6 +25,8 @@ export interface IBreakState {
     breakDurationMinutes: number;
   };
   breaksToday: number;
+  todayCompletedMinutes: number;
+  weekCompletedMinutes: number;
   dateKey: string;
   lastFetchedAt: number;
 }
@@ -56,24 +59,29 @@ export const BreakCache = {
     ) {
       return cached;
     }
+
     const userObjectId = new mongoose.Types.ObjectId(userId);
     const startOfDay = getZonedStartOfDay(nowDate, userTimezone);
     const endOfDay = getZonedEndOfDay(nowDate, userTimezone);
+    const startOfWeek = dayjs()
+      .tz(userTimezone)
+      .subtract(6, "day")
+      .startOf("day")
+      .toDate();
 
     // Highly optimized parallel queries with field selection and lean
     const [
       activeMode,
       activeSession,
-      existingBreak,
       breakConfigDoc,
-      breaksToday,
+      recentBreaks,
     ] = await Promise.all([
       Mode.findOne({
         userId: userObjectId,
         isActive: true,
         isDeleted: false,
       })
-        .select("_id")
+        .select("_id name icon totalLockedApps")
         .lean(),
 
       FocusSession.findOne({
@@ -84,18 +92,6 @@ export const BreakCache = {
         .select("_id modeId maxBreaks breakDurationMinutes usedBreaksCount")
         .lean(),
 
-      Break.findOne({
-        userId: userObjectId,
-        nudgeId: { $exists: false },
-        status: "active",
-        endTime: { $gt: nowDate },
-        isDeleted: false,
-      })
-        .select(
-          "_id startTime createdAt endTime totalDurationMinutes remainingSeconds durationMinutes modeId status isDeleted updatedAt",
-        )
-        .lean(),
-
       BreakConfig.findOne({
         userId: userObjectId,
         isDeleted: false,
@@ -103,12 +99,19 @@ export const BreakCache = {
         .select("breaksPerDay breakDurationMinutes")
         .lean(),
 
-      Break.countDocuments({
+      Break.find({
         userId: userObjectId,
-        nudgeId: { $exists: false },
-        createdAt: { $gte: startOfDay, $lte: endOfDay },
+        $or: [
+          { createdAt: { $gte: startOfWeek } },
+          { status: "active" },
+        ],
         isDeleted: false,
-      }),
+      })
+        .select(
+          "_id userId modeId nudgeId clientBreakId startTime endTime durationMinutes totalDurationMinutes remainingSeconds status isDeleted createdAt updatedAt",
+        )
+        .populate("modeId")
+        .lean(),
     ]);
 
     const effectiveConfig = breakConfigDoc || {
@@ -124,6 +127,57 @@ export const BreakCache = {
       }).catch(() => {});
     }
 
+    let existingBreak: any = null;
+    let breaksToday = 0;
+    let todayCompletedMinutes = 0;
+    let weekCompletedMinutes = 0;
+
+    const startOfDayMs = startOfDay.getTime();
+    const endOfDayMs = endOfDay.getTime();
+    const startOfWeekMs = startOfWeek.getTime();
+    const nowMs = nowDate.getTime();
+
+    for (const b of recentBreaks) {
+      const bCreatedAtMs = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+      const bEndTimeMs = b.endTime ? new Date(b.endTime).getTime() : 0;
+
+      // Active break check
+      if (!b.nudgeId && b.status === "active" && bEndTimeMs > nowMs) {
+        if (
+          !existingBreak ||
+          bEndTimeMs > new Date(existingBreak.endTime).getTime()
+        ) {
+          existingBreak = b;
+        }
+      }
+
+      // Count of breaks started today (excluding nudges)
+      if (
+        !b.nudgeId &&
+        bCreatedAtMs >= startOfDayMs &&
+        bCreatedAtMs <= endOfDayMs
+      ) {
+        breaksToday++;
+      }
+
+      // Completed minutes
+      if (b.status === "completed") {
+        const mins = b.durationMinutes || 0;
+        if (bCreatedAtMs >= startOfDayMs && bCreatedAtMs <= endOfDayMs) {
+          todayCompletedMinutes += mins;
+        }
+        if (bCreatedAtMs >= startOfWeekMs) {
+          weekCompletedMinutes += mins;
+        }
+      }
+    }
+
+    // Preserve any in-memory active break if present
+    const inMemoryActive = BreakCache.getActiveBreak(userId);
+    if (inMemoryActive) {
+      existingBreak = inMemoryActive;
+    }
+
     const state: IBreakState = {
       activeMode,
       activeSession,
@@ -133,6 +187,8 @@ export const BreakCache = {
         breakDurationMinutes: effectiveConfig.breakDurationMinutes ?? 15,
       },
       breaksToday,
+      todayCompletedMinutes,
+      weekCompletedMinutes,
       dateKey: currentDateKey,
       lastFetchedAt: Date.now(),
     };
@@ -167,6 +223,8 @@ export const BreakCache = {
         existingBreak: breakDoc,
         breakConfig: { breaksPerDay: 4, breakDurationMinutes: durationMinutes },
         breaksToday: 1,
+        todayCompletedMinutes: 0,
+        weekCompletedMinutes: 0,
         dateKey: getZonedStartOfDay(now, userTimezone).toISOString(),
         lastFetchedAt: Date.now(),
       });
@@ -199,10 +257,16 @@ export const BreakCache = {
   /**
    * Clears active break from cache.
    */
-  clearActiveBreak(userId: string) {
+  clearActiveBreak(userId: string, durationMinutes?: number) {
     const cached = breakStateCache.get(userId);
     if (cached) {
       cached.existingBreak = null;
+      if (typeof durationMinutes === "number" && durationMinutes > 0) {
+        cached.todayCompletedMinutes =
+          (cached.todayCompletedMinutes || 0) + durationMinutes;
+        cached.weekCompletedMinutes =
+          (cached.weekCompletedMinutes || 0) + durationMinutes;
+      }
       cached.lastFetchedAt = Date.now();
     }
   },

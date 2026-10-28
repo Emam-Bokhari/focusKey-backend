@@ -563,22 +563,14 @@ const getLockStatusFromDB = async (
     }).lean(),
   ]);
 
-  let remainingBreaks = dashboardData.breakStats?.remainingToday;
+  const remainingBreaks = dashboardData.breakStats?.remainingToday ?? 0;
   let netElapsedMinutes = 0;
 
-  if (activeSession) {
-    const sessionMaxBreaks =
-      typeof activeSession.maxBreaks === "number" ? activeSession.maxBreaks : 4;
-    const sessionUsedBreaks =
-      typeof activeSession.usedBreaksCount === "number"
-        ? activeSession.usedBreaksCount
-        : 0;
-    remainingBreaks = Math.max(0, sessionMaxBreaks - sessionUsedBreaks);
+  if (dashboardData.breakStats) {
+    (dashboardData.breakStats as any).remainingBreaks = remainingBreaks;
+  }
 
-    if (dashboardData.breakStats) {
-      dashboardData.breakStats.remainingToday = remainingBreaks;
-      (dashboardData.breakStats as any).remainingBreaks = remainingBreaks;
-    }
+  if (activeSession) {
 
     const nowMs = Date.now();
     const sessionStartMs = new Date(activeSession.startTime).getTime();

@@ -70,28 +70,18 @@ const startBreak = async (
     );
   }
 
-  let allowedBreaks = breakConfig.breaksPerDay;
+  const allowedBreaks = breakConfig.breaksPerDay;
   let breakDurationMinutes = breakConfig.breakDurationMinutes;
-  let breaksUsed = breaksToday;
 
-  if (activeSession) {
-    if (typeof activeSession.maxBreaks === "number") {
-      allowedBreaks = activeSession.maxBreaks;
-    }
-    if (typeof activeSession.breakDurationMinutes === "number") {
-      breakDurationMinutes = activeSession.breakDurationMinutes;
-    }
-    breaksUsed =
-      typeof activeSession.usedBreaksCount === "number"
-        ? activeSession.usedBreaksCount
-        : breaksToday;
+  if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
+    breakDurationMinutes = activeSession.breakDurationMinutes;
   }
 
   if (allowedBreaks <= 0) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Breaks are not allowed");
   }
 
-  if (breaksUsed >= allowedBreaks) {
+  if (breaksToday >= allowedBreaks) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached");
   }
 
@@ -168,21 +158,10 @@ const getActiveBreakStatus = async (
     currentBreak = existingBreak;
   }
 
-  let remainingBreaksToday = Math.max(
+  const remainingBreaksToday = Math.max(
     0,
     breakConfig.breaksPerDay - breaksToday,
   );
-  if (activeSession) {
-    const sessionMax =
-      typeof activeSession.maxBreaks === "number"
-        ? activeSession.maxBreaks
-        : breakConfig.breaksPerDay;
-    const sessionUsed =
-      typeof activeSession.usedBreaksCount === "number"
-        ? activeSession.usedBreaksCount
-        : breaksToday;
-    remainingBreaksToday = Math.max(0, sessionMax - sessionUsed);
-  }
 
   let elapsedMinutes = 0;
   if (currentBreak) {
@@ -278,24 +257,13 @@ const getRemainingBreaks = async (
     };
   }
 
-  let totalAllowed = breakConfig.breaksPerDay;
+  const totalAllowed = breakConfig.breaksPerDay;
   let durationMinutes = breakConfig.breakDurationMinutes;
-  let takenToday = breaksToday;
-  let remaining = Math.max(0, totalAllowed - takenToday);
-
-  if (activeSession) {
-    if (typeof activeSession.maxBreaks === "number") {
-      totalAllowed = activeSession.maxBreaks;
-    }
-    if (typeof activeSession.breakDurationMinutes === "number") {
-      durationMinutes = activeSession.breakDurationMinutes;
-    }
-    takenToday =
-      typeof activeSession.usedBreaksCount === "number"
-        ? activeSession.usedBreaksCount
-        : breaksToday;
-    remaining = Math.max(0, totalAllowed - takenToday);
+  if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
+    durationMinutes = activeSession.breakDurationMinutes;
   }
+  const takenToday = breaksToday;
+  const remaining = Math.max(0, totalAllowed - takenToday);
 
   return {
     totalAllowed,
@@ -597,22 +565,12 @@ const reconcileBreakFromDB = async (
     isDeleted: { $ne: true },
   });
 
-  let allowedBreaks = breakConfig.breaksPerDay;
+  const allowedBreaks = breakConfig.breaksPerDay;
   let effectiveDurationMinutes = breakConfig.breakDurationMinutes;
-  let breaksUsed = breaksToday;
-
-  if (activeSession) {
-    if (typeof activeSession.maxBreaks === "number") {
-      allowedBreaks = activeSession.maxBreaks;
-    }
-    if (typeof activeSession.breakDurationMinutes === "number") {
-      effectiveDurationMinutes = activeSession.breakDurationMinutes;
-    }
-    breaksUsed =
-      typeof activeSession.usedBreaksCount === "number"
-        ? activeSession.usedBreaksCount
-        : breaksToday;
+  if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
+    effectiveDurationMinutes = activeSession.breakDurationMinutes;
   }
+  const breaksUsed = breaksToday;
 
   const remainingBreaks = Math.max(0, allowedBreaks - breaksUsed);
 

@@ -213,22 +213,10 @@ const getDashboardData = async (
     nudgeId: { $exists: false },
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
-  if (activeSession) {
-    const sessionMaxBreaks =
-      typeof activeSession.maxBreaks === "number"
-        ? activeSession.maxBreaks
-        : breakConfig.breaksPerDay;
-    const sessionUsedBreaks =
-      typeof activeSession.usedBreaksCount === "number"
-        ? activeSession.usedBreaksCount
-        : 0;
-    remainingBreaksToday = Math.max(0, sessionMaxBreaks - sessionUsedBreaks);
-  } else {
-    remainingBreaksToday = Math.max(
-      0,
-      breakConfig.breaksPerDay - breaksTakenToday,
-    );
-  }
+  remainingBreaksToday = Math.max(
+    0,
+    breakConfig.breaksPerDay - breaksTakenToday,
+  );
 
   const currentGlobalBreak = await Break.findOne({
     userId: userObjectId,

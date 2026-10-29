@@ -3,10 +3,9 @@
   "version": "1.0.0",
   "main": "app.ts",
   "scripts": {
-    "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "start": "node dist/server.js",
-    "build": "tsc && npx cpx \"src/views/**/*\" dist/views",
-
+    "dev": "node init && ts-node-dev --respawn --transpile-only src/server.ts",
+    "start": "node init && node dist/server.js",
+    "build": "node init && tsc && npx cpx \"src/views/**/*\" dist/views",
     "format": "prettier . --write",
     "heal:sessions": "ts-node scripts/healDanglingSessions.ts",
     "test": "echo \"Error: no test specified\" && exit 1"

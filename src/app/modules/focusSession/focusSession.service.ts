@@ -1,6 +1,7 @@
 import mongoose from "mongoose";
 import { StatusCodes } from "http-status-codes";
 import ApiError from "../../../errors/ApiErrors";
+import { logger } from "../../../shared/logger";
 import { FocusSession } from "./focusSession.model";
 import { IReconcileSessionPayload } from "./focusSession.interface";
 import { Break, BreakConfig } from "../breaks/breaks.model";
@@ -119,7 +120,6 @@ export const calculateTotalMinutes = (
           (new Date(session.endTime).getTime() - sStartTime.getTime()) / 60000,
         )
       : (session.durationMinutes ?? 0);
-    if (rawMin > 1440) continue;
 
     const uId = (session.userId?._id || session.userId)?.toString();
     const sModeId = (session.modeId as any)?._id
@@ -171,9 +171,6 @@ const calculateSevenDaysStats = (
     for (const s of allSessions) {
       const sStartMs = new Date(s.startTime).getTime();
       const isActive = s.status === "active";
-      if (isActive && nowMs - sStartMs > 24 * 60 * 60 * 1000) {
-        continue;
-      }
 
       const sEndMs = isActive
         ? nowMs
@@ -334,7 +331,7 @@ const getFocusHistoryFromDB = async (
     const isActive = s.status === "active";
     const isToday =
       (sStartMs >= startOfTodayMs && sStartMs <= endOfTodayMs) ||
-      (isActive && nowMs - sStartMs <= 24 * 60 * 60 * 1000);
+      (isActive && sStartMs <= endOfTodayMs);
 
     if (isToday) {
       const modeName = (s.modeId as any)?.name || "Unknown Mode";
@@ -347,9 +344,7 @@ const getFocusHistoryFromDB = async (
           : (s.durationMinutes ?? 0);
       } else {
         const diff = nowMs - sStartMs;
-        if (diff <= 24 * 60 * 60 * 1000) {
-          modeWiseToday[modeName] += Math.max(0, Math.round(diff / 60000));
-        }
+        modeWiseToday[modeName] += Math.max(0, Math.round(diff / 60000));
       }
     }
   }
@@ -396,11 +391,10 @@ const getFocusHistoryFromDB = async (
               60000,
           )
         : (session.durationMinutes ?? 0);
-      sessionMinutes = rawMin > 1440 ? 0 : rawMin;
+      sessionMinutes = rawMin;
     } else {
       const diff = nowMs - sStartTime.getTime();
-      sessionMinutes =
-        diff > 24 * 60 * 60 * 1000 ? 0 : Math.max(0, Math.round(diff / 60000));
+      sessionMinutes = Math.max(0, Math.round(diff / 60000));
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -605,11 +599,10 @@ const getFocusHistoryV2FromDB = async (
               60000,
           )
         : (session.durationMinutes ?? 0);
-      sessionMinutes = rawMin > 1440 ? 0 : rawMin;
+      sessionMinutes = rawMin;
     } else {
       const diff = nowMs - sStartTime.getTime();
-      sessionMinutes =
-        diff > 24 * 60 * 60 * 1000 ? 0 : Math.max(0, Math.round(diff / 60000));
+      sessionMinutes = Math.max(0, Math.round(diff / 60000));
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -929,18 +922,25 @@ const reconcileSessionFromDB = async (
   if (existingSession) {
     const isCompleted = status === "completed" || Boolean(endedAt);
 
-    // If session is currently active in DB, but client reports it as completed
-    if (isCompleted && existingSession.status === "active") {
+    // If session is completed (either active before, or previously auto-closed with 0 duration / earlier endTime)
+    if (isCompleted) {
       const endTime = endedAt
         ? parseClientDate(endedAt, activeTimezone)
-        : new Date();
+        : (existingSession.endTime || new Date());
       const durationMs = Math.max(
         0,
         endTime.getTime() - new Date(existingSession.startTime).getTime(),
       );
       const durationMinutes = Math.round(durationMs / 60000);
 
-      existingSession.status = "completed";
+      const shouldUpdate =
+        existingSession.status === "active" ||
+        (existingSession.durationMinutes === 0 && durationMinutes > 0) ||
+        (existingSession.endTime &&
+          endTime.getTime() > new Date(existingSession.endTime).getTime());
+
+      if (shouldUpdate) {
+        existingSession.status = "completed";
       existingSession.endTime = endTime;
       existingSession.durationMinutes = durationMinutes;
       await existingSession.save();
@@ -992,6 +992,11 @@ const reconcileSessionFromDB = async (
         await FocusSession.bulkWrite(bulkOps);
       }
     }
+  }
+
+  logger.info(
+    `[Reconcile] Processed existing session. User: ${userId}, clientSessionId: ${trimmedClientSessionId}, status: ${existingSession.status}, durationMinutes: ${existingSession.durationMinutes}`,
+  );
 
     const lockStatus = await ModeService.getLockStatusFromDB(
       userId,
@@ -1206,30 +1211,43 @@ const reconcileSessionFromDB = async (
 };
 
 const healDanglingSessions = async () => {
-  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
+  // Only auto-heal abandoned sessions older than 30 days
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
 
   const danglingSessions = await FocusSession.find({
     status: "active",
-    startTime: { $lt: twentyFourHoursAgo },
+    startTime: { $lt: thirtyDaysAgo },
   });
 
   let healedSessionsCount = 0;
   if (danglingSessions.length > 0) {
     for (const session of danglingSessions) {
+      const endTime =
+        (session as any).updatedAt ||
+        new Date(session.startTime.getTime() + 60000);
+      const durationMs = Math.max(
+        0,
+        endTime.getTime() - new Date(session.startTime).getTime(),
+      );
+      const durationMinutes = Math.round(durationMs / 60000);
+
       await FocusSession.findByIdAndUpdate(session._id, {
         $set: {
           status: "completed",
-          durationMinutes: 0,
-          endTime: session.startTime,
+          durationMinutes,
+          endTime,
         },
       });
       healedSessionsCount++;
+      logger.info(
+        `[healDanglingSessions] Auto-healed abandoned session ${session._id} for user ${session.userId} (>30d). Duration: ${durationMinutes} mins.`,
+      );
     }
   }
 
-  // Also heal corrupt sessions with durationMinutes > 1440 or < 0
+  // Only heal corrupt sessions with negative duration (sessions > 1440 min are valid multi-day sessions)
   const corruptSessions = await FocusSession.find({
-    $or: [{ durationMinutes: { $gt: 1440 } }, { durationMinutes: { $lt: 0 } }],
+    durationMinutes: { $lt: 0 },
   });
   if (corruptSessions.length > 0) {
     for (const session of corruptSessions) {
@@ -1243,6 +1261,7 @@ const healDanglingSessions = async () => {
     }
   }
 
+  const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
   const danglingBreaks = await Break.find({
     status: "active",
     startTime: { $lt: twentyFourHoursAgo },

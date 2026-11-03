@@ -221,8 +221,7 @@ const deleteModeFromDB = async (modeId: string) => {
           0,
           endTime.getTime() - session.startTime.getTime(),
         );
-        const durationMinutes =
-          durationMs > 24 * 60 * 60 * 1000 ? 0 : Math.round(durationMs / 60000);
+        const durationMinutes = Math.round(durationMs / 60000);
         return {
           updateOne: {
             filter: { _id: session._id },
@@ -315,8 +314,7 @@ const toggleModeActivation = async (
           0,
           endTime.getTime() - session.startTime.getTime(),
         );
-        const durationMinutes =
-          durationMs > 24 * 60 * 60 * 1000 ? 0 : Math.round(durationMs / 60000);
+        const durationMinutes = Math.round(durationMs / 60000);
         return {
           updateOne: {
             filter: { _id: session._id },
@@ -383,8 +381,7 @@ const toggleModeActivation = async (
           0,
           endTime.getTime() - session.startTime.getTime(),
         );
-        const durationMinutes =
-          durationMs > 24 * 60 * 60 * 1000 ? 0 : Math.round(durationMs / 60000);
+        const durationMinutes = Math.round(durationMs / 60000);
         return {
           updateOne: {
             filter: { _id: session._id },
@@ -602,9 +599,7 @@ const getLockStatusFromDB = async (
       } else {
         const bStartMs = new Date(b.startTime).getTime();
         const diff = nowMs - bStartMs;
-        if (diff <= 24 * 60 * 60 * 1000) {
-          totalBreakMinutes += Math.max(0, Math.round(diff / 60000));
-        }
+        totalBreakMinutes += Math.max(0, Math.round(diff / 60000));
       }
     }
 

@@ -12,7 +12,6 @@ import {
   getZonedStartOfWeek,
 } from "../../../helpers/timezoneHelper";
 import {
-  calculateBreakMinutes,
   calculateSessionBreakMinutes,
   calculateTotalMinutes,
   indexBreaksByMode,
@@ -199,13 +198,13 @@ const getFocusTimeOverTime = async (
 
   sessions.forEach((session) => {
     const sStartTime = new Date(session.startTime);
-    const dateKey = formatZonedDateKey(sStartTime, userTimezone);
-    const rawMinutes = session.endTime
-      ? Math.round(
-          (new Date(session.endTime).getTime() - sStartTime.getTime()) / 60000,
-        )
-      : (session.durationMinutes ?? 0);
-    if (rawMinutes > 1440) return;
+    const sEndTime = session.endTime
+      ? new Date(session.endTime)
+      : new Date(sStartTime.getTime() + (session.durationMinutes ?? 0) * 60000);
+    const sStartMs = sStartTime.getTime();
+    const sEndMs = sEndTime.getTime();
+    const rawMinutes = Math.max(0, Math.round((sEndMs - sStartMs) / 60000));
+    if (rawMinutes <= 0) return;
 
     const sModeId = (session.modeId as any)?._id
       ? (session.modeId as any)._id.toString()
@@ -217,9 +216,27 @@ const getFocusTimeOverTime = async (
       nowMs,
     );
 
-    const minutes = Math.max(0, rawMinutes - sessionBreakMinutes);
-    if (dateWiseData[dateKey] !== undefined) {
-      dateWiseData[dateKey] += minutes;
+    for (let i = 0; i < actualDays; i++) {
+      const d = dayjs(startDate).tz(userTimezone).add(i, "day");
+      const dayStartMs = d.startOf("day").valueOf();
+      const dayEndMs = d.endOf("day").valueOf();
+
+      const segStart = Math.max(sStartMs, dayStartMs);
+      const segEnd = Math.min(sEndMs, dayEndMs);
+
+      if (segEnd > segStart) {
+        const segRawMinutes = Math.round((segEnd - segStart) / 60000);
+        const segBreakProportion =
+          rawMinutes > 0 ? (segRawMinutes / rawMinutes) * sessionBreakMinutes : 0;
+        const segMinutes = Math.max(
+          0,
+          Math.round(segRawMinutes - segBreakProportion),
+        );
+        const dayKey = formatZonedDateKey(d.toDate(), userTimezone);
+        if (dateWiseData[dayKey] !== undefined) {
+          dateWiseData[dayKey] += segMinutes;
+        }
+      }
     }
   });
 
@@ -305,13 +322,13 @@ const getFocusTimeTogetherOverTime = async (
 
   sessions.forEach((session) => {
     const sStartTime = new Date(session.startTime);
-    const dateKey = formatZonedDateKey(sStartTime, userTimezone);
-    const rawMinutes = session.endTime
-      ? Math.round(
-          (new Date(session.endTime).getTime() - sStartTime.getTime()) / 60000,
-        )
-      : (session.durationMinutes ?? 0);
-    if (rawMinutes > 1440) return;
+    const sEndTime = session.endTime
+      ? new Date(session.endTime)
+      : new Date(sStartTime.getTime() + (session.durationMinutes ?? 0) * 60000);
+    const sStartMs = sStartTime.getTime();
+    const sEndMs = sEndTime.getTime();
+    const rawMinutes = Math.max(0, Math.round((sEndMs - sStartMs) / 60000));
+    if (rawMinutes <= 0) return;
 
     const sModeId = (session.modeId as any)?._id
       ? (session.modeId as any)._id.toString()
@@ -323,9 +340,27 @@ const getFocusTimeTogetherOverTime = async (
       nowMs,
     );
 
-    const minutes = Math.max(0, rawMinutes - sessionBreakMinutes);
-    if (dateWiseData[dateKey] !== undefined) {
-      dateWiseData[dateKey] += minutes;
+    for (let i = 0; i < actualDays; i++) {
+      const d = dayjs(startDate).tz(userTimezone).add(i, "day");
+      const dayStartMs = d.startOf("day").valueOf();
+      const dayEndMs = d.endOf("day").valueOf();
+
+      const segStart = Math.max(sStartMs, dayStartMs);
+      const segEnd = Math.min(sEndMs, dayEndMs);
+
+      if (segEnd > segStart) {
+        const segRawMinutes = Math.round((segEnd - segStart) / 60000);
+        const segBreakProportion =
+          rawMinutes > 0 ? (segRawMinutes / rawMinutes) * sessionBreakMinutes : 0;
+        const segMinutes = Math.max(
+          0,
+          Math.round(segRawMinutes - segBreakProportion),
+        );
+        const dayKey = formatZonedDateKey(d.toDate(), userTimezone);
+        if (dateWiseData[dayKey] !== undefined) {
+          dateWiseData[dayKey] += segMinutes;
+        }
+      }
     }
   });
 

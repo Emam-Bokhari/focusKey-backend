@@ -91,9 +91,7 @@ const getDashboardData = async (
         0,
         new Date().getTime() - session.startTime.getTime(),
       );
-      if (durationMs <= 24 * 60 * 60 * 1000) {
-        todayFocusMinutes += Math.round(durationMs / 60000);
-      }
+      todayFocusMinutes += Math.round(durationMs / 60000);
     }
   });
 
@@ -158,9 +156,7 @@ const getDashboardData = async (
         0,
         new Date().getTime() - session.startTime.getTime(),
       );
-      if (durationMs <= 24 * 60 * 60 * 1000) {
-        weekFocusMinutes += Math.round(durationMs / 60000);
-      }
+      weekFocusMinutes += Math.round(durationMs / 60000);
     }
   });
 
@@ -554,11 +550,10 @@ const getHistoryV2 = async (
               60000,
           )
         : (session.durationMinutes ?? 0);
-      sessionMinutes = rawMin > 1440 ? 0 : rawMin;
+      sessionMinutes = rawMin;
     } else {
       const diff = nowMs - sStartTime.getTime();
-      sessionMinutes =
-        diff > 24 * 60 * 60 * 1000 ? 0 : Math.max(0, Math.round(diff / 60000));
+      sessionMinutes = Math.max(0, Math.round(diff / 60000));
     }
 
     const sModeId = (session.modeId as any)?._id
@@ -588,9 +583,7 @@ const getHistoryV2 = async (
           : (b.durationMinutes ?? 0);
       } else {
         const bDiff = nowMs - bStartMs;
-        if (bDiff <= 24 * 60 * 60 * 1000) {
-          sessionBreakMinutes += Math.max(0, Math.round(bDiff / 60000));
-        }
+        sessionBreakMinutes += Math.max(0, Math.round(bDiff / 60000));
       }
     }
 

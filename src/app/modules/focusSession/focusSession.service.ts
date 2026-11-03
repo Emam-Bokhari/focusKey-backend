@@ -1238,6 +1238,20 @@ const healDanglingSessions = async () => {
           endTime,
         },
       });
+
+      if (session.modeId) {
+        await Mode.findByIdAndUpdate(session.modeId, {
+          $set: { isActive: false },
+          $push: {
+            lockEvents: {
+              type: "unlock",
+              source: "mode",
+              timestamp: endTime,
+            },
+          },
+        });
+      }
+
       healedSessionsCount++;
       logger.info(
         `[healDanglingSessions] Auto-healed abandoned session ${session._id} for user ${session.userId} (>30d). Duration: ${durationMinutes} mins.`,

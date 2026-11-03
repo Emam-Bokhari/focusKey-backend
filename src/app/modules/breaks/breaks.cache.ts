@@ -183,8 +183,14 @@ export const BreakCache = {
       activeSession,
       existingBreak,
       breakConfig: {
-        breaksPerDay: effectiveConfig.breaksPerDay ?? 4,
-        breakDurationMinutes: effectiveConfig.breakDurationMinutes ?? 15,
+        breaksPerDay:
+          activeSession && typeof activeSession.maxBreaks === "number"
+            ? activeSession.maxBreaks
+            : (effectiveConfig.breaksPerDay ?? 4),
+        breakDurationMinutes:
+          activeSession && typeof activeSession.breakDurationMinutes === "number"
+            ? activeSession.breakDurationMinutes
+            : (effectiveConfig.breakDurationMinutes ?? 15),
       },
       breaksToday,
       todayCompletedMinutes,

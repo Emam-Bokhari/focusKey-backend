@@ -70,7 +70,10 @@ const startBreak = async (
     );
   }
 
-  const allowedBreaks = breakConfig.breaksPerDay;
+  let allowedBreaks = breakConfig.breaksPerDay;
+  if (activeSession && typeof activeSession.maxBreaks === "number") {
+    allowedBreaks = activeSession.maxBreaks;
+  }
   let breakDurationMinutes = breakConfig.breakDurationMinutes;
 
   if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
@@ -257,7 +260,10 @@ const getRemainingBreaks = async (
     };
   }
 
-  const totalAllowed = breakConfig.breaksPerDay;
+  let totalAllowed = breakConfig.breaksPerDay;
+  if (activeSession && typeof activeSession.maxBreaks === "number") {
+    totalAllowed = activeSession.maxBreaks;
+  }
   let durationMinutes = breakConfig.breakDurationMinutes;
   if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
     durationMinutes = activeSession.breakDurationMinutes;
@@ -408,27 +414,69 @@ const getGlobalBreakConfig = async (
   userId: string,
   userTimezone: string = DEFAULT_TIMEZONE,
 ) => {
-  let breakConfig = await BreakConfig.findOne({
-    userId: new mongoose.Types.ObjectId(userId),
-  });
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+  let [breakConfig, activeMode, activeSession] = await Promise.all([
+    BreakConfig.findOne({
+      userId: userObjectId,
+    }),
+    Mode.findOne({
+      userId: userObjectId,
+      isActive: true,
+      isDeleted: false,
+    }).select("_id name"),
+    FocusSession.findOne({
+      userId: userObjectId,
+      status: "active",
+      isDeleted: false,
+    }).select("_id"),
+  ]);
 
   if (!breakConfig) {
     breakConfig = await BreakConfig.create({
-      userId: new mongoose.Types.ObjectId(userId),
+      userId: userObjectId,
       breaksPerDay: 4,
       breakDurationMinutes: 15,
     });
   }
 
-  return breakConfig;
+  const isLocked = Boolean(activeMode || activeSession);
+
+  return {
+    ...breakConfig.toObject(),
+    isLocked,
+    canEdit: !isLocked,
+  };
 };
 
 const updateGlobalBreakConfig = async (
   userId: string,
   payload: Partial<IBreakConfig>,
 ) => {
+  const userObjectId = new mongoose.Types.ObjectId(userId);
+
+  // Users cannot change break settings (number of breaks or break duration) while locked
+  const [activeMode, activeSession] = await Promise.all([
+    Mode.findOne({
+      userId: userObjectId,
+      isActive: true,
+      isDeleted: false,
+    }).select("_id name"),
+    FocusSession.findOne({
+      userId: userObjectId,
+      status: "active",
+      isDeleted: false,
+    }).select("_id"),
+  ]);
+
+  if (activeMode || activeSession) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "Cannot change break settings while focus mode is locked. Please unlock first.",
+    );
+  }
+
   const result = await BreakConfig.findOneAndUpdate(
-    { userId: new mongoose.Types.ObjectId(userId) },
+    { userId: userObjectId },
     { $set: payload },
     {
       new: true,
@@ -438,6 +486,7 @@ const updateGlobalBreakConfig = async (
   );
 
   BreakCache.updateBreakConfig(userId, payload);
+  BreakCache.invalidate(userId);
 
   return result;
 };
@@ -565,7 +614,10 @@ const reconcileBreakFromDB = async (
     isDeleted: { $ne: true },
   });
 
-  const allowedBreaks = breakConfig.breaksPerDay;
+  let allowedBreaks = breakConfig.breaksPerDay;
+  if (activeSession && typeof activeSession.maxBreaks === "number") {
+    allowedBreaks = activeSession.maxBreaks;
+  }
   let effectiveDurationMinutes = breakConfig.breakDurationMinutes;
   if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
     effectiveDurationMinutes = activeSession.breakDurationMinutes;

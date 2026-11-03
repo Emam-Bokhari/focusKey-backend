@@ -209,10 +209,11 @@ const getDashboardData = async (
     nudgeId: { $exists: false },
     createdAt: { $gte: startOfDay, $lte: endOfDay },
   });
-  remainingBreaksToday = Math.max(
-    0,
-    breakConfig.breaksPerDay - breaksTakenToday,
-  );
+  const allowedBreaksToday =
+    activeSession && typeof (activeSession as any).maxBreaks === "number"
+      ? (activeSession as any).maxBreaks
+      : breakConfig.breaksPerDay;
+  remainingBreaksToday = Math.max(0, allowedBreaksToday - breaksTakenToday);
 
   const currentGlobalBreak = await Break.findOne({
     userId: userObjectId,

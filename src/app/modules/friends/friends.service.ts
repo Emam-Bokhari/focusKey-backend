@@ -1958,7 +1958,7 @@ const getCurrentNudgeStatusInDB = async (
         p.userId != null &&
         (p.userId._id || p.userId).toString() === pIdStr,
     );
-
+    
     const isOnBreak = activeBreakUserIds.has(pIdStr);
 
     return {

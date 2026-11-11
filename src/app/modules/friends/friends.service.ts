@@ -1711,6 +1711,7 @@ const stopNudgeBreakInDB = async (
     0,
     currentBreakToStop.endTime.getTime() - now.getTime(),
   );
+
   const remainingSeconds = Math.round(remainingMs / 1000);
 
   const totalAllocatedMinutes =
@@ -2684,7 +2685,6 @@ export const FriendsService = {
   initiateNudgePreviewInDB,
   getNudgePreviewDetailsFromDB,
   confirmNudgeFromPreviewInDB,
-  getPendingNudgePreviewInDB,
   joinNudgeInDB,
   getNudgeHistoryFromDB,
   removeFriendFromDB,
@@ -2702,6 +2702,7 @@ export const FriendsService = {
   cancelFriendRequestInDB,
   handleFriendRequestActionInDB,
   getFriendsFromDB,
+  getPendingNudgePreviewInDB,
   removeNudgeParticipantFromDB,
   leaveNudgeInDB,
 };

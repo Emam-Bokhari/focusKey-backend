@@ -204,16 +204,14 @@ const getDashboardData = async (
     await breakConfig.save();
   }
 
-  breaksTakenToday = await Break.countDocuments({
-    userId: userObjectId,
-    nudgeId: { $exists: false },
-    createdAt: { $gte: startOfDay, $lte: endOfDay },
-  });
-  const allowedBreaksToday =
+  const used = activeSession ? ((activeSession as any).usedBreaksCount ?? 0) : 0;
+  const allowed =
     activeSession && typeof (activeSession as any).maxBreaks === "number"
       ? (activeSession as any).maxBreaks
       : breakConfig.breaksPerDay;
-  remainingBreaksToday = Math.max(0, allowedBreaksToday - breaksTakenToday);
+  const remaining = activeSession ? Math.max(0, allowed - used) : allowed;
+  breaksTakenToday = used;
+  remainingBreaksToday = remaining;
 
   const currentGlobalBreak = await Break.findOne({
     userId: userObjectId,
@@ -269,6 +267,7 @@ const getDashboardData = async (
     breakStats: {
       takenToday: breaksTakenToday,
       remainingToday: remainingBreaksToday,
+      remainingBreaks: remainingBreaksToday,
       activeBreak: currentGlobalBreak
         ? {
             ...currentGlobalBreak.toObject(),

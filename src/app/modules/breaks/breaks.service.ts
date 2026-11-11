@@ -41,7 +41,7 @@ const startBreak = async (
       "You can only take a break when focus mode is locked",
     );
   }
-
+  
   const modeIdToUse = activeMode?._id || activeSession?.modeId;
 
   if (existingBreak) {
@@ -84,8 +84,15 @@ const startBreak = async (
     throw new ApiError(StatusCodes.BAD_REQUEST, "Breaks are not allowed");
   }
 
-  if (breaksToday >= allowedBreaks) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Daily break limit reached");
+  const breaksUsedInSession = activeSession
+    ? (activeSession.usedBreaksCount ?? 0)
+    : 0;
+
+  if (breaksUsedInSession >= allowedBreaks) {
+    throw new ApiError(
+      StatusCodes.BAD_REQUEST,
+      "No breaks left in this session.",
+    );
   }
 
   const startTime = new Date();
@@ -94,6 +101,7 @@ const startBreak = async (
   const result = new Break({
     _id: new mongoose.Types.ObjectId(),
     userId: userObjectId,
+    sessionId: activeSession?._id,
     modeId: modeIdToUse,
     startTime,
     endTime,
@@ -109,6 +117,7 @@ const startBreak = async (
   // Immediately update in-memory cache so subsequent requests instantly see active break
   const cachedDoc = {
     ...result.toObject(),
+    sessionId: activeSession?._id,
     modeId: activeMode || modeIdToUse,
   };
   BreakCache.setActiveBreak(
@@ -141,6 +150,8 @@ const startBreak = async (
     });
   }
 
+  BreakCache.invalidate(userId);
+
   return result;
 };
 
@@ -161,10 +172,12 @@ const getActiveBreakStatus = async (
     currentBreak = existingBreak;
   }
 
-  const remainingBreaksToday = Math.max(
-    0,
-    breakConfig.breaksPerDay - breaksToday,
-  );
+  let allowedBreaks = breakConfig.breaksPerDay;
+  if (activeSession && typeof activeSession.maxBreaks === "number") {
+    allowedBreaks = activeSession.maxBreaks;
+  }
+  const breaksUsed = activeSession ? (activeSession.usedBreaksCount ?? 0) : 0;
+  const remainingBreaksToday = Math.max(0, allowedBreaks - breaksUsed);
 
   let elapsedMinutes = 0;
   if (currentBreak) {
@@ -268,7 +281,7 @@ const getRemainingBreaks = async (
   if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
     durationMinutes = activeSession.breakDurationMinutes;
   }
-  const takenToday = breaksToday;
+  const takenToday = activeSession ? (activeSession.usedBreaksCount ?? 0) : 0;
   const remaining = Math.max(0, totalAllowed - takenToday);
 
   return {
@@ -537,6 +550,7 @@ const formatReconcileBreak = (
   return {
     _id: breakDoc._id,
     userId: breakDoc.userId,
+    sessionId: breakDoc.sessionId || null,
     modeId: breakDoc.modeId,
     clientBreakId: breakDoc.clientBreakId || null,
     startTime: formatZonedIso(startTime, userTimezone),
@@ -577,8 +591,18 @@ const reconcileBreakFromDB = async (
 
   const trimmedClientBreakId = clientBreakId.trim();
   const now = new Date();
-  const startOfDay = getZonedStartOfDay(now, activeTimezone);
-  const endOfDay = getZonedEndOfDay(now, activeTimezone);
+  let startTime = parseClientDate(startedAt, activeTimezone);
+
+  // Guard against extreme clock-skew or invalid future timestamp.
+  // Allow slight client clock drift (up to 5 minutes into the future) to preserve offline progress.
+  const MAX_FUTURE_DRIFT_MS = 5 * 60 * 1000;
+  if (
+    status !== "completed" &&
+    !endedAt &&
+    startTime.getTime() - Date.now() > MAX_FUTURE_DRIFT_MS
+  ) {
+    startTime = new Date();
+  }
 
   // 1. Idempotency & Session Check
   const [existingBreak, breakConfigDoc, activeSession] = await Promise.all([
@@ -607,23 +631,50 @@ const reconcileBreakFromDB = async (
     });
   }
 
-  const breaksToday = await Break.countDocuments({
-    userId: userObjectId,
-    nudgeId: { $exists: false },
-    createdAt: { $gte: startOfDay, $lte: endOfDay },
-    isDeleted: { $ne: true },
-  });
+  // Find the session that covers startedAt
+  let targetSession: any = null;
+  if (
+    activeSession &&
+    new Date(activeSession.startTime).getTime() <= startTime.getTime() &&
+    (!activeSession.endTime ||
+      new Date(activeSession.endTime).getTime() >= startTime.getTime())
+  ) {
+    targetSession = activeSession;
+  } else {
+    targetSession = await FocusSession.findOne({
+      userId: userObjectId,
+      isDeleted: false,
+      startTime: { $lte: startTime },
+      $or: [
+        { endTime: { $gte: startTime } },
+        { status: "active" },
+        { endTime: null },
+      ],
+    }).sort({ startTime: -1 });
+  }
+
+  if (!targetSession && activeSession) {
+    targetSession = activeSession;
+  }
 
   let allowedBreaks = breakConfig.breaksPerDay;
-  if (activeSession && typeof activeSession.maxBreaks === "number") {
+  if (targetSession && typeof targetSession.maxBreaks === "number") {
+    allowedBreaks = targetSession.maxBreaks;
+  } else if (activeSession && typeof activeSession.maxBreaks === "number") {
     allowedBreaks = activeSession.maxBreaks;
   }
+
   let effectiveDurationMinutes = breakConfig.breakDurationMinutes;
-  if (activeSession && typeof activeSession.breakDurationMinutes === "number") {
+  if (targetSession && typeof targetSession.breakDurationMinutes === "number") {
+    effectiveDurationMinutes = targetSession.breakDurationMinutes;
+  } else if (
+    activeSession &&
+    typeof activeSession.breakDurationMinutes === "number"
+  ) {
     effectiveDurationMinutes = activeSession.breakDurationMinutes;
   }
-  const breaksUsed = breaksToday;
 
+  const breaksUsed = targetSession ? (targetSession.usedBreaksCount ?? 0) : 0;
   const remainingBreaks = Math.max(0, allowedBreaks - breaksUsed);
 
   if (existingBreak) {
@@ -659,7 +710,7 @@ const reconcileBreakFromDB = async (
       isAccepted: false,
       isAlreadySynced: false,
       errorCode: "BREAK_QUOTA_EXCEEDED",
-      message: "Daily break limit reached",
+      message: "No breaks left in this session.",
       break: null,
       breaksLeft: 0,
       totalAllowed: allowedBreaks,
@@ -701,17 +752,6 @@ const reconcileBreakFromDB = async (
   const modeObjectId = new mongoose.Types.ObjectId(modeIdToUse);
 
   // 4. Parse Dates & Status
-  let startTime = parseClientDate(startedAt, activeTimezone);
-  // Guard against extreme clock-skew or invalid future timestamp.
-  // Allow slight client clock drift (up to 5 minutes into the future) to preserve offline progress.
-  const MAX_FUTURE_DRIFT_MS = 5 * 60 * 1000;
-  if (
-    status !== "completed" &&
-    !endedAt &&
-    startTime.getTime() - Date.now() > MAX_FUTURE_DRIFT_MS
-  ) {
-    startTime = new Date();
-  }
   const breakDurationMinutes = effectiveDurationMinutes || 15;
   const totalBreakSeconds = breakDurationMinutes * 60;
   const scheduledEndTime = new Date(
@@ -758,6 +798,7 @@ const reconcileBreakFromDB = async (
   // 5. Create Break Document with clientBreakId
   const createdBreak = await Break.create({
     userId: userObjectId,
+    sessionId: targetSession?._id || undefined,
     modeId: modeObjectId,
     clientBreakId: trimmedClientBreakId,
     startTime,
@@ -769,8 +810,8 @@ const reconcileBreakFromDB = async (
     createdAt: startTime, // keep createdAt consistent with break start time
   });
 
-  if (activeSession?._id) {
-    await FocusSession.findByIdAndUpdate(activeSession._id, {
+  if (targetSession?._id) {
+    await FocusSession.findByIdAndUpdate(targetSession._id, {
       $inc: { usedBreaksCount: 1 },
     });
   }

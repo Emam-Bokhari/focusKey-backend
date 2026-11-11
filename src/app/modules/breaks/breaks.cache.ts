@@ -89,7 +89,7 @@ export const BreakCache = {
         status: "active",
         isDeleted: false,
       })
-        .select("_id modeId maxBreaks breakDurationMinutes usedBreaksCount")
+        .select("_id modeId maxBreaks breakDurationMinutes usedBreaksCount startTime endTime")
         .lean(),
 
       BreakConfig.findOne({
@@ -108,7 +108,7 @@ export const BreakCache = {
         isDeleted: false,
       })
         .select(
-          "_id userId modeId nudgeId clientBreakId startTime endTime durationMinutes totalDurationMinutes remainingSeconds status isDeleted createdAt updatedAt",
+          "_id userId sessionId modeId nudgeId clientBreakId startTime endTime durationMinutes totalDurationMinutes remainingSeconds status isDeleted createdAt updatedAt",
         )
         .populate("modeId")
         .lean(),

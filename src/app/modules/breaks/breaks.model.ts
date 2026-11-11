@@ -10,6 +10,11 @@ const breakSchema = new Schema<IBreak>(
       required: true,
       index: true,
     },
+    sessionId: {
+      type: Schema.Types.ObjectId,
+      ref: "FocusSession",
+      index: true,
+    },
     modeId: {
       type: Schema.Types.ObjectId,
       ref: "Mode",
@@ -59,6 +64,7 @@ const breakSchema = new Schema<IBreak>(
 breakSchema.plugin(softDeletePlugin);
 
 breakSchema.index({ userId: 1, startTime: -1 });
+breakSchema.index({ userId: 1, sessionId: 1 });
 breakSchema.index({ userId: 1, modeId: 1, startTime: -1 });
 breakSchema.index({ userId: 1, status: 1, endTime: 1 });
 breakSchema.index({ userId: 1, status: 1, endTime: 1, isDeleted: 1 });
@@ -74,6 +80,7 @@ breakSchema.index({
   endTime: 1,
   nudgeId: 1,
 });
+
 breakSchema.index({ userId: 1, isDeleted: 1, nudgeId: 1, createdAt: -1 });
 
 export const Break = model<IBreak>("Break", breakSchema);

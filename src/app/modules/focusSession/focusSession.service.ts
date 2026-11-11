@@ -883,6 +883,9 @@ const formatReconcileSession = (
     endTimeRaw: endTime ? endTime.toISOString() : null,
     timeRange: formatZonedTimeRange(startTime, endTime, userTimezone),
     durationMinutes: session.durationMinutes || 0,
+    maxBreaks: session.maxBreaks,
+    breakDurationMinutes: session.breakDurationMinutes,
+    usedBreaksCount: session.usedBreaksCount ?? 0,
     status: session.status,
     createdAt: session.createdAt,
     updatedAt: session.updatedAt,
@@ -997,6 +1000,8 @@ const reconcileSessionFromDB = async (
   logger.info(
     `[Reconcile] Processed existing session. User: ${userId}, clientSessionId: ${trimmedClientSessionId}, status: ${existingSession.status}, durationMinutes: ${existingSession.durationMinutes}`,
   );
+
+  BreakCache.invalidate(userId);
 
     const lockStatus = await ModeService.getLockStatusFromDB(
       userId,

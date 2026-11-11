@@ -2,6 +2,7 @@ import { Types } from "mongoose";
 
 export interface IBreak {
   userId: Types.ObjectId;
+  sessionId?: Types.ObjectId;
   modeId: Types.ObjectId;
   nudgeId?: Types.ObjectId;
   clientBreakId?: string;

@@ -182,6 +182,19 @@ const handleUserUnpairing = catchAsync(async (req, res) => {
   });
 });
 
+const handleAdminUserUnpairing = catchAsync(async (req, res) => {
+  const { userId } = req.params;
+
+  const result = await UserCommands.handleUserUnpairing(userId);
+
+  sendResponse(res, {
+    success: true,
+    statusCode: 200,
+    message: "User device unpaired successfully by admin",
+    data: result,
+  });
+});
+
 export const UserControllers = {
   createUser,
   getUserProfile,
@@ -196,4 +209,5 @@ export const UserControllers = {
   deleteAdmin,
   handleUserPairing,
   handleUserUnpairing,
+  handleAdminUserUnpairing,
 };

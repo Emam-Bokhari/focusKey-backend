@@ -22,6 +22,12 @@ router
   .get(isAuthenticated, UserControllers.getUserProfile)
   .delete(isAuthenticated, UserControllers.deleteProfile);
 
+router.post(
+  "/admin/unpair-device/:userId",
+  isAdmin,
+  UserControllers.handleAdminUserUnpairing,
+);
+
 router.post("/create-admin", isAdmin, UserControllers.createAdmin);
 
 router.get("/admins", isAdmin, UserControllers.getAdmin);

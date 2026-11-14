@@ -151,6 +151,10 @@ const handleUserPairing = async (
 };
 
 const handleUserUnpairing = async (userId: string) => {
+  if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+    throw new ApiError(StatusCodes.BAD_REQUEST, "Invalid user ID");
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
@@ -160,16 +164,28 @@ const handleUserUnpairing = async (userId: string) => {
       throw new ApiError(StatusCodes.NOT_FOUND, "User not found");
     }
 
-    const device = await RegisteredDevice.findOne({ userId }).session(session);
-    if (device) {
-      device.deviceFingerprint = null;
-      device.deviceModel = null;
-      device.platform = null;
-      device.userId = null;
-      device.pairedAt = null;
-      device.lastUnpairedAt = new Date();
-      await device.save({ session });
+    const userObjectId = new mongoose.Types.ObjectId(userId);
+    const deviceConditions: any[] = [
+      { userId: userObjectId },
+      { userId: userId.toString() },
+    ];
+    if (user.device?.nfcChip) {
+      deviceConditions.push({ uid: user.device.nfcChip });
     }
+
+    await RegisteredDevice.updateMany(
+      { $or: deviceConditions },
+      {
+        $set: {
+          deviceFingerprint: null,
+          deviceModel: null,
+          platform: null,
+          userId: null,
+          pairedAt: null,
+          lastUnpairedAt: new Date(),
+        },
+      },
+    ).session(session);
 
     user.isPaired = false;
     user.device = undefined;

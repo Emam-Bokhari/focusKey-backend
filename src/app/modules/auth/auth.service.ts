@@ -80,7 +80,6 @@ const loginUserFromDB = async (payload: ILoginData) => {
 
   const result = {
     token: createToken,
-    isPaired: Boolean(isExistUser.isPaired),
     user: userObj,
   };
 
@@ -481,7 +480,6 @@ const googleLoginService = async (payload: {
 
   return {
     token: createToken,
-    isPaired: Boolean(user.isPaired),
     user: userObj,
   };
 };

@@ -434,6 +434,54 @@ const parseDevicesFromCsv = (csvText: string): IBulkDeviceItem[] => {
   return results;
 };
 
+const unpairDeviceByUserId = async (
+  userId: string | mongoose.Types.ObjectId,
+  nfcChip?: string,
+  deviceFingerprint?: string,
+) => {
+  if (!userId) return null;
+
+  const userObjectId = mongoose.Types.ObjectId.isValid(userId)
+    ? new mongoose.Types.ObjectId(userId.toString())
+    : userId;
+
+  const conditions: any[] = [
+    { userId: userObjectId },
+    { userId: userId.toString() },
+  ];
+
+  if (nfcChip && deviceFingerprint) {
+    conditions.push({
+      uid: nfcChip,
+      deviceFingerprint: deviceFingerprint,
+    });
+  }
+
+  const result = await RegisteredDevice.updateMany(
+    { $or: conditions },
+    {
+      $set: {
+        deviceFingerprint: null,
+        deviceModel: null,
+        platform: null,
+        userId: null,
+        pairedAt: null,
+        lastUnpairedAt: new Date(),
+      },
+    },
+  );
+
+  //@ts-ignore
+  const io = global.io;
+  if (io) {
+    io.emit(`device-pairing-updated::${userId.toString()}`, {
+      status: "UNPAIRED",
+    });
+  }
+
+  return result;
+};
+
 export const RegisteredDeviceService = {
   createDeviceToDB,
   bulkCreateDevicesToDB,
@@ -443,4 +491,5 @@ export const RegisteredDeviceService = {
   updateDeviceToDB,
   deleteDeviceFromDB,
   resetDeviceToDB,
+  unpairDeviceByUserId,
 };

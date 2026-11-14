@@ -22,6 +22,8 @@ import { firebaseAdmin } from "../../../config/firebase";
 import { FcmTokenService } from "../fcmToken/fcmService";
 import { emailQueue } from "../../../queues";
 import { ModeService } from "../modes/modes.service";
+import { RegisteredDeviceService } from "../registeredDevice/registeredDevice.service";
+import { invalidateUserAuthCache } from "../../middlewares/auth";
 
 const loginUserFromDB = async (payload: ILoginData) => {
   const { email, password, fcmToken, deviceId, deviceType } = payload;
@@ -336,10 +338,19 @@ const deleteUserFromDB = async (user: JwtPayload, password: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Password is incorrect");
   }
 
+  // Automatically unpair any paired NFC key/device when user deletes account
+  await RegisteredDeviceService.unpairDeviceByUserId(
+    user.id,
+    isExistUser.device?.nfcChip,
+    isExistUser.device?.deviceFingerprint,
+  );
+
   const updateUser = await User.findByIdAndDelete(user.id);
   if (!updateUser) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "User doesn't exist!");
   }
+
+  invalidateUserAuthCache(user.id);
 
   const admin = await User.findOne({ role: USER_ROLES.SUPER_ADMIN }).select(
     "_id name",

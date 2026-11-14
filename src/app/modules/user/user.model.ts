@@ -4,6 +4,7 @@ import { IUser, IUserModel } from "./user.interface";
 import bcrypt from "bcrypt";
 import config from "../../../config";
 import { softDeletePlugin } from "../../../DB/plugins/softDeletePlugin";
+import { RegisteredDevice } from "../registeredDevice/registeredDevice.model";
 
 const installedAppSchema = new Schema(
   {
@@ -260,6 +261,48 @@ userSchema.pre("save", async function (next) {
   }
 
   next();
+});
+
+userSchema.post("findOneAndDelete", async function (doc) {
+  if (doc && doc._id) {
+    try {
+      const conditions: any[] = [
+        { userId: doc._id },
+        { userId: doc._id.toString() },
+      ];
+
+      if (doc.device?.nfcChip && doc.device?.deviceFingerprint) {
+        conditions.push({
+          uid: doc.device.nfcChip,
+          deviceFingerprint: doc.device.deviceFingerprint,
+        });
+      }
+
+      await RegisteredDevice.updateMany(
+        { $or: conditions },
+        {
+          $set: {
+            deviceFingerprint: null,
+            deviceModel: null,
+            platform: null,
+            userId: null,
+            pairedAt: null,
+            lastUnpairedAt: new Date(),
+          },
+        },
+      );
+
+      //@ts-ignore
+      const io = global.io;
+      if (io) {
+        io.emit(`device-pairing-updated::${doc._id.toString()}`, {
+          status: "UNPAIRED",
+        });
+      }
+    } catch (error) {
+      // Ignore background unpairing errors during post-delete hook
+    }
+  }
 });
 
 export const User = model<IUser, IUserModel>("User", userSchema);

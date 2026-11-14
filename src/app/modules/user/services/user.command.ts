@@ -5,6 +5,7 @@ import generateOTP from "../../../../util/generateOTP";
 import { emailTemplate } from "../../../../shared/emailTemplate";
 import mongoose from "mongoose";
 import { RegisteredDevice } from "../../registeredDevice/registeredDevice.model";
+import { RegisteredDeviceService } from "../../registeredDevice/registeredDevice.service";
 import { emailQueue } from "../../../../queues";
 import { jwtHelper } from "../../../../helpers/jwtHelper";
 import config from "../../../../config";
@@ -377,6 +378,13 @@ const deleteUserByIdFromDB = async (id: string) => {
     throw new ApiError(StatusCodes.FORBIDDEN, "SUPER_ADMIN cannot be deleted");
   }
 
+  // Automatically unpair any paired NFC key/device when user is deleted
+  await RegisteredDeviceService.unpairDeviceByUserId(
+    id,
+    user.device?.nfcChip,
+    user.device?.deviceFingerprint,
+  );
+
   const result = await User.findByIdAndDelete(id);
   invalidateUserAuthCache(id);
 
@@ -418,7 +426,16 @@ const deleteProfileFromDB = async (id: string, password: string) => {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Password is incorrect!");
   }
 
+  // Automatically unpair any paired NFC key/device when user deletes profile
+  await RegisteredDeviceService.unpairDeviceByUserId(
+    id,
+    user.device?.nfcChip,
+    user.device?.deviceFingerprint,
+  );
+
   const result = await User.findByIdAndDelete(id);
+  invalidateUserAuthCache(id);
+
   if (!result) {
     throw new ApiError(400, "Failed to delete this user");
   }
@@ -472,7 +489,15 @@ const deleteAdminFromDB = async (id: any) => {
     throw new ApiError(StatusCodes.FORBIDDEN, "Super Admin cannot be deleted");
   }
 
+  // Automatically unpair any paired NFC key/device if admin account is deleted
+  await RegisteredDeviceService.unpairDeviceByUserId(
+    id,
+    isExistAdmin.device?.nfcChip,
+    isExistAdmin.device?.deviceFingerprint,
+  );
+
   const result = await User.findByIdAndDelete(id);
+  invalidateUserAuthCache(id);
 
   if (!result) {
     throw new ApiError(StatusCodes.BAD_REQUEST, "Failed to delete Admin");

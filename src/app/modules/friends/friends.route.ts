@@ -1,43 +1,43 @@
 import express from "express";
-import { isUser } from "../../../helpers/authHelper";
+import { isPairedUser } from "../../../helpers/authHelper";
 import { FriendsController } from "./friends.controller";
 
 const router = express.Router();
 
 // Users search / discovery
-router.get("/users", isUser, FriendsController.getUsers);
+router.get("/users", isPairedUser, FriendsController.getUsers);
 
 // Friend details & actions
-router.get("/details/:friendId", isUser, FriendsController.getFriendDetails);
-router.post("/send-nudge/:friendId?", isUser, FriendsController.sendNudge);
-router.post("/send-nudge", isUser, FriendsController.sendNudge);
+router.get("/details/:friendId", isPairedUser, FriendsController.getFriendDetails);
+router.post("/send-nudge/:friendId?", isPairedUser, FriendsController.sendNudge);
+router.post("/send-nudge", isPairedUser, FriendsController.sendNudge);
 router.delete(
   "/remove-friend/:friendId",
-  isUser,
+  isPairedUser,
   FriendsController.removeFriend,
 );
 
 // Friends focusing status & list
 router.get(
   "/focusing-status",
-  isUser,
+  isPairedUser,
   FriendsController.getFriendsFocusingStatus,
 );
-router.get("/list", isUser, FriendsController.getFriends);
-router.get("/nudge-history", isUser, FriendsController.getNudgeHistory);
+router.get("/list", isPairedUser, FriendsController.getFriends);
+router.get("/nudge-history", isPairedUser, FriendsController.getNudgeHistory);
 
 // Friend requests
-router.post("/send-request", isUser, FriendsController.sendFriendRequest);
-router.post("/add-friend", isUser, FriendsController.oldAddFriend);
+router.post("/send-request", isPairedUser, FriendsController.sendFriendRequest);
+router.post("/add-friend", isPairedUser, FriendsController.oldAddFriend);
 router.get(
   "/received-requests",
-  isUser,
+  isPairedUser,
   FriendsController.getReceivedFriendRequests,
 );
-router.get("/sent-requests", isUser, FriendsController.getSentFriendRequests);
+router.get("/sent-requests", isPairedUser, FriendsController.getSentFriendRequests);
 router.post(
   "/respond-request/:requestId",
-  isUser,
+  isPairedUser,
   FriendsController.handleFriendRequestAction,
 );
 

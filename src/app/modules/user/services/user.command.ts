@@ -21,6 +21,8 @@ import unlinkFile from "../../../../shared/unlinkFile";
 import bcrypt from "bcrypt";
 import crypto from "crypto";
 import { ModeService } from "../../modes/modes.service";
+import { Mode } from "../../modes/modes.model";
+import { FocusSession } from "../../focusSession/focusSession.model";
 import { invalidateUserAuthCache } from "../../../middlewares/auth";
 
 const generatePairingCode = (): string => {
@@ -133,6 +135,8 @@ const handleUserPairing = async (
     await session.commitTransaction();
     session.endSession();
 
+    invalidateUserAuthCache(userId);
+
     //@ts-ignore
     const io = global.io;
     if (io) {
@@ -191,8 +195,20 @@ const handleUserUnpairing = async (userId: string) => {
     user.device = undefined;
     await user.save({ session });
 
+    await Mode.updateMany(
+      { userId: userObjectId, isActive: true },
+      { $set: { isActive: false } },
+    ).session(session);
+
+    await FocusSession.updateMany(
+      { userId: userObjectId, status: "active" },
+      { $set: { status: "completed", endTime: new Date() } },
+    ).session(session);
+
     await session.commitTransaction();
     session.endSession();
+
+    invalidateUserAuthCache(userId);
 
     //@ts-ignore
     const io = global.io;
@@ -201,6 +217,13 @@ const handleUserUnpairing = async (userId: string) => {
         status: "UNPAIRED",
       });
     }
+
+    await sendNotifications({
+      title: "Device Unpaired",
+      text: "Your FocusKey device has been unpaired. Please pair your FocusKey device to continue.",
+      receiver: userId,
+      type: NOTIFICATION_TYPE.USER,
+    }).catch(() => {});
 
     return user;
   } catch (error) {

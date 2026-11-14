@@ -5,7 +5,7 @@ import config from "../../config";
 import { User } from "../modules/user/user.model";
 import ApiError from "../../errors/ApiErrors";
 import { verifyToken } from "../../util/verifyToken";
-import { STATUS } from "../../enums/user";
+import { STATUS, USER_ROLES } from "../../enums/user";
 
 import { resolveTimezone } from "../../helpers/timezoneHelper";
 
@@ -14,6 +14,7 @@ interface ICachedAuthUser {
   status?: string;
   timezone?: string;
   role?: string;
+  isPaired?: boolean;
   expiresAt: number;
 }
 
@@ -56,14 +57,18 @@ const auth =
 
         const nowMs = Date.now();
         const cachedUser = authUserCache.get(verifyUser.id);
-        let user: { status?: string; timezone?: string; role?: string } | null =
-          null;
+        let user: {
+          status?: string;
+          timezone?: string;
+          role?: string;
+          isPaired?: boolean;
+        } | null = null;
 
         if (cachedUser && cachedUser.expiresAt > nowMs) {
           user = cachedUser;
         } else {
           const dbUser = await User.findById(verifyUser.id)
-            .select("status timezone role")
+            .select("status timezone role isPaired")
             .lean();
 
           if (dbUser) {
@@ -71,12 +76,14 @@ const auth =
               status: dbUser.status,
               timezone: dbUser.timezone,
               role: dbUser.role,
+              isPaired: Boolean(dbUser.isPaired),
             };
             authUserCache.set(verifyUser.id, {
               id: verifyUser.id,
               status: dbUser.status,
               timezone: dbUser.timezone,
               role: dbUser.role,
+              isPaired: Boolean(dbUser.isPaired),
               expiresAt: nowMs + 60_000,
             });
           }
@@ -106,6 +113,8 @@ const auth =
 
         req.user = {
           ...verifyUser,
+          isPaired: user?.isPaired,
+          status: user?.status,
           timezone: resolveTimezone(user?.timezone, headerTz, queryTz),
         };
         next();
@@ -114,5 +123,24 @@ const auth =
       next(error);
     }
   };
+
+export const requirePaired = (
+  req: Request,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const user = req.user;
+    if (user?.role === USER_ROLES.USER && !user?.isPaired) {
+      throw new ApiError(
+        StatusCodes.FORBIDDEN,
+        "Device is not paired. Please pair your FocusKey device to continue.",
+      );
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
 
 export default auth;

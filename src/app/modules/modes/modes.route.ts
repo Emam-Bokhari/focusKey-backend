@@ -1,33 +1,33 @@
 import express from "express";
-import { isUser } from "../../../helpers/authHelper";
+import { isPairedUser } from "../../../helpers/authHelper";
 import { ModeController } from "./modes.controller";
 
 const router = express.Router();
 
 router
   .route("/")
-  .post(isUser, ModeController.createMode)
-  .get(isUser, ModeController.getModes);
+  .post(isPairedUser, ModeController.createMode)
+  .get(isPairedUser, ModeController.getModes);
 
-router.get("/app-count", isUser, ModeController.getModeAppCount);
-router.get("/app-details", isUser, ModeController.getModeAppDetails);
-router.get("/total-focus-apps", isUser, ModeController.getTotalFocusApps);
-router.get("/lock-status", isUser, ModeController.getLockStatus);
+router.get("/app-count", isPairedUser, ModeController.getModeAppCount);
+router.get("/app-details", isPairedUser, ModeController.getModeAppDetails);
+router.get("/total-focus-apps", isPairedUser, ModeController.getTotalFocusApps);
+router.get("/lock-status", isPairedUser, ModeController.getLockStatus);
 router.get(
   "/app-details/:modeId",
-  isUser,
+  isPairedUser,
   ModeController.getSingleModeAppDetails,
 );
 
 router
   .route("/:modeId")
-  .get(isUser, ModeController.getSingleMode)
-  .patch(isUser, ModeController.updateMode)
-  .delete(isUser, ModeController.deleteMode);
+  .get(isPairedUser, ModeController.getSingleMode)
+  .patch(isPairedUser, ModeController.updateMode)
+  .delete(isPairedUser, ModeController.deleteMode);
 
 router.patch(
   "/:modeId/toggle-activation",
-  isUser,
+  isPairedUser,
   ModeController.toggleModeActivation,
 );
 

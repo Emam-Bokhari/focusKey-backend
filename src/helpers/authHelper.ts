@@ -1,7 +1,11 @@
-import auth from "../app/middlewares/auth";
+import auth, { requirePaired } from "../app/middlewares/auth";
 import { USER_ROLES } from "../enums/user";
 
 export const isUser = auth(USER_ROLES.USER);
+
+export const requirePairedUser = requirePaired;
+
+export const isPairedUser = [isUser, requirePaired];
 
 export const isAuthenticated = auth(
   USER_ROLES.USER,

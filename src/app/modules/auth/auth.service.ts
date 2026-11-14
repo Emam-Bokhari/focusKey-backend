@@ -73,9 +73,15 @@ const loginUserFromDB = async (payload: ILoginData) => {
     config.jwt.jwt_expire_in as string,
   );
 
+  const userObj: any = isExistUser.toObject
+    ? isExistUser.toObject()
+    : { ...isExistUser };
+  delete userObj.password;
+
   const result = {
     token: createToken,
-    user: isExistUser,
+    isPaired: Boolean(isExistUser.isPaired),
+    user: userObj,
   };
 
   return result;
@@ -470,9 +476,13 @@ const googleLoginService = async (payload: {
     config.jwt.jwt_expire_in as string,
   );
 
+  const userObj: any = user.toObject ? user.toObject() : { ...user };
+  delete userObj.password;
+
   return {
     token: createToken,
-    user,
+    isPaired: Boolean(user.isPaired),
+    user: userObj,
   };
 };
 

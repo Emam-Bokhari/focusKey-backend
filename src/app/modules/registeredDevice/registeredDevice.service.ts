@@ -11,6 +11,11 @@ import {
 } from "./registeredDevice.interface";
 import { RegisteredDevice } from "./registeredDevice.model";
 import { User } from "../user/user.model";
+import { invalidateUserAuthCache } from "../../middlewares/auth";
+import { Mode } from "../modes/modes.model";
+import { FocusSession } from "../focusSession/focusSession.model";
+import { sendNotifications } from "../../../helpers/notificationsHelper";
+import { NOTIFICATION_TYPE } from "../notification/notification.constant";
 
 const createDeviceToDB = async (
   payload: Partial<IRegisteredDevice>,
@@ -174,6 +179,16 @@ const resetDeviceToDB = async (id: string) => {
         user.isPaired = false;
         user.device = undefined;
         await user.save({ session });
+
+        await Mode.updateMany(
+          { userId: pairedUserId, isActive: true },
+          { $set: { isActive: false } },
+        ).session(session);
+
+        await FocusSession.updateMany(
+          { userId: pairedUserId, status: "active" },
+          { $set: { status: "completed", endTime: new Date() } },
+        ).session(session);
       }
     }
 
@@ -181,6 +196,8 @@ const resetDeviceToDB = async (id: string) => {
     session.endSession();
 
     if (pairedUserId) {
+      invalidateUserAuthCache(pairedUserId.toString());
+
       //@ts-ignore
       const io = global.io;
       if (io) {
@@ -188,6 +205,13 @@ const resetDeviceToDB = async (id: string) => {
           status: "UNPAIRED",
         });
       }
+
+      await sendNotifications({
+        title: "Device Unpaired",
+        text: "Your FocusKey device has been reset and unpaired by an administrator. Please pair your FocusKey device to continue.",
+        receiver: pairedUserId.toString(),
+        type: NOTIFICATION_TYPE.USER,
+      }).catch(() => {});
     }
 
     return device;
@@ -471,6 +495,22 @@ const unpairDeviceByUserId = async (
     },
   );
 
+  await User.findByIdAndUpdate(userObjectId, {
+    $set: { isPaired: false, device: undefined },
+  });
+
+  await Mode.updateMany(
+    { userId: userObjectId, isActive: true },
+    { $set: { isActive: false } },
+  );
+
+  await FocusSession.updateMany(
+    { userId: userObjectId, status: "active" },
+    { $set: { status: "completed", endTime: new Date() } },
+  );
+
+  invalidateUserAuthCache(userObjectId.toString());
+
   //@ts-ignore
   const io = global.io;
   if (io) {
@@ -478,6 +518,13 @@ const unpairDeviceByUserId = async (
       status: "UNPAIRED",
     });
   }
+
+  await sendNotifications({
+    title: "Device Unpaired",
+    text: "Your FocusKey device has been unpaired. Please pair your FocusKey device to continue.",
+    receiver: userId.toString(),
+    type: NOTIFICATION_TYPE.USER,
+  }).catch(() => {});
 
   return result;
 };

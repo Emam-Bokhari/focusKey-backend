@@ -1,21 +1,21 @@
 import express from "express";
-import { isUser } from "../../../helpers/authHelper";
+import { isPairedUser } from "../../../helpers/authHelper";
 import validateRequest from "../../middlewares/validateRequest";
 import { BreakController } from "./breaks.controller";
 import { BreakValidation } from "./breaks.validation";
 
 const router = express.Router();
 
-router.post("/start", isUser, BreakController.startBreak);
-router.post("/stop", isUser, BreakController.stopBreak);
-router.post("/reconcile", isUser, BreakController.reconcileBreak);
-router.get("/status", isUser, BreakController.getActiveBreakStatus);
-router.get("/remaining", isUser, BreakController.getRemainingBreaks);
+router.post("/start", isPairedUser, BreakController.startBreak);
+router.post("/stop", isPairedUser, BreakController.stopBreak);
+router.post("/reconcile", isPairedUser, BreakController.reconcileBreak);
+router.get("/status", isPairedUser, BreakController.getActiveBreakStatus);
+router.get("/remaining", isPairedUser, BreakController.getRemainingBreaks);
 
-router.get("/config", isUser, BreakController.getGlobalBreakConfig);
+router.get("/config", isPairedUser, BreakController.getGlobalBreakConfig);
 router.patch(
   "/config",
-  isUser,
+  isPairedUser,
   validateRequest(BreakValidation.updateBreakConfigZodSchema),
   BreakController.updateGlobalBreakConfig,
 );

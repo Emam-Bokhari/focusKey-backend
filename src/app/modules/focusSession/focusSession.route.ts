@@ -1,18 +1,18 @@
 import express from "express";
-import { isUser } from "../../../helpers/authHelper";
+import { isPairedUser } from "../../../helpers/authHelper";
 import { FocusSessionController } from "./focusSession.controller";
 
 const router = express.Router();
 
-router.get("/history", isUser, FocusSessionController.getFocusHistory);
-router.get("/history-v2", isUser, FocusSessionController.getFocusHistoryV2);
+router.get("/history", isPairedUser, FocusSessionController.getFocusHistory);
+router.get("/history-v2", isPairedUser, FocusSessionController.getFocusHistoryV2);
 
-router.get("/stats", isUser, FocusSessionController.getFocusStats);
+router.get("/stats", isPairedUser, FocusSessionController.getFocusStats);
 
-router.get("/export-csv", isUser, FocusSessionController.exportHistoryToCSV);
+router.get("/export-csv", isPairedUser, FocusSessionController.exportHistoryToCSV);
 
-router.delete("/clear-all", isUser, FocusSessionController.clearAllData);
+router.delete("/clear-all", isPairedUser, FocusSessionController.clearAllData);
 
-router.post("/reconcile", isUser, FocusSessionController.reconcileSession);
+router.post("/reconcile", isPairedUser, FocusSessionController.reconcileSession);
 
 export const FocusSessionRoutes = router;
